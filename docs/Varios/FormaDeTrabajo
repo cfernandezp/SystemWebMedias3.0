@@ -1,0 +1,13 @@
+  ESCENARIO 2: Necesitas análisis de negocio
+
+  1. Usuario → @po-user-stories-template: "Crea HU de [funcionalidad]"
+     └─ PO crea HU básica
+
+  2. Usuario → @negocio-medias-expert: "Analiza y refina HU-XXX"
+     └─ Negocio define reglas específicas (RN-XXX)
+     └─ Actualiza SISTEMA_DOCUMENTACION.md
+
+  3. Usuario → @web-architect-expert: "Implementa HU-XXX"
+     └─ Arquitecto lee HU + reglas de negocio
+     └─ Gestiona desarrollo completo
+     └─ Entrega implementado

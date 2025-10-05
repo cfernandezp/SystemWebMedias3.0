@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST \"http://127.0.0.1:54321/rest/v1/rpc/login_user\" -H \"apikey: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH\" -H \"Content-Type: application/json\" -d '{\"\"p_email\"\":\"\"testuser@example.com\"\",\"\"p_password\"\":\"\"password123\"\",\"\"p_remember_me\"\":true}')",
+      "Bash(curl:*)",
+      "Bash(for i in {1..6})",
+      "Bash(do echo \"Intento $i:\")",
+      "Bash(done)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

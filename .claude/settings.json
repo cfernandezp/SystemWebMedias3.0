@@ -1,0 +1,45 @@
+{
+  "commands": {
+    "implementar": {
+      "description": "Comando para coordinar la implementación de Historias de Usuario desde perspectiva de negocio-medias-expert",
+      "file": "implementar.md",
+      "enabled": true
+    }
+  },
+  "agents": {
+    "default_agent": "negocio-medias-expert",
+    "available_agents": [
+      "negocio-medias-expert",
+      "supabase-expert",
+      "flutter-expert",
+      "ux-ui-expert",
+      "qa-testing-expert"
+    ]
+  },
+  "project": {
+    "name": "Sistema Venta Medias",
+    "type": "flutter-web-supabase",
+    "platform": "web",
+    "target": "web_application",
+    "documentation_path": "docs/",
+    "central_docs": "SISTEMA_DOCUMENTACION.md"
+  },
+  "permissions": {
+    "auto_approve_code_creation": true,
+    "trusted_agents": [
+      "supabase-expert",
+      "flutter-expert",
+      "ux-ui-expert",
+      "qa-testing-expert"
+    ],
+    "auto_approve_file_types": [".dart", ".sql", ".md", ".json", ".yaml"],
+    "role_restrictions": {
+      "negocio-medias-expert": {
+        "can_edit": [".md"],
+        "cannot_edit": [".dart", ".js", ".ts", ".sql", ".yaml", ".json"],
+        "role": "coordinator_only",
+        "must_use_task_for": ["code_changes", "dependency_changes", "config_changes"]
+      }
+    }
+  }
+}

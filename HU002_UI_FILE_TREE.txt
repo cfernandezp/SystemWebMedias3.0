@@ -1,0 +1,122 @@
+HU-002 UI Implementation - File Structure
+==========================================
+
+📁 lib/
+├── 📁 core/
+│   └── 📁 utils/
+│       └── 📄 validators.dart ✨ NEW
+│           ├── email()
+│           ├── required(message)
+│           ├── minLength(n, message)
+│           └── maxLength(n, message)
+│
+├── 📁 features/
+│   ├── 📁 auth/
+│   │   └── 📁 presentation/
+│   │       ├── 📁 bloc/
+│   │       │   ├── 📄 auth_state.dart ⚡ UPDATED
+│   │       │   │   ├── AuthAuthenticated (NEW)
+│   │       │   │   ├── AuthUnauthenticated (NEW)
+│   │       │   │   └── AuthError (errorHint added)
+│   │       │   │
+│   │       │   └── 📄 auth_event.dart ⚡ UPDATED
+│   │       │       ├── LoginRequested (NEW)
+│   │       │       ├── LogoutRequested (NEW)
+│   │       │       └── CheckAuthStatus (NEW)
+│   │       │
+│   │       ├── 📁 pages/
+│   │       │   └── 📄 login_page.dart ✨ NEW
+│   │       │       ├── Responsive (max 440px)
+│   │       │       ├── AuthHeader
+│   │       │       ├── LoginForm
+│   │       │       └── Link to register
+│   │       │
+│   │       └── 📁 widgets/
+│   │           ├── 📄 login_form.dart ✨ NEW
+│   │           │   ├── Email + Password fields
+│   │           │   ├── RememberMe checkbox
+│   │           │   ├── Validations
+│   │           │   ├── BlocConsumer
+│   │           │   └── SnackBar with actions
+│   │           │
+│   │           ├── 📄 remember_me_checkbox.dart ✨ NEW
+│   │           │   ├── 24x24px checkbox
+│   │           │   ├── Corporate color
+│   │           │   └── Clickable label
+│   │           │
+│   │           ├── 📄 auth_guard.dart ✨ NEW
+│   │           │   ├── Route protection
+│   │           │   ├── Redirect to /login
+│   │           │   └── Session expired message
+│   │           │
+│   │           └── 📄 register_form.dart ⚡ UPDATED
+│   │               └── Fixed route: /login (was /auth/login)
+│   │
+│   └── 📁 home/
+│       └── 📁 presentation/
+│           └── 📁 pages/
+│               └── 📄 home_page.dart ✨ NEW
+│                   ├── AppBar with logout
+│                   ├── Welcome message
+│                   ├── User info card
+│                   └── Responsive (max 600px)
+│
+└── 📄 main.dart ⚡ UPDATED
+    ├── BlocProvider global
+    ├── CheckAuthStatus on init
+    └── Routes:
+        ├── /login → LoginPage
+        └── /home → AuthGuard(HomePage)
+
+📁 test/
+├── 📁 core/
+│   └── 📁 utils/
+│       └── 📄 validators_test.dart ✨ NEW
+│           ├── email validation tests
+│           ├── required validation tests
+│           ├── minLength validation tests
+│           └── maxLength validation tests
+│
+└── 📁 features/
+    ├── 📁 auth/
+    │   └── 📁 presentation/
+    │       └── 📁 widgets/
+    │           └── 📄 login_form_test.dart ✨ NEW
+    │               ├── CA-001: show all elements
+    │               ├── CA-002: validate empty fields
+    │               ├── CA-002: validate email format
+    │               ├── toggle remember me
+    │               ├── show loading state
+    │               └── disable fields when loading
+    │
+    └── 📁 home/
+        └── 📁 presentation/
+            └── 📁 pages/
+                └── 📄 home_page_test.dart ✨ NEW
+                    ├── display user info
+                    ├── show logout button
+                    ├── dispatch logout event
+                    ├── show loading state
+                    ├── display all fields
+                    ├── handle null role
+                    └── show placeholder text
+
+📁 docs/
+└── 📁 technical/
+    └── 📁 design/
+        └── 📄 components_hu002.md ⚡ UPDATED
+            └── Implementation Final section
+
+📄 IMPLEMENTATION_SUMMARY_HU002_UI.md ✨ NEW
+    ├── Executive summary
+    ├── Files created/updated
+    ├── Tests created
+    ├── Design validation
+    ├── Pending dependencies
+    └── Next steps
+
+Legend:
+✨ NEW - Newly created file
+⚡ UPDATED - Modified existing file
+📁 Folder
+📄 File

@@ -1,0 +1,36 @@
+## Desarrollo Local - Sistema de Gestión de Medias
+
+### 🚀 Levantar el proyecto
+
+```bash
+# 1. Iniciar Supabase (PostgreSQL + todos los servicios)
+supabase start
+
+# 2. Iniciar Flutter Web
+flutter run -d chrome --web-port=8080
+```
+
+### 📧 Confirmación de Email en Desarrollo Local
+
+**✅ Los emails se envían automáticamente a Inbucket** usando Supabase Auth.
+
+#### Ver emails en Inbucket:
+
+1. **Registra un usuario** en http://localhost:8080
+2. **Abre Inbucket**: http://127.0.0.1:54324
+3. **Busca el buzón**: Click en la parte antes del @ (ej: si registraste `test@example.com`, busca `test`)
+4. **Abre el email** de confirmación de Supabase
+5. **Haz click en "Confirm your email"** para confirmar la cuenta
+
+### 🔗 URLs Útiles
+
+- **Flutter App**: http://localhost:8080
+- **Supabase Studio**: http://127.0.0.1:54323
+- **Inbucket** (emails): http://127.0.0.1:54324 ✅
+- **PostgreSQL**: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
+
+### 🛑 Detener servicios
+
+```bash
+supabase stop
+```
