@@ -5,7 +5,8 @@
 - **Épica**: E001 - Autenticación y Autorización
 - **Título**: Logout Seguro
 - **Story Points**: 3 pts
-- **Estado**: ⚪ Pendiente
+- **Estado**: ✅ Completada
+- **Fecha de completación**: 2025-10-06
 
 ## 🎯 HISTORIA DE USUARIO
 **Como** usuario autenticado en el sistema

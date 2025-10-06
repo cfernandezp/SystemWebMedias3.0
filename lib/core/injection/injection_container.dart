@@ -11,6 +11,16 @@ import 'package:system_web_medias/features/auth/domain/usecases/register_user.da
 import 'package:system_web_medias/features/auth/domain/usecases/resend_confirmation.dart';
 import 'package:system_web_medias/features/auth/domain/usecases/validate_token.dart';
 import 'package:system_web_medias/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:system_web_medias/features/menu/data/datasources/menu_remote_datasource.dart';
+import 'package:system_web_medias/features/menu/data/repositories/menu_repository_impl.dart';
+import 'package:system_web_medias/features/menu/domain/repositories/menu_repository.dart';
+import 'package:system_web_medias/features/menu/domain/usecases/get_menu_options.dart';
+import 'package:system_web_medias/features/menu/domain/usecases/update_sidebar_preference.dart';
+import 'package:system_web_medias/features/menu/presentation/bloc/menu_bloc.dart';
+import 'package:system_web_medias/features/user/data/datasources/user_profile_remote_datasource.dart';
+import 'package:system_web_medias/features/user/data/repositories/user_profile_repository_impl.dart';
+import 'package:system_web_medias/features/user/domain/repositories/user_profile_repository.dart';
+import 'package:system_web_medias/features/user/domain/usecases/get_user_profile.dart';
 
 final sl = GetIt.instance;
 
@@ -41,6 +51,7 @@ Future<void> init() async {
       validateTokenUseCase: sl(),
       logoutUserUseCase: sl(),
       secureStorage: sl(),
+      authRepository: sl(), // HU-003: Inyectar repository para logout seguro
     ),
   );
 
@@ -63,6 +74,53 @@ Future<void> init() async {
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(
       supabase: sl(),
+    ),
+  );
+
+  // ========== FEATURES - MENU (HU-002) ==========
+
+  // Bloc
+  sl.registerFactory(
+    () => MenuBloc(
+      getMenuOptions: sl(),
+      updateSidebarPreference: sl(),
+    ),
+  );
+
+  // Use Cases
+  sl.registerLazySingleton(() => GetMenuOptions(sl()));
+  sl.registerLazySingleton(() => UpdateSidebarPreference(sl()));
+
+  // Repository
+  sl.registerLazySingleton<MenuRepository>(
+    () => MenuRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data Sources
+  sl.registerLazySingleton<MenuRemoteDataSource>(
+    () => MenuRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  // ========== FEATURES - USER PROFILE (HU-002) ==========
+
+  // Use Cases
+  sl.registerLazySingleton(() => GetUserProfile(sl()));
+
+  // Repository
+  sl.registerLazySingleton<UserProfileRepository>(
+    () => UserProfileRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data Sources
+  sl.registerLazySingleton<UserProfileRemoteDataSource>(
+    () => UserProfileRemoteDataSourceImpl(
+      supabaseClient: sl(),
     ),
   );
 }

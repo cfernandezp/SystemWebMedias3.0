@@ -58,3 +58,29 @@ class NotFoundException extends AppException {
 class ForbiddenException extends AppException {
   ForbiddenException([super.message = 'Operación no permitida', super.statusCode = 403]);
 }
+
+/// E001-HU-003: Logout Seguro exceptions
+class TokenBlacklistedException extends AppException {
+  TokenBlacklistedException([super.message = 'Token ya invalidado', super.statusCode = 401]);
+}
+
+class AlreadyLoggedOutException extends AppException {
+  AlreadyLoggedOutException([super.message = 'Ya has cerrado sesión', super.statusCode = 400]);
+}
+
+class UserNotFoundException extends AppException {
+  UserNotFoundException([super.message = 'Usuario no encontrado', super.statusCode = 404]);
+}
+
+/// E001-HU-004: Password Recovery exceptions
+class ExpiredTokenException extends AppException {
+  ExpiredTokenException([super.message = 'Enlace de recuperación expirado', super.statusCode = 400]);
+}
+
+class UsedTokenException extends AppException {
+  UsedTokenException([super.message = 'Enlace ya utilizado', super.statusCode = 400]);
+}
+
+class WeakPasswordException extends AppException {
+  WeakPasswordException([super.message = 'Contraseña muy débil', super.statusCode = 400]);
+}

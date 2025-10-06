@@ -1,302 +1,340 @@
 import 'package:flutter/material.dart';
-import 'package:system_web_medias/features/dashboard/presentation/widgets/vendedor_dashboard.dart';
-import 'package:system_web_medias/features/dashboard/presentation/widgets/gerente_dashboard.dart';
-import 'package:system_web_medias/features/dashboard/presentation/widgets/admin_dashboard.dart';
-import 'package:system_web_medias/features/dashboard/presentation/widgets/sales_line_chart.dart';
-import 'package:system_web_medias/features/dashboard/presentation/widgets/top_productos_list.dart';
-import 'package:system_web_medias/features/dashboard/presentation/widgets/top_vendedores_list.dart';
-import 'package:system_web_medias/features/dashboard/presentation/widgets/transacciones_recientes_list.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:system_web_medias/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:system_web_medias/features/auth/presentation/bloc/auth_event.dart';
+import 'package:system_web_medias/features/auth/presentation/bloc/auth_state.dart';
+import 'package:system_web_medias/shared/design_system/organisms/authenticated_header.dart';
 
-/// DashboardPage (Page)
-///
-/// Página principal del dashboard que muestra el organism correcto según rol.
-///
-/// Implementa HU E003-HU-001: Dashboard con Métricas
-/// Routing flat: '/dashboard'
+/// Página principal del Dashboard
+/// Muestra resumen de métricas y accesos rápidos
 ///
 /// Características:
-/// - BlocBuilder con polimorfismo según rol
-/// - AppBar con botón refresh
-/// - Loading skeleton mientras carga
-/// - Manejo de errores con retry
-///
-/// NOTA: Temporalmente sin BLoC hasta implementación de backend
-class DashboardPage extends StatefulWidget {
+/// - Grid responsivo de cards
+/// - Gráficos de resumen (ventas, productos, clientes)
+/// - Accesos rápidos a funciones principales
+/// - Theme-aware
+/// - AuthenticatedHeader con datos de usuario
+class DashboardPage extends StatelessWidget {
   const DashboardPage({Key? key}) : super(key: key);
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        // Solo renderizar si está autenticado
+        if (authState is! AuthAuthenticated) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final user = authState.user;
+
+        return Scaffold(
+          appBar: AuthenticatedHeader(
+            userName: user.nombreCompleto,
+            userRole: _formatRole(user.rol?.value ?? 'USUARIO'),
+            avatarUrl: null,
+            title: null,
+            onLogoutConfirmed: () {
+              context.read<AuthBloc>().add(const LogoutRequested());
+            },
+          ),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  const Text(
+                    'Dashboard',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Resumen general del sistema',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Grid de métricas
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final crossAxisCount = constraints.maxWidth > 1200
+                          ? 4
+                          : constraints.maxWidth > 768
+                              ? 2
+                              : 1;
+
+                      return GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: 24,
+                        crossAxisSpacing: 24,
+                        childAspectRatio: 2.5,
+                        children: const [
+                          _MetricCard(
+                            title: 'Ventas del día',
+                            value: '\$0.00',
+                            icon: Icons.point_of_sale,
+                            color: Color(0xFF4ECDC4),
+                          ),
+                          _MetricCard(
+                            title: 'Productos',
+                            value: '0',
+                            icon: Icons.inventory_2,
+                            color: Color(0xFF26A69A),
+                          ),
+                          _MetricCard(
+                            title: 'Clientes',
+                            value: '0',
+                            icon: Icons.people,
+                            color: Color(0xFF66BB6A),
+                          ),
+                          _MetricCard(
+                            title: 'Stock bajo',
+                            value: '0',
+                            icon: Icons.warning,
+                            color: Color(0xFFFFA726),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Accesos rápidos
+                  const Text(
+                    'Accesos rápidos',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final crossAxisCount = constraints.maxWidth > 1200
+                          ? 3
+                          : constraints.maxWidth > 768
+                              ? 2
+                              : 1;
+
+                      return GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 3,
+                        children: [
+                          _QuickAccessCard(
+                            title: 'Nueva venta',
+                            description: 'Registrar una venta en el punto de venta',
+                            icon: Icons.add_shopping_cart,
+                            onTap: () {
+                              // TODO: Navegar a /pos
+                            },
+                          ),
+                          _QuickAccessCard(
+                            title: 'Agregar producto',
+                            description: 'Añadir un nuevo producto al catálogo',
+                            icon: Icons.add_box,
+                            onTap: () {
+                              // TODO: Navegar a /products/new
+                            },
+                          ),
+                          _QuickAccessCard(
+                            title: 'Ver reportes',
+                            description: 'Consultar reportes de ventas e inventario',
+                            icon: Icons.bar_chart,
+                            onTap: () {
+                              // TODO: Navegar a /reportes
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Helper para formatear rol en español
+  String _formatRole(String role) {
+    switch (role) {
+      case 'ADMIN':
+        return 'Administrador';
+      case 'GERENTE':
+        return 'Gerente';
+      case 'VENDEDOR':
+        return 'Vendedor';
+      default:
+        return role;
+    }
+  }
 }
 
-class _DashboardPageState extends State<DashboardPage> {
-  bool _isLoading = false;
-  String _currentRole = 'VENDEDOR'; // Simular rol, luego vendrá del BLoC
+/// Card de métrica con ícono y valor
+class _MetricCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
 
-  // Datos mock temporales
-  late VendedorMetrics _vendedorMetrics;
-  late GerenteMetrics _gerenteMetrics;
-  late AdminMetrics _adminMetrics;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeMockData();
-  }
-
-  void _initializeMockData() {
-    // Mock data para vendedor
-    _vendedorMetrics = VendedorMetrics(
-      ventasHoy: 1250.50,
-      tendenciaVentasHoy: 12.5,
-      comisionesMes: 850.00,
-      tendenciaComisiones: 8.3,
-      productosStock: 145,
-      productosStockBajo: 3,
-      ordenesPendientes: 5,
-      ventasPorMes: [
-        const SalesChartData(mes: 'Oct', monto: 30000),
-        const SalesChartData(mes: 'Nov', monto: 35000),
-        const SalesChartData(mes: 'Dic', monto: 42000),
-        const SalesChartData(mes: 'Ene', monto: 38000),
-        const SalesChartData(mes: 'Feb', monto: 45000),
-        const SalesChartData(mes: 'Mar', monto: 48000),
-      ],
-      topProductos: [
-        const TopProducto(
-          id: '1',
-          nombre: 'Medias Deportivas Negras',
-          cantidadVendida: 120,
-          ranking: 1,
-        ),
-        const TopProducto(
-          id: '2',
-          nombre: 'Medias Ejecutivas Grises',
-          cantidadVendida: 95,
-          ranking: 2,
-        ),
-        const TopProducto(
-          id: '3',
-          nombre: 'Medias Casuales Blancas',
-          cantidadVendida: 80,
-          ranking: 3,
-        ),
-      ],
-    );
-
-    // Mock data para gerente
-    _gerenteMetrics = GerenteMetrics(
-      ventasMesActual: 35000,
-      tendenciaVentas: 15.2,
-      clientesActivos: 245,
-      tendenciaClientes: 8.7,
-      productosStock: 450,
-      productosStockBajo: 12,
-      ordenesPendientes: 18,
-      metaMensual: 50000,
-      ventasPorMes: [
-        const SalesChartData(mes: 'Oct', monto: 45000),
-        const SalesChartData(mes: 'Nov', monto: 48000),
-        const SalesChartData(mes: 'Dic', monto: 52000),
-        const SalesChartData(mes: 'Ene', monto: 46000),
-        const SalesChartData(mes: 'Feb', monto: 51000),
-        const SalesChartData(mes: 'Mar', monto: 53000),
-      ],
-      topVendedores: [
-        const TopVendedor(
-          id: '1',
-          nombreCompleto: 'Juan Pérez',
-          montoVentas: 15000,
-          cantidadTransacciones: 50,
-          ranking: 1,
-        ),
-        const TopVendedor(
-          id: '2',
-          nombreCompleto: 'María González',
-          montoVentas: 12000,
-          cantidadTransacciones: 45,
-          ranking: 2,
-        ),
-      ],
-      transaccionesRecientes: [
-        TransaccionReciente(
-          id: '1',
-          clienteNombre: 'Carlos Ramírez',
-          vendedorNombre: 'Juan Pérez',
-          monto: 1250.50,
-          fecha: DateTime.now().subtract(const Duration(hours: 2)),
-          estado: TransaccionEstado.completada,
-        ),
-        TransaccionReciente(
-          id: '2',
-          clienteNombre: 'Ana López',
-          vendedorNombre: 'María González',
-          monto: 850.00,
-          fecha: DateTime.now().subtract(const Duration(hours: 3)),
-          estado: TransaccionEstado.pendiente,
-        ),
-      ],
-    );
-
-    // Mock data para admin
-    _adminMetrics = AdminMetrics(
-      ventasTotales: 250000,
-      tendenciaVentas: 18.5,
-      clientesActivos: 1245,
-      tendenciaClientes: 12.3,
-      ordenesPendientes: 48,
-      tiendasActivas: 5,
-      productosStockCritico: 8,
-      usuariosActivos: 25,
-      ventasPorMes: [
-        const SalesChartData(mes: 'Oct', monto: 220000),
-        const SalesChartData(mes: 'Nov', monto: 235000),
-        const SalesChartData(mes: 'Dic', monto: 270000),
-        const SalesChartData(mes: 'Ene', monto: 245000),
-        const SalesChartData(mes: 'Feb', monto: 260000),
-        const SalesChartData(mes: 'Mar', monto: 280000),
-      ],
-      topProductos: [
-        const TopProducto(
-          id: '1',
-          nombre: 'Medias Deportivas Negras',
-          cantidadVendida: 450,
-          ranking: 1,
-        ),
-        const TopProducto(
-          id: '2',
-          nombre: 'Medias Ejecutivas Grises',
-          cantidadVendida: 380,
-          ranking: 2,
-        ),
-      ],
-    );
-  }
+  const _MetricCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _onRefresh,
-            tooltip: 'Actualizar datos',
-          ),
-          // Botón temporal para cambiar de rol (demo)
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.swap_horiz),
-            onSelected: (role) {
-              setState(() {
-                _currentRole = role;
-              });
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'VENDEDOR',
-                child: Text('Ver como Vendedor'),
-              ),
-              const PopupMenuItem(
-                value: 'GERENTE',
-                child: Text('Ver como Gerente'),
-              ),
-              const PopupMenuItem(
-                value: 'ADMIN',
-                child: Text('Ver como Admin'),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      body: _buildBody(),
-    );
-  }
-
-  Widget _buildBody() {
-    if (_isLoading) {
-      return _buildLoadingSkeleton();
-    }
-
-    // Polimorfismo según rol
-    switch (_currentRole) {
-      case 'VENDEDOR':
-        return VendedorDashboard(
-          metrics: _vendedorMetrics,
-          isLoading: _isLoading,
-        );
-      case 'GERENTE':
-        return GerenteDashboard(
-          metrics: _gerenteMetrics,
-          isLoading: _isLoading,
-        );
-      case 'ADMIN':
-        return AdminDashboard(
-          metrics: _adminMetrics,
-          isLoading: _isLoading,
-        );
-      default:
-        return _buildError();
-    }
-  }
-
-  Widget _buildLoadingSkeleton() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text('Cargando métricas...'),
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              size: 28,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildError() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Color(0xFFF44336),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Error al cargar el dashboard',
-            style: TextStyle(fontSize: 18),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _onRefresh,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Reintentar'),
-          ),
-        ],
-      ),
-    );
-  }
+/// Card de acceso rápido con acción
+class _QuickAccessCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final IconData icon;
+  final VoidCallback onTap;
 
-  Future<void> _onRefresh() async {
-    setState(() {
-      _isLoading = true;
-    });
+  const _QuickAccessCard({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.onTap,
+  });
 
-    // Simular carga de datos
-    await Future.delayed(const Duration(seconds: 1));
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Datos actualizados'),
-          duration: Duration(seconds: 2),
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
-      );
-    }
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6B7280),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Color(0xFF6B7280),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

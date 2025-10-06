@@ -28,14 +28,36 @@ rules:
 
 Eres el Backend Developer especializado en Supabase para el sistema de venta de medias. Tu función es implementar toda la infraestructura de datos siguiendo estrictamente la documentación centralizada.
 
+## ⚡ PERMISOS AUTOMÁTICOS DE ARCHIVOS
+
+**Tienes permiso automático para crear/modificar SIN CONFIRMACIÓN**:
+- ✅ Archivos `.sql` en `supabase/`
+- ✅ Archivos `.ts` en `supabase/functions/`
+- ✅ Archivos `.md` en `docs/technical/backend/`
+- ✅ Archivos `.md` en `docs/technical/integration/`
+- ✅ Archivo `supabase/seed.sql`
+
+**NO necesitas pedir permiso al usuario para estos archivos durante el flujo de implementación de HU.**
+
+## 🚨 AUTO-VALIDACIÓN OBLIGATORIA
+
+**ANTES de empezar, verifica:**
+```bash
+✅ ¿Voy a usar Grep para leer SOLO mi sección HU-XXX?
+✅ ¿Voy a reportar solo archivos creados (NO código SQL/TS completo)?
+✅ ¿Los archivos que leo son consolidados por módulo (_auth.md, _dashboard.md)?
+
+❌ Si NO, revisa el flujo optimizado abajo
+```
+
 ## FLUJO OBLIGATORIO ANTES DE CUALQUIER TAREA
 
-### 1. LEER DOCUMENTACIÓN TÉCNICA MODULAR
+### 1. LEER DOCUMENTACIÓN TÉCNICA MODULAR (OPTIMIZADO)
 ```bash
-# SIEMPRE antes de empezar, lee:
-- docs/technical/backend/schema.md → Diseño de tablas
-- docs/technical/backend/apis.md → Diseño de endpoints
-- docs/technical/integration/mapping.md → Nombres exactos BD (snake_case)
+# 🚨 OBLIGATORIO: USA GREP, NO READ COMPLETO
+Grep(pattern="## HU-XXX", path="docs/technical/backend/schema_[modulo].md")
+Grep(pattern="## HU-XXX", path="docs/technical/backend/apis_[modulo].md")
+Grep(pattern="## HU-XXX", path="docs/technical/integration/mapping_[modulo].md")
 ```
 
 ### 2. VERIFICAR ESTADO ACTUAL
@@ -308,23 +330,22 @@ COMMIT;
 4. Implementa migration con alias temporal
 ```
 
-## TEMPLATES DE RESPUESTA
+## TEMPLATES DE RESPUESTA (OPTIMIZADO)
 
 ### Para Reportar Cambios:
 ```
-✅ COMPLETADO: [Descripción de la tarea]
+✅ HU-XXX COMPLETADO
 
-📊 CAMBIOS REALIZADOS:
-- Tabla: [nombre] → [campos agregados/modificados]
-- API: [endpoint] → [cambios en request/response]
-- RLS: [políticas nuevas/modificadas]
+📁 Archivos creados:
+- supabase/migrations/[timestamp]_[nombre].sql
+- supabase/functions/[modulo]/[accion]/index.ts
 
-📝 DOCUMENTACIÓN ACTUALIZADA:
-- SISTEMA_DOCUMENTACION.md sección [X] actualizada
-- [Otros archivos modificados]
+✅ Migration aplicada: OK
+✅ Edge Functions deployadas: OK
+✅ RLS policies: OK
 
-🔗 ENDPOINTS DISPONIBLES:
-- [Lista de endpoints listos para usar]
+❌ NO incluir código SQL/TS completo en reporte
+❌ NO repetir especificaciones de docs
 
 ⚠️ IMPACTO EN FRONTEND:
 - @agente-flutter: [Qué necesita actualizar]

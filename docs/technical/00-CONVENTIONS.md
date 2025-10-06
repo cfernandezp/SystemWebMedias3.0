@@ -445,9 +445,9 @@ test('validate email', () { ... });
 
 ---
 
-## 📝 7. DOCUMENTATION STANDARDS
+## 📝 9. DOCUMENTATION STANDARDS
 
-### 7.1 Comentarios en Código
+### 9.1 Comentarios en Código
 
 **PostgreSQL**:
 ```sql
@@ -483,7 +483,7 @@ class User {
 }
 ```
 
-### 7.2 Actualización de Docs Técnicos
+### 9.2 Actualización de Docs Técnicos
 
 **REGLA**: Después de implementar, actualizar sección "Código Final Implementado" en los `.md`
 
@@ -502,9 +502,163 @@ class User {
 
 ---
 
-## 🔄 8. GIT WORKFLOW
+## 🔐 7. SECURITY PATTERNS
 
-### 8.1 Branches
+### 7.1 Token Blacklist (Logout Seguro)
+
+**CONVENCIÓN**: Tokens invalidados se almacenan en tabla `token_blacklist`
+
+```sql
+-- ✅ CORRECTO: Estructura de blacklist
+CREATE TABLE token_blacklist (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    token TEXT NOT NULL UNIQUE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    blacklisted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    reason TEXT  -- 'manual_logout', 'inactivity', 'token_expired'
+);
+
+CREATE INDEX idx_token_blacklist_token ON token_blacklist(token);
+CREATE INDEX idx_token_blacklist_expires_at ON token_blacklist(expires_at);
+```
+
+**Validación en Functions**:
+```sql
+-- Verificar si token está en blacklist
+IF EXISTS (SELECT 1 FROM token_blacklist WHERE token = p_token AND expires_at > NOW()) THEN
+    v_error_hint := 'token_blacklisted';
+    RAISE EXCEPTION 'Token inválido';
+END IF;
+```
+
+### 7.2 Inactivity Detection
+
+**CONVENCIÓN**: Tracking de última actividad del usuario
+
+```sql
+-- ✅ CORRECTO: Columna de tracking
+ALTER TABLE users ADD COLUMN last_activity_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+-- Actualizar en cada request autenticado
+CREATE OR REPLACE FUNCTION update_user_activity(p_user_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE users SET last_activity_at = NOW() WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+**Timeouts estándar**:
+- Inactividad general: 120 minutos (2 horas)
+- Warning previo: 5 minutos antes
+- Cleanup de blacklist: 24 horas
+
+### 7.3 Password Recovery (HU-004)
+
+**CONVENCIÓN**: Sistema de recuperación seguro con tokens de un solo uso
+
+```sql
+-- ✅ CORRECTO: Tabla de tokens de recuperación
+CREATE TABLE password_recovery (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
+    ip_address INET,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_password_recovery_token ON password_recovery(token);
+CREATE INDEX idx_password_recovery_email ON password_recovery(email);
+CREATE INDEX idx_password_recovery_expires_at ON password_recovery(expires_at);
+```
+
+**Parámetros estándar**:
+- Token: 32 bytes random, URL-safe encoding
+- Expiración: 24 horas desde creación
+- Rate limiting: 3 solicitudes/15 minutos por email
+- Uso único: `used_at` marcado al cambiar password
+- Privacidad: No revelar si email existe
+
+**Funciones RPC**:
+- `request_password_reset(p_email, p_ip_address)`: Genera token
+- `validate_reset_token(p_token)`: Valida estado del token
+- `reset_password(p_token, p_new_password, p_ip_address)`: Cambia password
+- `cleanup_expired_recovery_tokens()`: Limpieza automática
+
+**Response hints**:
+| Hint | Significado |
+|------|-------------|
+| `rate_limit_exceeded` | Límite de solicitudes alcanzado |
+| `token_expired` | Token válido pero expirado |
+| `token_invalid` | Token no existe o inválido |
+| `token_used` | Token ya fue utilizado |
+| `password_weak` | Password no cumple política |
+
+### 7.4 Multi-Tab Sync (Flutter)
+
+**CONVENCIÓN**: Usar `localStorage` events para sincronizar estado entre pestañas
+
+```dart
+// ✅ CORRECTO: Listener para cambios en storage
+class AuthRepository {
+  StreamController<AuthState> _authStateController = StreamController.broadcast();
+
+  AuthRepository() {
+    // Escuchar cambios en localStorage (multi-tab)
+    window.addEventListener('storage', (event) {
+      if (event.key == 'auth_token' && event.newValue == null) {
+        // Token eliminado en otra pestaña → logout local
+        _authStateController.add(AuthState.unauthenticated());
+      }
+    });
+  }
+}
+```
+
+### 7.5 Audit Logging
+
+**CONVENCIÓN**: Tabla `audit_logs` para eventos de seguridad
+
+```sql
+-- ✅ CORRECTO: Estructura de auditoría
+CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    event_type TEXT NOT NULL,  -- 'login', 'logout', 'password_change', etc.
+    event_subtype TEXT,  -- 'manual', 'inactivity', 'token_expired'
+    ip_address INET,
+    user_agent TEXT,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX idx_audit_logs_event_type ON audit_logs(event_type);
+CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
+```
+
+**Registro en Functions**:
+```sql
+-- Registrar logout
+INSERT INTO audit_logs (user_id, event_type, event_subtype, ip_address, metadata)
+VALUES (
+    p_user_id,
+    'logout',
+    p_logout_type,  -- 'manual', 'inactivity', 'token_expired'
+    p_ip_address,
+    json_build_object('session_duration', p_session_duration)::jsonb
+);
+```
+
+---
+
+## 🔄 10. GIT WORKFLOW
+
+### 10.1 Branches
 
 ```
 main                    ← Código en producción
@@ -512,7 +666,7 @@ main                    ← Código en producción
     └── feature/HU-XXX  ← Feature branch por Historia de Usuario
 ```
 
-### 8.2 Commits
+### 10.2 Commits
 
 **Formato**: `[HU-XXX] tipo: descripción`
 
@@ -537,7 +691,7 @@ git commit -m "update code"
 
 ---
 
-## 🚨 9. REGLAS CRÍTICAS - NO NEGOCIABLES
+## 🚨 11. REGLAS CRÍTICAS - NO NEGOCIABLES
 
 ### ❌ PROHIBIDO:
 
@@ -562,7 +716,7 @@ git commit -m "update code"
 
 ---
 
-## 📞 10. PROCESO DE CONSULTA
+## 📞 12. PROCESO DE CONSULTA
 
 ### Si encuentras algo no documentado aquí:
 

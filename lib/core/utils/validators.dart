@@ -66,4 +66,55 @@ class Validators {
       return null;
     };
   }
+
+  /// Valida fortaleza de contraseña (HU-004)
+  ///
+  /// Requisitos:
+  /// - Mínimo 8 caracteres
+  /// - Al menos 1 mayúscula
+  /// - Al menos 1 minúscula
+  /// - Al menos 1 número
+  static String? password(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Contraseña es requerida';
+    }
+
+    if (value.length < 8) {
+      return 'Mínimo 8 caracteres';
+    }
+
+    final hasUppercase = value.contains(RegExp(r'[A-Z]'));
+    final hasLowercase = value.contains(RegExp(r'[a-z]'));
+    final hasNumber = value.contains(RegExp(r'[0-9]'));
+
+    if (!hasUppercase || !hasLowercase || !hasNumber) {
+      return 'Debe contener mayúscula, minúscula y número';
+    }
+
+    return null;
+  }
+
+  /// Valida que dos contraseñas coincidan (HU-004)
+  ///
+  /// Retorna un validator function que compara con la contraseña original.
+  ///
+  /// Ejemplo:
+  /// ```dart
+  /// CorporateFormField(
+  ///   validator: Validators.passwordMatch(_passwordController.text),
+  /// )
+  /// ```
+  static String? Function(String?) passwordMatch(String originalPassword) {
+    return (String? value) {
+      if (value == null || value.isEmpty) {
+        return 'Debes confirmar la contraseña';
+      }
+
+      if (value != originalPassword) {
+        return 'Las contraseñas no coinciden';
+      }
+
+      return null;
+    };
+  }
 }

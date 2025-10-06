@@ -76,3 +76,35 @@ class NotFoundFailure extends Failure {
 class ForbiddenFailure extends Failure {
   const ForbiddenFailure([super.message = 'No tienes permisos para esta operación']);
 }
+
+/// E001-HU-003: Logout Seguro failures
+/// Token ya invalidado (401)
+class TokenBlacklistedFailure extends Failure {
+  const TokenBlacklistedFailure([super.message = 'Token ya invalidado. Inicia sesión nuevamente']);
+}
+
+/// Ya cerró sesión (400)
+class AlreadyLoggedOutFailure extends Failure {
+  const AlreadyLoggedOutFailure([super.message = 'Ya has cerrado sesión']);
+}
+
+/// Usuario no encontrado (404)
+class UserNotFoundFailure extends Failure {
+  const UserNotFoundFailure([super.message = 'Usuario no encontrado']);
+}
+
+/// E001-HU-004: Password Recovery failures
+/// Token expirado (400)
+class ExpiredTokenFailure extends Failure {
+  const ExpiredTokenFailure([super.message = 'Enlace de recuperación expirado. Solicita uno nuevo']);
+}
+
+/// Token ya usado (400)
+class UsedTokenFailure extends Failure {
+  const UsedTokenFailure([super.message = 'Enlace ya utilizado. Solicita uno nuevo']);
+}
+
+/// Contraseña débil (400)
+class WeakPasswordFailure extends Failure {
+  const WeakPasswordFailure([super.message = 'La contraseña debe tener al menos 8 caracteres']);
+}

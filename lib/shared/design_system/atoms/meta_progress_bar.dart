@@ -34,9 +34,9 @@ class MetaProgressBar extends StatelessWidget {
   /// Factory constructor que calcula automáticamente el indicador según RN-007
   ///
   /// Lógica de negocio:
-  /// - >= 100% → MetaIndicador.cumplida (verde)
-  /// - 50-99% → MetaIndicador.enProgreso (amarillo)
-  /// - < 50% y día > 20 → MetaIndicador.critica (rojo)
+  /// - >= 100% → MetaIndicator.cumplida (verde)
+  /// - 50-99% → MetaIndicator.enProgreso (amarillo)
+  /// - < 50% y día > 20 → MetaIndicator.critica (rojo)
   factory MetaProgressBar.fromVentas({
     required double metaMensual,
     required double ventasActuales,
@@ -44,7 +44,7 @@ class MetaProgressBar extends StatelessWidget {
     final progreso = (ventasActuales / metaMensual) * 100;
     final diaActual = DateTime.now().day;
 
-    final MetaIndicador indicador;
+    final MetaIndicator indicador;
     if (progreso >= 100) {
       indicador = MetaIndicator.cumplida;
     } else if (progreso >= 50) {

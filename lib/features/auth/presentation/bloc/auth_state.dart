@@ -65,6 +65,63 @@ class AuthUnauthenticated extends AuthState {
   List<Object?> get props => [message];
 }
 
+/// Estado de logout en progreso (HU-003)
+class LogoutInProgress extends AuthState {}
+
+/// Estado de confirmación de logout requerida (HU-003)
+class LogoutConfirmationRequired extends AuthState {
+  final String message;
+
+  const LogoutConfirmationRequired({
+    this.message = '¿Estás seguro que quieres cerrar sesión?',
+  });
+
+  @override
+  List<Object> get props => [message];
+}
+
+/// Estado de logout exitoso (HU-003)
+class LogoutSuccess extends AuthState {
+  final String message;
+  final String logoutType;
+
+  const LogoutSuccess({
+    required this.message,
+    required this.logoutType,
+  });
+
+  @override
+  List<Object> get props => [message, logoutType];
+}
+
+/// Estado de warning de inactividad (HU-003)
+class InactivityWarning extends AuthState {
+  final int minutesRemaining;
+  final String message;
+
+  const InactivityWarning({
+    required this.minutesRemaining,
+    required this.message,
+  });
+
+  @override
+  List<Object> get props => [minutesRemaining, message];
+}
+
+/// Estado de token blacklisted (HU-003)
+class TokenBlacklisted extends AuthState {
+  final String message;
+  final String reason;
+
+  const TokenBlacklisted({
+    required this.message,
+    required this.reason,
+  });
+
+  @override
+  List<Object> get props => [message, reason];
+}
+
 class AuthError extends AuthState {
   final String message;
   final String? errorHint;
@@ -73,4 +130,69 @@ class AuthError extends AuthState {
 
   @override
   List<Object?> get props => [message, errorHint];
+}
+
+/// HU-004: Estados de recuperación de contraseña
+class PasswordResetRequestInProgress extends AuthState {}
+
+class PasswordResetRequestSuccess extends AuthState {
+  final String message;
+
+  const PasswordResetRequestSuccess({required this.message});
+
+  @override
+  List<Object> get props => [message];
+}
+
+class PasswordResetRequestFailure extends AuthState {
+  final String message;
+
+  const PasswordResetRequestFailure({required this.message});
+
+  @override
+  List<Object> get props => [message];
+}
+
+class ResetPasswordInProgress extends AuthState {}
+
+class ResetPasswordSuccess extends AuthState {
+  final String message;
+
+  const ResetPasswordSuccess({required this.message});
+
+  @override
+  List<Object> get props => [message];
+}
+
+class ResetPasswordFailure extends AuthState {
+  final String message;
+
+  const ResetPasswordFailure({required this.message});
+
+  @override
+  List<Object> get props => [message];
+}
+
+class ResetTokenValidationInProgress extends AuthState {}
+
+class ResetTokenValid extends AuthState {
+  final String? userId;
+
+  const ResetTokenValid({this.userId});
+
+  @override
+  List<Object?> get props => [userId];
+}
+
+class ResetTokenInvalid extends AuthState {
+  final String message;
+  final String? hint; // 'expired', 'invalid', 'used'
+
+  const ResetTokenInvalid({
+    required this.message,
+    this.hint,
+  });
+
+  @override
+  List<Object?> get props => [message, hint];
 }

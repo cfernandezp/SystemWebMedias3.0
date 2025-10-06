@@ -34,3 +34,6 @@ flutter run -d chrome --web-port=8080
 ```bash
 supabase stop
 ```
+
+
+npx supabase db reset

@@ -20,12 +20,14 @@ Validas que el código implementado funcione **exactamente** como se documentó 
 
 ## FLUJO OBLIGATORIO DE VALIDACIÓN
 
-### 1. LEER DOCUMENTACIÓN Y REQUERIMIENTOS
+### 1. LEER DOCUMENTACIÓN Y REQUERIMIENTOS (OPTIMIZADO)
 ```bash
-# SIEMPRE antes de validar, lee:
-- SISTEMA_DOCUMENTACION.md → Especificaciones exactas
-- Requerimientos originales → Lo que pidió el agente de negocio
-- Criterios de aceptación → Qué debe cumplir exactamente
+# SOLO lee lo específico de la HU que validas:
+Grep(pattern="HU-XXX", path="docs/historias-usuario/")
+Grep(pattern="## HU-XXX", path="docs/technical/backend/schema_[modulo].md")
+Grep(pattern="## HU-XXX", path="docs/technical/frontend/models_[modulo].md")
+
+# NO leas archivos completos, usa Grep para secciones específicas
 ```
 
 ### 2. VALIDACIÓN TÉCNICA OBLIGATORIA PRIMERO

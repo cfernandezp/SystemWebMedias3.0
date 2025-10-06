@@ -24,7 +24,19 @@
       "Bash(timeout 10 docker logs -f supabase_studio_systemwebmedias30)",
       "Bash(flutter test:*)",
       "Bash(flutter analyze:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash([ -d \"integration_test\" ])",
+      "Bash(flutter pub add:*)",
+      "Bash(cat:*)",
+      "Bash(flutter pub:*)",
+      "Bash(flutter run:*)",
+      "Bash(flutter attach:*)",
+      "Bash(flutter build:*)",
+      "Bash(findstr:*)",
+      "Bash(del \"supabase\\migrations\\20251006210405_hu004_password_recovery.sql\")",
+      "Bash(docker compose:*)",
+      "Bash(deno check:*)",
+      "Bash(for i in {1..4})"
     ],
     "deny": [],
     "ask": []

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -54,8 +55,8 @@ class _LoginFormState extends State<LoginForm> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
-          // Redirección a /home (CA-003)
-          Navigator.pushReplacementNamed(context, '/home');
+          // Redirección a /dashboard (CA-003) - GoRouter lo maneja automáticamente
+          context.go('/dashboard');
 
           // Mostrar SnackBar de bienvenida
           ScaffoldMessenger.of(context).showSnackBar(
@@ -123,15 +124,14 @@ class _LoginFormState extends State<LoginForm> {
 
               const SizedBox(height: 8),
 
-              // Link "¿Olvidaste tu contraseña?" (CA-001)
+              // Link "¿Olvidaste tu contraseña?" (HU-004)
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: isLoading
                       ? null
                       : () {
-                          // TODO: Implementar en HU-004
-                          Navigator.pushNamed(context, '/forgot-password');
+                          context.go('/forgot-password');
                         },
                   child: const Text('¿Olvidaste tu contraseña?'),
                 ),
