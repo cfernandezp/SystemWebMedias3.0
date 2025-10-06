@@ -142,7 +142,7 @@ class EmailConfirmationWaiting extends StatelessWidget {
                 TextButton(
                   onPressed: () => Navigator.pushNamedAndRemoveUntil(
                     context,
-                    '/auth/login',
+                    '/',
                     (route) => false,
                   ),
                   child: const Text(

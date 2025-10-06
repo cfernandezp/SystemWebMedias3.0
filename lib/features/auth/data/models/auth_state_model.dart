@@ -7,16 +7,16 @@ import 'package:system_web_medias/features/auth/data/models/user_model.dart';
 /// Se guarda en Flutter SecureStorage para sesiones persistentes (CA-009)
 ///
 /// Mapping Dart ↔ SecureStorage:
-/// - `token` → `token`
+/// - `token` → `token` (opcional - el backend actual no genera JWT)
 /// - `user` → `user` (objeto serializado)
 /// - `tokenExpiration` → `token_expiration` (ISO 8601)
 class AuthStateModel extends Equatable {
-  final String token;
+  final String? token;
   final UserModel user;
   final DateTime tokenExpiration;
 
   const AuthStateModel({
-    required this.token,
+    this.token,
     required this.user,
     required this.tokenExpiration,
   });
@@ -24,7 +24,7 @@ class AuthStateModel extends Equatable {
   /// Parse desde JSON de SecureStorage
   factory AuthStateModel.fromJson(Map<String, dynamic> json) {
     return AuthStateModel(
-      token: json['token'] as String,
+      token: json['token'] as String?,
       user: UserModel.fromJson(json['user'] as Map<String, dynamic>),
       tokenExpiration: DateTime.parse(json['token_expiration'] as String),
     );
@@ -33,7 +33,7 @@ class AuthStateModel extends Equatable {
   /// Convierte a JSON para guardar en SecureStorage
   Map<String, dynamic> toJson() {
     return {
-      'token': token,
+      if (token != null) 'token': token,
       'user': user.toJson(),
       'token_expiration': tokenExpiration.toIso8601String(),
     };

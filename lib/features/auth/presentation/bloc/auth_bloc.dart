@@ -171,18 +171,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return;
       }
 
-      // Validar token con backend
-      final result = await validateTokenUseCase(authState.token);
+      // Si hay token, validarlo con el backend
+      if (authState.token != null) {
+        final result = await validateTokenUseCase(authState.token!);
 
-      result.fold(
-        (failure) async {
-          await secureStorage.delete(key: 'auth_state');
-          emit(AuthUnauthenticated(message: failure.message));
-        },
-        (response) {
-          emit(AuthAuthenticated(user: response.user));
-        },
-      );
+        result.fold(
+          (failure) async {
+            await secureStorage.delete(key: 'auth_state');
+            emit(AuthUnauthenticated(message: failure.message));
+          },
+          (response) {
+            emit(AuthAuthenticated(user: response.user));
+          },
+        );
+      } else {
+        // Sin token JWT real, confiar en la sesión local si no ha expirado
+        // Esto es temporal hasta que el backend implemente tokens JWT
+        emit(AuthAuthenticated(user: authState.user));
+      }
     } catch (e) {
       await secureStorage.delete(key: 'auth_state');
       emit(const AuthUnauthenticated(message: 'Error al verificar sesión'));

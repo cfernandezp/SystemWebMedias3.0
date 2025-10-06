@@ -65,3 +65,14 @@ class EmailNotVerifiedFailure extends Failure {
 class UserNotApprovedFailure extends Failure {
   const UserNotApprovedFailure([super.message = 'Tu cuenta no ha sido aprobada']);
 }
+
+/// E003-HU-001: Dashboard failures
+/// Recurso no encontrado (404)
+class NotFoundFailure extends Failure {
+  const NotFoundFailure([super.message = 'Recurso no encontrado']);
+}
+
+/// Operación no permitida (403)
+class ForbiddenFailure extends Failure {
+  const ForbiddenFailure([super.message = 'No tienes permisos para esta operación']);
+}

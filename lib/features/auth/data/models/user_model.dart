@@ -20,10 +20,16 @@ class UserModel extends User {
       email: json['email'] as String,
       nombreCompleto: json['nombre_completo'] as String,
       rol: UserRole.fromString(json['rol'] as String?),
-      estado: UserEstado.fromString(json['estado'] as String),
+      estado: json['estado'] != null
+          ? UserEstado.fromString(json['estado'] as String)
+          : UserEstado.registrado, // Default si no viene del backend
       emailVerificado: json['email_verificado'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(), // Default si no viene del backend
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(), // Default si no viene del backend
     );
   }
 

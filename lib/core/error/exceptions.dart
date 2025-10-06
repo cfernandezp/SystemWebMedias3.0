@@ -49,3 +49,12 @@ class EmailNotVerifiedException extends AppException {
 class UserNotApprovedException extends AppException {
   UserNotApprovedException([super.message = 'Usuario no aprobado', super.statusCode = 403]);
 }
+
+/// E003-HU-001: Dashboard exceptions
+class NotFoundException extends AppException {
+  NotFoundException([super.message = 'Recurso no encontrado', super.statusCode = 404]);
+}
+
+class ForbiddenException extends AppException {
+  ForbiddenException([super.message = 'Operación no permitida', super.statusCode = 403]);
+}

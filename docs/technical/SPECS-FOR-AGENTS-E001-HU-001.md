@@ -16,6 +16,27 @@
 
 ---
 
+## 📝 POLÍTICA DE DOCUMENTACIÓN
+
+**❌ NUNCA CREAR DOCUMENTOS EN LA RAÍZ DEL PROYECTO**
+
+Si necesitas documentar tu implementación:
+- ✅ **Actualizar archivos existentes** en `docs/technical/` específicos de tu área:
+  - Backend: `docs/technical/backend/apis_hu001.md`
+  - Frontend: `docs/technical/frontend/models_hu001.md`
+  - UI/UX: `docs/technical/design/components_hu001.md`
+
+- ✅ **Si necesitas un reporte de implementación**: Crear en `docs/technical/implementation-reports/`
+  - Formato: `HU001_[AGENTE]_IMPLEMENTATION.md`
+  - Ejemplo: `HU001_UI_IMPLEMENTATION.md`, `HU001_BACKEND_IMPLEMENTATION.md`
+
+**❌ NO CREAR**:
+- `IMPLEMENTATION_SUMMARY_*.md` en raíz
+- `HU*_REPORT.md` en raíz
+- Cualquier archivo `.md` fuera de `docs/`
+
+---
+
 ## Para @supabase-expert
 
 ### Tarea: Implementar Backend de HU-001
@@ -23,6 +44,7 @@
 **⚠️ LEER PRIMERO**:
 - [00-CONVENTIONS.md](00-CONVENTIONS.md) - Secciones: Naming (1), Error Handling (3), API Response (4)
 - [QUICK_CHECKLIST.md](QUICK_CHECKLIST.md) - Sección: Backend
+- [backend/MIGRATION_STRATEGY.md](backend/MIGRATION_STRATEGY.md) - Estrategia de migraciones SQL
 
 **Archivos de diseño:**
 - C:/SystemWebMedias3.0/docs/technical/backend/schema_hu001.md

@@ -9,6 +9,7 @@ import 'package:system_web_medias/features/auth/presentation/widgets/auth_guard.
 import 'package:system_web_medias/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:system_web_medias/features/auth/presentation/bloc/auth_event.dart';
 import 'package:system_web_medias/features/home/presentation/pages/home_page.dart';
+import 'package:system_web_medias/features/dashboard/presentation/pages/dashboard_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,10 +41,11 @@ class MyApp extends StatelessWidget {
         // Ver: docs/technical/frontend/ROUTING_CONVENTIONS.md
         initialRoute: '/',
         routes: {
-          '/': (context) => const RegisterPage(),
+          '/': (context) => const LoginPage(),
           '/register': (context) => const RegisterPage(),
           '/login': (context) => const LoginPage(),
           '/home': (context) => const AuthGuard(child: HomePage()),
+          '/dashboard': (context) => const AuthGuard(child: DashboardPage()),
           '/confirm-email': (context) => const ConfirmEmailPage(),
           '/email-confirmation-waiting': (context) => const EmailConfirmationWaitingPage(),
         },

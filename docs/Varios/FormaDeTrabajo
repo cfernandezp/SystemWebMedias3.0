@@ -11,3 +11,8 @@
      └─ Arquitecto lee HU + reglas de negocio
      └─ Gestiona desarrollo completo
      └─ Entrega implementado
+
+
+-- Pendiente
+veo que cada vez que implementamos una hu aplican un cd c:/SystemWebMedias3.0 && npx supabase db reset
+y la data creada de pruebas se pieder     

@@ -62,5 +62,49 @@ void main() {
       // Assert
       expect(model1, isNot(equals(model2)));
     });
+
+    test('fromJson should handle missing token (backend actual)', () {
+      // Arrange - Este es el formato real que el backend está enviando
+      final jsonWithoutToken = {
+        'user': {
+          'id': '550e8400-e29b-41d4-a716-446655440000',
+          'email': 'admin@admin.com',
+          'nombre_completo': 'Admin User',
+          'email_verificado': true,
+        },
+        'message': 'Bienvenido Admin User',
+      };
+
+      // Act
+      final model = LoginResponseModel.fromJson(jsonWithoutToken);
+
+      // Assert
+      expect(model.token, isNull);
+      expect(model.user.email, 'admin@admin.com');
+      expect(model.user.nombreCompleto, 'Admin User');
+      expect(model.message, 'Bienvenido Admin User');
+    });
+
+    test('toJson should omit token when null', () {
+      // Arrange
+      final jsonWithoutToken = {
+        'user': {
+          'id': '550e8400-e29b-41d4-a716-446655440000',
+          'email': 'admin@admin.com',
+          'nombre_completo': 'Admin User',
+          'email_verificado': true,
+        },
+        'message': 'Bienvenido Admin User',
+      };
+      final model = LoginResponseModel.fromJson(jsonWithoutToken);
+
+      // Act
+      final json = model.toJson();
+
+      // Assert
+      expect(json.containsKey('token'), isFalse);
+      expect(json['user']['email'], 'admin@admin.com');
+      expect(json['message'], 'Bienvenido Admin User');
+    });
   });
 }
