@@ -12,6 +12,10 @@ import 'package:system_web_medias/features/auth/presentation/pages/forgot_passwo
 import 'package:system_web_medias/features/auth/presentation/pages/login_page.dart';
 import 'package:system_web_medias/features/auth/presentation/pages/register_page.dart';
 import 'package:system_web_medias/features/auth/presentation/pages/reset_password_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/marcas_list_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/marca_form_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/materiales_list_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/material_form_page.dart';
 import 'package:system_web_medias/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_bloc.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_event.dart';
@@ -148,6 +152,34 @@ class AppRouter {
             name: 'settings',
             builder: (context, state) => const _PlaceholderPage(title: 'Configuración'),
           ),
+          // HU-001: Gestionar Catálogo de Marcas
+          GoRoute(
+            path: '/marcas',
+            name: 'marcas',
+            builder: (context, state) => const MarcasListPage(),
+          ),
+          GoRoute(
+            path: '/marca-form',
+            name: 'marca-form',
+            builder: (context, state) {
+              final arguments = state.extra as Map<String, dynamic>?;
+              return MarcaFormPage(arguments: arguments);
+            },
+          ),
+          // HU-002: Gestionar Catálogo de Materiales
+          GoRoute(
+            path: '/materiales',
+            name: 'materiales',
+            builder: (context, state) => const MaterialesListPage(),
+          ),
+          GoRoute(
+            path: '/materiales-form',
+            name: 'materiales-form',
+            builder: (context, state) {
+              final arguments = state.extra as Map<String, dynamic>?;
+              return MaterialFormPage(arguments: arguments);
+            },
+          ),
         ],
       ),
     ],
@@ -261,6 +293,10 @@ class _MainLayoutWrapper extends StatelessWidget {
       '/reportes': ('Reportes', '/reportes'),
       '/admin': ('Administración', '/admin'),
       '/settings': ('Configuración', '/settings'),
+      '/marcas': ('Catálogo de Marcas', '/marcas'),
+      '/marca-form': ('Formulario de Marca', null),
+      '/materiales': ('Catálogo de Materiales', '/materiales'),
+      '/materiales-form': ('Formulario de Material', null),
     };
 
     final current = routeMap[route];

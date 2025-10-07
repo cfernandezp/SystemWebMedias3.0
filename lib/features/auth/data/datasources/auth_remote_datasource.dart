@@ -180,7 +180,30 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       print('🔵 Success: ${result['success']}');
 
       if (result['success'] == true) {
-        print('✅ Login exitoso');
+        print('✅ Login RPC exitoso');
+
+        // CRÍTICO: Autenticar también en Supabase Auth para mantener sesión
+        // Esto permite que supabase.auth.currentUser funcione correctamente
+        print('🔵 Autenticando en Supabase Auth...');
+        try {
+          final authResponse = await supabase.auth.signInWithPassword(
+            email: request.email,
+            password: request.password,
+          );
+
+          if (authResponse.session != null) {
+            print('✅ Sesión de Supabase Auth creada exitosamente');
+            print('🔵 User ID: ${authResponse.user?.id}');
+          } else {
+            print('⚠️ Warning: Sesión de Supabase Auth no creada');
+          }
+        } catch (authError) {
+          // Si falla la autenticación nativa, loggear pero continuar
+          // El RPC ya validó las credenciales correctamente
+          print('⚠️ Warning: Error al crear sesión de Supabase Auth: $authError');
+          // No lanzar excepción, permitir que continúe con la respuesta RPC
+        }
+
         return LoginResponseModel.fromJson(result['data']);
       } else {
         final error = result['error'] as Map<String, dynamic>;
@@ -266,7 +289,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       print('🔵 Success: ${result['success']}');
 
       if (result['success'] == true) {
-        print('✅ Logout exitoso');
+        print('✅ Logout RPC exitoso');
+
+        // CRÍTICO: Cerrar también sesión de Supabase Auth
+        print('🔵 Cerrando sesión de Supabase Auth...');
+        try {
+          await supabase.auth.signOut();
+          print('✅ Sesión de Supabase Auth cerrada exitosamente');
+        } catch (authError) {
+          // Loggear pero continuar - el logout RPC ya se completó
+          print('⚠️ Warning: Error al cerrar sesión de Supabase Auth: $authError');
+        }
+
         return LogoutResponseModel.fromJson(result['data']);
       } else {
         final error = result['error'] as Map<String, dynamic>;

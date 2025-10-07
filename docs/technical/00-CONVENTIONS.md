@@ -762,7 +762,22 @@ Antes de marcar HU como completada, validar:
 
 ---
 
-**Versión**: 1.0
-**Última revisión**: 2025-10-04
-**Próxima revisión**: Después de HU-003
+## 🚫 7. CÓDIGO LIMPIO
+
+**Requisito**: `flutter analyze --no-pub` debe retornar `0 issues found`
+
+| ❌ Incorrecto | ✅ Correcto | Razón |
+|--------------|------------|-------|
+| `import 'dart:html';` | `import 'package:web/web.dart';` | Deprecado |
+| `.withOpacity(0.5)` | `Color.fromRGBO(r,g,b,0.5)` | Deprecado |
+| Imports no usados | Solo imports necesarios | Lint |
+| Variables no usadas | Solo variables usadas | Lint |
+
+**Antes de completar HU**: `flutter analyze --no-pub` y corregir issues.
+
+---
+
+**Versión**: 1.1
+**Última revisión**: 2025-10-07
+**Próxima revisión**: Después de HU-005
 **Mantenido por**: @web-architect-expert

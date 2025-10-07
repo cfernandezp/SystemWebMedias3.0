@@ -35,5 +35,15 @@ flutter run -d chrome --web-port=8080
 supabase stop
 ```
 
+Alternativa si quieres preservar datos:
+# Ver qué migrations están aplicadas:
+npx supabase migration list
 
+# Aplicar solo las nuevas:
+npx supabase migration up
+
+# Ver estado:
+npx supabase status
+
+### borrar todo y dejar daros pro defecto
 npx supabase db reset

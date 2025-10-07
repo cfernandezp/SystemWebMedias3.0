@@ -108,3 +108,40 @@ class UsedTokenFailure extends Failure {
 class WeakPasswordFailure extends Failure {
   const WeakPasswordFailure([super.message = 'La contraseña debe tener al menos 8 caracteres']);
 }
+
+/// E002-HU-001: Gestionar Catálogo de Marcas failures
+/// Código duplicado (409)
+class DuplicateCodigoFailure extends Failure {
+  const DuplicateCodigoFailure([super.message = 'Este código ya existe, ingresa otro']);
+}
+
+/// Nombre duplicado (409)
+class DuplicateNombreFailure extends Failure {
+  const DuplicateNombreFailure([super.message = 'Ya existe una marca con este nombre']);
+}
+
+/// Código inválido (400)
+class InvalidCodigoFailure extends Failure {
+  const InvalidCodigoFailure([super.message = 'Código solo puede contener letras mayúsculas']);
+}
+
+/// Marca no encontrada (404)
+class MarcaNotFoundFailure extends Failure {
+  const MarcaNotFoundFailure([super.message = 'La marca no existe']);
+}
+
+/// E002-HU-002: Gestionar Catálogo de Materiales failures
+/// Código duplicado (409)
+class DuplicateCodeFailure extends Failure {
+  const DuplicateCodeFailure([super.message = 'Este código ya existe, ingresa otro']);
+}
+
+/// Nombre duplicado (409)
+class DuplicateNameFailure extends Failure {
+  const DuplicateNameFailure([super.message = 'Ya existe un material con este nombre']);
+}
+
+/// Material no encontrado (404)
+class MaterialNotFoundFailure extends Failure {
+  const MaterialNotFoundFailure([super.message = 'El material no existe']);
+}

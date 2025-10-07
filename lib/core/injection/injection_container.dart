@@ -21,16 +21,29 @@ import 'package:system_web_medias/features/user/data/datasources/user_profile_re
 import 'package:system_web_medias/features/user/data/repositories/user_profile_repository_impl.dart';
 import 'package:system_web_medias/features/user/domain/repositories/user_profile_repository.dart';
 import 'package:system_web_medias/features/user/domain/usecases/get_user_profile.dart';
+import 'package:system_web_medias/features/catalogos/data/datasources/marcas_remote_datasource.dart';
+import 'package:system_web_medias/features/catalogos/data/repositories/marcas_repository_impl.dart';
+import 'package:system_web_medias/features/catalogos/domain/repositories/marcas_repository.dart';
+import 'package:system_web_medias/features/catalogos/presentation/bloc/marcas_bloc.dart';
+import 'package:system_web_medias/features/catalogos/data/datasources/materiales_remote_datasource.dart';
+import 'package:system_web_medias/features/catalogos/data/repositories/materiales_repository_impl.dart';
+import 'package:system_web_medias/features/catalogos/domain/repositories/materiales_repository.dart';
+import 'package:system_web_medias/features/catalogos/presentation/bloc/materiales_bloc.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
   // ========== CORE - SUPABASE ==========
 
-  // Inicializar Supabase
+  // Inicializar Supabase con persistencia de sesión
   await Supabase.initialize(
     url: 'http://127.0.0.1:54321',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+      // CRÍTICO: Habilitar persistencia de sesión
+      // Esto permite que supabase.auth.currentUser persista entre reinicios
+    ),
   );
 
   // Registrar Supabase Client
@@ -121,6 +134,50 @@ Future<void> init() async {
   sl.registerLazySingleton<UserProfileRemoteDataSource>(
     () => UserProfileRemoteDataSourceImpl(
       supabaseClient: sl(),
+    ),
+  );
+
+  // ========== FEATURES - CATALOGOS (E002-HU-001, E002-HU-002) ==========
+
+  // Bloc - Marcas
+  sl.registerFactory(
+    () => MarcasBloc(
+      repository: sl(),
+    ),
+  );
+
+  // Repository - Marcas
+  sl.registerLazySingleton<MarcasRepository>(
+    () => MarcasRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data Sources - Marcas
+  sl.registerLazySingleton<MarcasRemoteDataSource>(
+    () => MarcasRemoteDataSourceImpl(
+      supabase: sl(),
+    ),
+  );
+
+  // Bloc - Materiales (E002-HU-002)
+  sl.registerFactory(
+    () => MaterialesBloc(
+      repository: sl(),
+    ),
+  );
+
+  // Repository - Materiales
+  sl.registerLazySingleton<MaterialesRepository>(
+    () => MaterialesRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data Sources - Materiales
+  sl.registerLazySingleton<MaterialesRemoteDataSource>(
+    () => MaterialesRemoteDataSourceImpl(
+      sl(),
     ),
   );
 }

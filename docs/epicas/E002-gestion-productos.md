@@ -11,35 +11,35 @@
 
 ### 🏷️ GESTIÓN DE CATÁLOGOS MAESTROS (Solo Admin)
 
-### E002-HU-005: Gestionar Catálogo de Marcas
+### E002-HU-001: Gestionar Catálogo de Marcas
 - **Archivo**: `docs/historias-usuario/E002-HU-005-gestionar-marcas.md`
 - **Estado**: ⚪ Pendiente
 - **Story Points**: 4 pts
 - **Prioridad**: Alta
 - **Descripción**: CRUD de marcas con códigos únicos para SKU
 
-### E002-HU-006: Gestionar Catálogo de Materiales
-- **Archivo**: `docs/historias-usuario/E002-HU-006-gestionar-materiales.md`
-- **Estado**: ⚪ Pendiente
+### E002-HU-002: Gestionar Catálogo de Materiales
+- **Archivo**: `docs/historias-usuario/E002-HU-002-COM-gestionar-materiales.md`
+- **Estado**: ✅ Completada
 - **Story Points**: 4 pts
 - **Prioridad**: Alta
 - **Descripción**: CRUD de materiales con códigos para generación de SKU
 
-### E002-HU-007: Gestionar Catálogo de Tipos
-- **Archivo**: `docs/historias-usuario/E002-HU-007-gestionar-tipos.md`
-- **Estado**: ⚪ Pendiente
+### E002-HU-003: Gestionar Catálogo de Tipos
+- **Archivo**: `docs/historias-usuario/E002-HU-003-DEV-gestionar-tipos.md`
+- **Estado**: 🔵 En Desarrollo
 - **Story Points**: 4 pts
 - **Prioridad**: Alta
 - **Descripción**: CRUD de tipos de medias con códigos para SKU
 
-### E002-HU-008: Gestionar Sistemas de Tallas
-- **Archivo**: `docs/historias-usuario/E002-HU-008-gestionar-sistemas-tallas.md`
-- **Estado**: ⚪ Pendiente
+### E002-HU-004: Gestionar Sistemas de Tallas
+- **Archivo**: `docs/historias-usuario/E002-HU-004-REF-gestionar-sistemas-tallas.md`
+- **Estado**: 🟢 Refinada
 - **Story Points**: 5 pts
 - **Prioridad**: Alta
 - **Descripción**: CRUD de sistemas de tallas con configuración de valores
 
-### HU-009: Gestionar Catálogo de Colores
+### E002-HU-005: Gestionar Catálogo de Colores
 - **Archivo**: `docs/historias-usuario/HU-009-gestionar-colores.md`
 - **Estado**: ⚪ Pendiente
 - **Story Points**: 3 pts
@@ -102,9 +102,10 @@
 
 ## 📊 PROGRESO
 - Total HU: 11
-- ✅ Completadas: 0 (0%)
-- 🟡 En Desarrollo: 0 (0%)
-- ⚪ Pendientes: 11 (100%)
+- ✅ Completadas: 1 (9%)
+- 🟢 Refinadas: 2 (18%)
+- 🔵 En Desarrollo: 1 (9%)
+- ⚪ Pendientes: 7 (64%)
 
 ## 🗃️ DATOS TÉCNICOS
 

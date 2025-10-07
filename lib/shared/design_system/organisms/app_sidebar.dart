@@ -316,7 +316,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
       case 'point_of_sale':
         return Icons.point_of_sale;
       case 'inventory':
-        return Icons.inventory_2;
+        return Icons.inventory;
       case 'inventory_2':
         return Icons.inventory_2;
       case 'warehouse':
@@ -341,6 +341,8 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
         return Icons.attach_money;
       case 'receipt_long':
         return Icons.receipt_long;
+      case 'assessment':
+        return Icons.assessment;
       default:
         return Icons.circle;
     }

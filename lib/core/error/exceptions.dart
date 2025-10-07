@@ -84,3 +84,33 @@ class UsedTokenException extends AppException {
 class WeakPasswordException extends AppException {
   WeakPasswordException([super.message = 'Contraseña muy débil', super.statusCode = 400]);
 }
+
+/// E002-HU-001: Gestionar Catálogo de Marcas exceptions
+class DuplicateCodigoException extends AppException {
+  DuplicateCodigoException([super.message = 'Este código ya existe, ingresa otro', super.statusCode = 409]);
+}
+
+class DuplicateNombreException extends AppException {
+  DuplicateNombreException([super.message = 'Ya existe una marca con este nombre', super.statusCode = 409]);
+}
+
+class InvalidCodigoException extends AppException {
+  InvalidCodigoException([super.message = 'Código inválido', super.statusCode = 400]);
+}
+
+class MarcaNotFoundException extends AppException {
+  MarcaNotFoundException([super.message = 'La marca no existe', super.statusCode = 404]);
+}
+
+/// E002-HU-002: Gestionar Catálogo de Materiales exceptions
+class DuplicateCodeException extends AppException {
+  DuplicateCodeException([super.message = 'Este código ya existe, ingresa otro', super.statusCode = 409]);
+}
+
+class DuplicateNameException extends AppException {
+  DuplicateNameException([super.message = 'Ya existe un material con este nombre', super.statusCode = 409]);
+}
+
+class MaterialNotFoundException extends AppException {
+  MaterialNotFoundException([super.message = 'El material no existe', super.statusCode = 404]);
+}

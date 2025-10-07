@@ -36,7 +36,9 @@
       "Bash(del \"supabase\\migrations\\20251006210405_hu004_password_recovery.sql\")",
       "Bash(docker compose:*)",
       "Bash(deno check:*)",
-      "Bash(for i in {1..4})"
+      "Bash(for i in {1..4})",
+      "Bash(mkdir:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []
