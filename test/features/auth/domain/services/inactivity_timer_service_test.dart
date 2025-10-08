@@ -5,11 +5,9 @@ void main() {
   group('InactivityTimerService', () {
     late InactivityTimerService service;
     late List<String> events;
-    late int warningMinutesRemaining;
 
     setUp(() {
       events = [];
-      warningMinutesRemaining = 0;
 
       service = InactivityTimerService(
         onInactive: () {
@@ -17,7 +15,6 @@ void main() {
         },
         onWarning: (minutesRemaining) {
           events.add('warning');
-          warningMinutesRemaining = minutesRemaining;
         },
       );
     });

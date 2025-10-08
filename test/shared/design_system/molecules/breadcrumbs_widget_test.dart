@@ -82,8 +82,6 @@ void main() {
     });
 
     testWidgets('should not call onNavigate when non-clickable breadcrumb is tapped', (tester) async {
-      String? navigatedRoute;
-
       final breadcrumbs = [
         const Breadcrumb(label: 'Dashboard', route: '/dashboard'),
         const Breadcrumb(label: 'Gestionar catálogo', route: null),
@@ -92,9 +90,7 @@ void main() {
       await tester.pumpWidget(
         buildTestWidget(
           breadcrumbs: breadcrumbs,
-          onNavigate: (route) {
-            navigatedRoute = route;
-          },
+          onNavigate: (route) {},
         ),
       );
 

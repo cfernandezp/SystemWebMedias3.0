@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../data/models/tipo_model.dart';
 
 /// Modal de detalles del tipo (CA-012)
 ///
@@ -9,7 +10,7 @@ import 'package:intl/intl.dart';
 /// - Fechas de creación y última modificación
 /// - Lista de productos asociados (si existen)
 class TipoDetailModal extends StatelessWidget {
-  final Map<String, dynamic> tipoDetail; // Recibe detail completo del RPC
+  final TipoModel tipoDetail;
 
   const TipoDetailModal({
     Key? key,
@@ -22,19 +23,14 @@ class TipoDetailModal extends StatelessWidget {
     final isDesktop = MediaQuery.of(context).size.width >= 1200;
 
     // Extraer datos del detalle
-    final nombre = tipoDetail['nombre'] as String? ?? 'Tipo';
-    final codigo = tipoDetail['codigo'] as String? ?? 'N/A';
-    final descripcion = tipoDetail['descripcion'] as String?;
-    final imagenUrl = tipoDetail['imagen_url'] as String?;
-    final activo = tipoDetail['activo'] as bool? ?? false;
-    final createdAt = tipoDetail['created_at'] != null
-        ? DateTime.parse(tipoDetail['created_at'] as String)
-        : null;
-    final updatedAt = tipoDetail['updated_at'] != null
-        ? DateTime.parse(tipoDetail['updated_at'] as String)
-        : null;
-    final estadisticas = tipoDetail['estadisticas'] as Map<String, dynamic>?;
-    final productosCount = estadisticas?['productos_count'] as int? ?? 0;
+    final nombre = tipoDetail.nombre;
+    final codigo = tipoDetail.codigo;
+    final descripcion = tipoDetail.descripcion;
+    final imagenUrl = tipoDetail.imagenUrl;
+    final activo = tipoDetail.activo;
+    final createdAt = tipoDetail.createdAt;
+    final updatedAt = tipoDetail.updatedAt;
+    final productosCount = tipoDetail.productosCount ?? 0;
 
     return Dialog(
       shape: RoundedRectangleBorder(

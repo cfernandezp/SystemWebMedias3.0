@@ -1,0 +1,244 @@
+Analyzing SystemWebMedias3.0...                                 
+
+   info - Don't use 'BuildContext's across async gaps - lib\core\routing\app_router.dart:112:13 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\core\routing\app_router.dart:308:48 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:51:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:61:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:62:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:63:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:66:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:70:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:82:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:102:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:110:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:111:7 - avoid_print
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\data\datasources\auth_remote_datasource.dart:117:14 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:124:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:143:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:150:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:152:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:174:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:179:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:180:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:183:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:187:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:195:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:196:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:198:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:203:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:213:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:230:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:242:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:247:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:248:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:251:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:258:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:271:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:283:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:288:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:289:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:292:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:295:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:298:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:301:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:310:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:325:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:337:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:342:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:343:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:346:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:353:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:362:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:374:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:382:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:383:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:386:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:393:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:404:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:416:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:423:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:424:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:427:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:434:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:445:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:459:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:467:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:468:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:471:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:478:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:489:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:501:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:509:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:510:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:513:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:520:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:535:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:547:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:555:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:556:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:564:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\auth\data\datasources\auth_remote_datasource.dart:581:7 - avoid_print
+   info - Dangling library doc comment - lib\features\auth\domain\services\multi_tab_sync_service.dart:1:1 - dangling_library_doc_comments
+   info - The imported package 'web' isn't a dependency of the importing package - lib\features\auth\domain\services\multi_tab_sync_service_web.dart:3:8 - depend_on_referenced_packages
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\pages\confirm_email_page.dart:19:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\pages\confirm_email_page.dart:62:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\pages\confirm_email_page.dart:79:12 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\pages\confirm_email_page.dart:80:14 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\pages\email_confirmation_waiting_page.dart:16:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\pages\forgot_password_page.dart:20:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\pages\login_page.dart:15:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\pages\register_page.dart:15:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\pages\register_page.dart:45:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\pages\register_page.dart:46:25 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\auth\presentation\pages\register_page.dart:49:25 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\pages\register_page.dart:55:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\pages\register_page.dart:56:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\pages\register_page.dart:58:24 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\auth\presentation\pages\register_page.dart:60:29 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\pages\register_page.dart:100:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\pages\register_page.dart:130:20 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\pages\reset_password_page.dart:22:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\auth_guard.dart:22:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\email_confirmation_error.dart:18:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\widgets\email_confirmation_error.dart:31:24 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\email_confirmation_success.dart:12:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\email_confirmation_waiting.dart:18:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\widgets\email_confirmation_waiting.dart:31:24 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\inactivity_warning_dialog.dart:23:9 - use_super_parameters
+   info - Use 'const' for final variables initialized to a constant value - lib\features\auth\presentation\widgets\inactivity_warning_dialog.dart:95:5 - prefer_const_declarations
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\login_form.dart:22:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\logout_confirmation_dialog.dart:18:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\password_strength_indicator.dart:24:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\register_form.dart:18:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\features\auth\presentation\widgets\register_form.dart:48:24 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\remember_me_checkbox.dart:14:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\auth\presentation\widgets\user_menu_dropdown.dart:25:9 - use_super_parameters
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:39:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:44:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:45:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:49:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:58:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:62:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:77:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:86:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:87:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:90:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:97:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:114:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:129:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:138:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:139:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:142:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:149:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:164:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:175:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:182:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:183:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:188:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:196:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\catalogos\data\datasources\marcas_remote_datasource.dart:205:7 - avoid_print
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\pages\marca_form_page.dart:21:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\pages\marcas_list_page.dart:20:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\pages\material_form_page.dart:21:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\pages\materiales_list_page.dart:23:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\pages\tipo_form_page.dart:21:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\features\catalogos\presentation\pages\tipo_form_page.dart:295:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\catalogos\presentation\pages\tipo_form_page.dart:297:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\catalogos\presentation\pages\tipo_form_page.dart:299:38 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\pages\tipos_list_page.dart:23:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\marca_card.dart:17:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\marca_search_bar.dart:12:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\material_card.dart:21:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\material_detail_modal.dart:14:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\features\catalogos\presentation\widgets\material_detail_modal.dart:217:32 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\catalogos\presentation\widgets\material_detail_modal.dart:218:37 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\catalogos\presentation\widgets\material_detail_modal.dart:233:29 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\catalogos\presentation\widgets\material_detail_modal.dart:235:38 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\catalogos\presentation\widgets\material_detail_modal.dart:254:32 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\material_search_bar.dart:13:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\material_toggle_confirm_dialog.dart:15:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\features\catalogos\presentation\widgets\material_toggle_confirm_dialog.dart:98:13 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\status_badge.dart:12:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\tipo_card.dart:22:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\tipo_detail_modal.dart:15:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\tipo_search_bar.dart:12:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\catalogos\presentation\widgets\tipo_toggle_confirm_dialog.dart:15:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\dashboard\presentation\pages\dashboard_page.dart:18:9 - use_super_parameters
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\dashboard\presentation\pages\dashboard_page.dart:216:20 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\dashboard\presentation\pages\dashboard_page.dart:217:11 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\features\dashboard\presentation\widgets\admin_dashboard.dart:22:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\dashboard\presentation\widgets\gerente_dashboard.dart:24:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\dashboard\presentation\widgets\metrics_grid.dart:43:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\dashboard\presentation\widgets\sales_line_chart.dart:34:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\features\dashboard\presentation\widgets\sales_line_chart.dart:146:20 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\features\dashboard\presentation\widgets\top_productos_list.dart:36:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\dashboard\presentation\widgets\top_vendedores_list.dart:38:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\dashboard\presentation\widgets\transacciones_recientes_list.dart:49:9 - use_super_parameters
+   info - Use a 'SizedBox' to add whitespace to a layout - lib\features\dashboard\presentation\widgets\transacciones_recientes_list.dart:104:12 - sized_box_for_whitespace
+   info - Parameter 'key' could be a super parameter - lib\features\dashboard\presentation\widgets\vendedor_dashboard.dart:25:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\features\home\presentation\pages\home_page.dart:18:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\features\home\presentation\pages\home_page.dart:30:44 - prefer_const_constructors
+   info - Use 'const' for final variables initialized to a constant value - lib\main.dart:211:5 - prefer_const_declarations
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\atoms\corporate_button.dart:24:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\atoms\corporate_button.dart:147:9 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\atoms\corporate_form_field.dart:26:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\atoms\corporate_form_field.dart:143:25 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\atoms\logout_button.dart:19:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\atoms\meta_progress_bar.dart:26:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\atoms\metric_card.dart:27:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\atoms\trend_indicator.dart:25:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\molecules\auth_header.dart:14:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\molecules\auth_header.dart:67:14 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\shared\design_system\molecules\auth_header.dart:69:19 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\molecules\auth_header.dart:70:11 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\molecules\breadcrumbs_widget.dart:21:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\organisms\app_header.dart:31:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\organisms\app_header.dart:145:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\organisms\app_header.dart:147:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\organisms\app_header.dart:155:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\organisms\app_header.dart:157:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\organisms\app_header.dart:166:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\organisms\app_header.dart:168:18 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\organisms\app_sidebar.dart:28:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\organisms\app_sidebar.dart:117:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\organisms\app_sidebar.dart:118:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\organisms\app_sidebar.dart:119:19 - prefer_const_constructors
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\organisms\authenticated_header.dart:28:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\shared\design_system\templates\main_layout.dart:35:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\templates\main_layout.dart:297:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\templates\main_layout.dart:299:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\templates\main_layout.dart:307:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\templates\main_layout.dart:309:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\templates\main_layout.dart:318:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\shared\design_system\templates\main_layout.dart:320:18 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - test\features\auth\data\models\audit_log_model_test.dart:100:19 - prefer_const_literals_to_create_immutables
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - test\features\auth\data\models\audit_log_model_test.dart:109:19 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:8:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:24:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:30:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:39:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:44:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:50:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:67:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:70:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:82:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:86:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\logout_request_model_test.dart:90:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\token_blacklist_check_model_test.dart:62:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\token_blacklist_check_model_test.dart:67:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\models\token_blacklist_check_model_test.dart:72:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\repositories\auth_repository_impl_test.dart:27:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\repositories\auth_repository_impl_test.dart:34:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\data\repositories\auth_repository_impl_test.dart:143:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\domain\services\inactivity_timer_service_test.dart:36:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\domain\services\inactivity_timer_service_test.dart:47:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\domain\services\inactivity_timer_service_test.dart:49:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\auth\domain\services\inactivity_timer_service_test.dart:61:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\home\presentation\pages\home_page_test.dart:85:37 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\menu\data\models\menu_response_model_test.dart:67:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\menu\data\models\menu_response_model_test.dart:85:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\shared\design_system\atoms\metric_card_test.dart:12:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\shared\design_system\atoms\metric_card_test.dart:13:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\shared\design_system\atoms\metric_card_test.dart:14:19 - prefer_const_constructors
+
+240 issues found. (ran in 5.2s)

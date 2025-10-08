@@ -58,7 +58,9 @@ CREATE TABLE audit_logs (
     event_type TEXT NOT NULL CHECK (event_type IN (
         'login', 'logout', 'password_change', 'password_reset', 'email_change',
         'material_management', 'marca_management',
-        'tipo_created', 'tipo_updated', 'tipo_activated', 'tipo_deactivated'
+        'tipo_created', 'tipo_updated', 'tipo_activated', 'tipo_deactivated',
+        'sistema_talla_created', 'sistema_talla_updated', 'sistema_talla_activated', 'sistema_talla_deactivated',
+        'valor_talla_added', 'valor_talla_updated', 'valor_talla_deleted'
     )),
     event_subtype TEXT,
     ip_address INET,

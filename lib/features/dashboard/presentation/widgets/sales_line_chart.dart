@@ -225,10 +225,10 @@ class _SalesLineChartState extends State<SalesLineChart>
             ),
             belowBarData: BarAreaData(
               show: true,
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [
-                  const Color(0xFF4ECDC4).withOpacity(0.2),
-                  const Color(0xFF4ECDC4).withOpacity(0.0),
+                  Color.fromRGBO(78, 205, 196, 0.2),
+                  Color.fromRGBO(78, 205, 196, 0.0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,

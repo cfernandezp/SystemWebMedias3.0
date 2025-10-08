@@ -38,7 +38,14 @@
       "Bash(deno check:*)",
       "Bash(for i in {1..4})",
       "Bash(mkdir:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(flutter create:*)",
+      "Bash(tee:*)",
+      "Bash(dir:*)",
+      "Bash(timeout:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

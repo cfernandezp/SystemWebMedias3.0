@@ -35,7 +35,7 @@ class TiposLoaded extends TiposState {
 
 /// Detalle de tipo cargado (CA-012)
 class TipoDetailLoaded extends TiposState {
-  final Map<String, dynamic> detail;
+  final TipoModel detail;
 
   const TipoDetailLoaded({required this.detail});
 

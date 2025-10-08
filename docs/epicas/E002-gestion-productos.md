@@ -26,15 +26,15 @@
 - **Descripción**: CRUD de materiales con códigos para generación de SKU
 
 ### E002-HU-003: Gestionar Catálogo de Tipos
-- **Archivo**: `docs/historias-usuario/E002-HU-003-DEV-gestionar-tipos.md`
-- **Estado**: 🔵 En Desarrollo
+- **Archivo**: `docs/historias-usuario/E002-HU-003-COM-gestionar-tipos.md`
+- **Estado**: ✅ Completada
 - **Story Points**: 4 pts
 - **Prioridad**: Alta
 - **Descripción**: CRUD de tipos de medias con códigos para SKU
 
 ### E002-HU-004: Gestionar Sistemas de Tallas
-- **Archivo**: `docs/historias-usuario/E002-HU-004-REF-gestionar-sistemas-tallas.md`
-- **Estado**: 🟢 Refinada
+- **Archivo**: `docs/historias-usuario/E002-HU-004-COM-gestionar-sistemas-tallas.md`
+- **Estado**: ✅ Completada
 - **Story Points**: 5 pts
 - **Prioridad**: Alta
 - **Descripción**: CRUD de sistemas de tallas con configuración de valores
@@ -102,9 +102,9 @@
 
 ## 📊 PROGRESO
 - Total HU: 11
-- ✅ Completadas: 1 (9%)
-- 🟢 Refinadas: 2 (18%)
-- 🔵 En Desarrollo: 1 (9%)
+- ✅ Completadas: 3 (27%)
+- 🟢 Refinadas: 1 (9%)
+- 🔵 En Desarrollo: 0 (0%)
 - ⚪ Pendientes: 7 (64%)
 
 ## 🗃️ DATOS TÉCNICOS

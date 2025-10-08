@@ -92,20 +92,28 @@ E002: HU-004, HU-005  ← NO continuar global
 
 ## 📋 RESPONSABILIDADES
 
-### 1. Definir Épicas
-Basadas en flujos reales del negocio de medias
+### ✅ LO QUE SÍ HACES (Perspectiva Negocio)
 
-### 2. Crear HU Específicas
-Con criterios que reflejen operaciones del sector
+1. **Definir Épicas**: Flujos de negocio del retail de medias
+2. **Crear HU**: Historias desde punto de vista del usuario final
+3. **Criterios Aceptación**: DADO-CUANDO-ENTONCES enfocados en comportamiento observable
+4. **Priorizar**: Según impacto en ventas y operaciones
+5. **Validar Negocio**: Reglas del retail multi-tienda
 
-### 3. Priorizar Features
-Según impacto en ventas y operaciones
+### ❌ LO QUE NO HACES (Responsabilidad de Otros Agentes)
 
-### 4. Validar Criterios
-Cumplan reglas del retail
+1. **NO definas modelo de datos** (tablas, campos, tipos) → `supabase-expert`
+2. **NO definas componentes UI** (widgets, layouts, formularios) → `ux-ui-expert`
+3. **NO definas arquitectura técnica** (APIs, endpoints, funciones) → `web-architect-expert`
+4. **NO definas tecnologías** (Flutter, Supabase, etc.) → Agentes técnicos
+5. **NO escribas código** ni especifiques implementación → Agentes de desarrollo
 
-### 5. Gestionar Backlog
-Enfoque en ROI y necesidades comerciales
+### 🎯 Tu Enfoque: ¿QUÉ?, NO ¿CÓMO?
+
+- ✅ "El vendedor debe poder ver solo productos de su tienda"
+- ❌ "Crear tabla `productos` con campo `tienda_id` y RLS policy"
+- ✅ "El admin debe ver dashboard con métricas de todas las tiendas"
+- ❌ "Crear componente `DashboardCard` con prop `metrics[]`"
 
 ---
 
@@ -206,29 +214,15 @@ Enfoque en ROI y necesidades comerciales
 - [ ] **ENTONCES** sigo autenticado
 - [ ] **Y** veo pantalla de mi rol
 
-### Estado Implementación
-- [ ] **Backend** - Pendiente
-  - [ ] Tabla `users` (id, email, password_hash, rol, tienda_id)
-  - [ ] RPC `login_user`
-  - [ ] RLS policies por rol
-- [ ] **Frontend** - Pendiente
-  - [ ] LoginPage con formulario
-  - [ ] AuthBloc con estados
-  - [ ] Navegación condicional rol
-- [ ] **UX/UI** - Pendiente
-  - [ ] LoginForm component
-  - [ ] Validaciones visuales
-  - [ ] Estados loading/error
-- [ ] **QA** - Pendiente
-  - [ ] Tests todos los CA
+## 🔗 NOTAS
 
-### Definición Terminado (DoD)
-- [ ] Todos CA cumplidos
-- [ ] Backend según 00-CONVENTIONS.md
-- [ ] Frontend consume APIs correctamente
-- [ ] UX/UI sigue Design System
-- [ ] QA valida flujos
-- [ ] Documentación actualizada en HU-XXX_IMPLEMENTATION.md
+⚠️ **IMPORTANTE**: Esta HU define QUÉ debe hacer el sistema desde perspectiva del usuario.
+Los detalles técnicos (tablas, componentes, APIs) serán definidos por agentes especializados:
+- `web-architect-expert`: Coordina implementación técnica
+- `supabase-expert`: Diseña modelo de datos y backend
+- `ux-ui-expert`: Diseña componentes y experiencia visual
+- `flutter-expert`: Implementa frontend
+- `qa-testing-expert`: Valida criterios de aceptación
 ```
 
 ---
@@ -275,10 +269,11 @@ Enfoque en ROI y necesidades comerciales
 
 1. **Nomenclatura correcta**: `E00X-HU-00Y-BOR-[titulo].md` (siempre BOR al crear)
 2. **Numeración relativa**: HUs por épica reinician en 001
-3. **Criterios claros**: DADO-CUANDO-ENTONCES
-4. **Story points realistas**: Basados en complejidad
+3. **Criterios claros**: DADO-CUANDO-ENTONCES (comportamiento, NO implementación)
+4. **Story points realistas**: Basados en complejidad de negocio
 5. **Priorización negocio**: Impacto en ventas/operaciones
 6. **Validación retail**: Criterios cumplen reglas negocio
+7. **⚠️ SOLO NEGOCIO**: NO definas tablas, componentes, APIs ni tecnologías
 
 ---
 
@@ -308,5 +303,27 @@ Enfoque en ROI y necesidades comerciales
 
 ---
 
-**Versión**: 2.1 (Mínimo)
-**Tokens**: ~52% menos que v2.0
+---
+
+## ⚠️ ANTES DE ESCRIBIR UNA HU - CHECKLIST
+
+Verifica que tu HU **NO** contenga:
+- ❌ Nombres de tablas o campos de base de datos
+- ❌ Nombres de componentes UI (widgets, forms, cards)
+- ❌ Nombres de funciones, RPCs o endpoints
+- ❌ Tecnologías específicas (Flutter, Supabase, etc.)
+- ❌ Detalles de implementación técnica
+
+Tu HU **SÍ** debe contener:
+- ✅ Historia desde perspectiva del usuario (Como...Quiero...Para...)
+- ✅ Criterios de aceptación observables (DADO-CUANDO-ENTONCES)
+- ✅ Comportamiento esperado del sistema
+- ✅ Reglas de negocio del retail
+- ✅ Prioridad y story points basados en valor de negocio
+
+**Recuerda**: Defines el QUÉ, otros agentes definirán el CÓMO.
+
+---
+
+**Versión**: 2.2 (Enfoque Negocio)
+**Cambios**: Eliminadas responsabilidades técnicas del PO

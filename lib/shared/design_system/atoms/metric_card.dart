@@ -59,7 +59,11 @@ class _MetricCardState extends State<MetricCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+        transform: Matrix4.diagonal3Values(
+          _isHovered ? 1.02 : 1.0,
+          _isHovered ? 1.02 : 1.0,
+          1.0,
+        ),
         child: Material(
           elevation: _isHovered ? 8 : 2,
           borderRadius: BorderRadius.circular(12),

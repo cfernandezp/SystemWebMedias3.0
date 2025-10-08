@@ -5,9 +5,6 @@ import 'package:system_web_medias/features/auth/presentation/widgets/inactivity_
 void main() {
   group('InactivityWarningDialog', () {
     testWidgets('should show inactivity warning dialog', (tester) async {
-      bool extendSessionCalled = false;
-      bool logoutCalled = false;
-
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -16,8 +13,8 @@ void main() {
                 onPressed: () => InactivityWarningDialog.show(
                   context: context,
                   minutesRemaining: 5,
-                  onExtendSession: () => extendSessionCalled = true,
-                  onLogout: () => logoutCalled = true,
+                  onExtendSession: () {},
+                  onLogout: () {},
                 ),
                 child: const Text('Show Warning'),
               ),

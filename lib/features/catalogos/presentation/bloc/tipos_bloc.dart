@@ -125,7 +125,7 @@ class TiposBloc extends Bloc<TiposEvent, TiposState> {
   ) async {
     emit(const TiposLoading());
 
-    final result = await repository.getTipoDetalle(event.id);
+    final result = await repository.getTipoDetail(event.id);
 
     result.fold(
       (failure) => emit(TiposError(message: failure.message)),

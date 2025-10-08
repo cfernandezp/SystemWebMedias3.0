@@ -1,0 +1,83 @@
+### Validacion Integracion Backend <-> Frontend
+
+**get_sistemas_talla():**
+- Backend: Retorna JSON con array de sistemas + valores_count
+- DataSource: Parsea response['data'] a List<SistemaTallaModel>
+- Repository: Either<Failure, List<SistemaTallaModel>>
+- Bloc: SistemasTallaLoaded state
+- UI: SistemasTallaListPage renderiza GridView/ListView
+- VEREDICTO: PASS
+
+**create_sistema_talla():**
+- Backend: Inserta sistema + valores en transaccion atomica
+- DataSource: CreateSistemaTallaRequest.toJson() mapea p_* params
+- Repository: Either con mapeo excepciones especificas
+- Bloc: SistemaTallaCreated state
+- UI: SnackBar success + context.pop()
+- VEREDICTO: PASS
+
+**update_sistema_talla():**
+- Backend: UPDATE sistemas_talla (NO modifica tipo_sistema)
+- DataSource: UpdateSistemaTallaRequest NO incluye tipoSistema
+- Repository: Either con SistemaNotFoundFailure, DuplicateNameFailure
+- Bloc: SistemaTallaUpdated state
+- UI: SnackBar success + recarga lista
+- VEREDICTO: PASS
+
+**get_sistema_talla_valores():**
+- Backend: Retorna JSON con sistema + array valores ordenados
+- DataSource: Parsea Map con 'sistema' y 'valores'
+- Repository: Either con Map<String, dynamic>
+- Bloc: SistemaTallaValoresLoaded state
+- UI: SistemaTallaValoresModal renderiza dialog
+- VEREDICTO: PASS
+
+**add_valor_talla():**
+- Backend: INSERT valor con orden auto-calculado
+- DataSource: Parsea ValorTallaModel.fromJson()
+- Repository: Either con validaciones rangos/duplicados
+- Bloc: ValorTallaAdded state
+- UI: Recarga lista valores
+- VEREDICTO: PASS
+
+**update_valor_talla():**
+- Backend: UPDATE valor excluyendo sí mismo en validaciones
+- DataSource: Parsea ValorTallaModel.fromJson()
+- Repository: Either con ValorNotFoundFailure
+- Bloc: ValorTallaUpdated state
+- UI: Actualiza valor en lista
+- VEREDICTO: PASS
+
+**delete_valor_talla():**
+- Backend: Soft delete (activo=false) con validacion productos
+- DataSource: Mapea hint valor_used_by_products
+- Repository: Either con ValorUsedByProductsFailure, LastValueFailure
+- Bloc: ValorTallaDeleted state
+- UI: Elimina de lista o muestra warning
+- VEREDICTO: PASS
+
+**toggle_sistema_talla_activo():**
+- Backend: UPDATE activo = NOT activo
+- DataSource: Parsea SistemaTallaModel con nuevo estado
+- Repository: Either con SistemaNotFoundFailure
+- Bloc: SistemaTallaToggled state
+- UI: Dialog confirmacion + actualiza card estado
+- VEREDICTO: PASS
+
+**Mapping snake_case <-> camelCase:**
+- tipo_sistema <-> tipoSistema: PASS
+- valores_count <-> valoresCount: PASS
+- created_at <-> createdAt: PASS
+- updated_at <-> updatedAt: PASS
+- sistema_talla_id <-> sistemaTallaId: PASS
+- productos_count <-> productosCount: PASS
+- VEREDICTO: PASS (mapeo explicito en fromJson/toJson)
+
+**Error handling muestra mensajes claros:**
+- duplicate_nombre: "Este nombre ya está registrado"
+- overlapping_ranges: "Los rangos no pueden superponerse"
+- last_value_cannot_delete: "No se puede eliminar el último valor"
+- valor_used_by_products: "Este valor está siendo usado en X productos"
+- VEREDICTO: PASS
+
+RESUMEN INTEGRACION: 10/10 PASS (100%)

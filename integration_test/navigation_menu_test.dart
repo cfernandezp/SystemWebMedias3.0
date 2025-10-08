@@ -1,10 +1,8 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:system_web_medias/main.dart' as app;
 import 'package:system_web_medias/core/injection/injection_container.dart' as di;
-import 'package:system_web_medias/shared/design_system/organisms/app_sidebar.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

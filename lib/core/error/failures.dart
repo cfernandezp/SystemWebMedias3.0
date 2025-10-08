@@ -145,3 +145,39 @@ class DuplicateNameFailure extends Failure {
 class MaterialNotFoundFailure extends Failure {
   const MaterialNotFoundFailure([super.message = 'El material no existe']);
 }
+
+/// Tipo no encontrado (404)
+class TipoNotFoundFailure extends Failure {
+  const TipoNotFoundFailure([super.message = 'El tipo no existe']);
+}
+
+/// E002-HU-004: Gestionar Sistemas de Tallas failures
+/// Valor duplicado (409)
+class DuplicateValueFailure extends Failure {
+  const DuplicateValueFailure([super.message = 'Este valor ya existe en el sistema']);
+}
+
+/// Rangos superpuestos (400)
+class OverlappingRangesFailure extends Failure {
+  const OverlappingRangesFailure([super.message = 'Los rangos no pueden superponerse']);
+}
+
+/// Último valor (400)
+class LastValueFailure extends Failure {
+  const LastValueFailure([super.message = 'No se puede eliminar el último valor del sistema']);
+}
+
+/// Valor usado por productos (400)
+class ValorUsedByProductsFailure extends Failure {
+  const ValorUsedByProductsFailure([super.message = 'Este valor está siendo usado por productos']);
+}
+
+/// Sistema no encontrado (404)
+class SistemaNotFoundFailure extends Failure {
+  const SistemaNotFoundFailure([super.message = 'El sistema de tallas no existe']);
+}
+
+/// Valor no encontrado (404)
+class ValorNotFoundFailure extends Failure {
+  const ValorNotFoundFailure([super.message = 'El valor de talla no existe']);
+}

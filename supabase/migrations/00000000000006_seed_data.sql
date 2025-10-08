@@ -57,6 +57,93 @@ INSERT INTO tipos (nombre, descripcion, codigo, activo) VALUES
 ON CONFLICT (codigo) DO NOTHING;
 
 -- ============================================
+-- PASO 2C: Sistemas de tallas de ejemplo (E002-HU-004)
+-- ============================================
+
+-- Sistema UNICA
+INSERT INTO sistemas_talla (nombre, tipo_sistema, descripcion, activo) VALUES
+    ('Talla Única Estándar', 'UNICA', 'Talla única que se adapta a pie 35-42', true)
+ON CONFLICT (nombre) DO NOTHING;
+
+INSERT INTO valores_talla (sistema_talla_id, valor, orden, activo)
+SELECT id, 'ÚNICA', 1, true
+FROM sistemas_talla
+WHERE nombre = 'Talla Única Estándar'
+ON CONFLICT (sistema_talla_id, valor) DO NOTHING;
+
+-- Sistema NUMERO
+INSERT INTO sistemas_talla (nombre, tipo_sistema, descripcion, activo) VALUES
+    ('Tallas Numéricas Europeas', 'NUMERO', 'Sistema de tallas por números europeos', true)
+ON CONFLICT (nombre) DO NOTHING;
+
+DO $$
+DECLARE
+    v_sistema_id UUID;
+    v_orden INTEGER := 0;
+    v_valor TEXT;
+BEGIN
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas';
+
+    IF v_sistema_id IS NOT NULL THEN
+        FOR v_valor IN SELECT unnest(ARRAY['35-36', '37-38', '39-40', '41-42', '43-44'])
+        LOOP
+            v_orden := v_orden + 1;
+            INSERT INTO valores_talla (sistema_talla_id, valor, orden, activo)
+            VALUES (v_sistema_id, v_valor, v_orden, true)
+            ON CONFLICT (sistema_talla_id, valor) DO NOTHING;
+        END LOOP;
+    END IF;
+END $$;
+
+-- Sistema LETRA
+INSERT INTO sistemas_talla (nombre, tipo_sistema, descripcion, activo) VALUES
+    ('Tallas por Letras Estándar', 'LETRA', 'Sistema de tallas alfabético', true)
+ON CONFLICT (nombre) DO NOTHING;
+
+DO $$
+DECLARE
+    v_sistema_id UUID;
+    v_orden INTEGER := 0;
+    v_valor TEXT;
+BEGIN
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar';
+
+    IF v_sistema_id IS NOT NULL THEN
+        FOR v_valor IN SELECT unnest(ARRAY['XS', 'S', 'M', 'L', 'XL', 'XXL'])
+        LOOP
+            v_orden := v_orden + 1;
+            INSERT INTO valores_talla (sistema_talla_id, valor, orden, activo)
+            VALUES (v_sistema_id, v_valor, v_orden, true)
+            ON CONFLICT (sistema_talla_id, valor) DO NOTHING;
+        END LOOP;
+    END IF;
+END $$;
+
+-- Sistema RANGO
+INSERT INTO sistemas_talla (nombre, tipo_sistema, descripcion, activo) VALUES
+    ('Rangos Amplios', 'RANGO', 'Rangos amplios para medias deportivas', true)
+ON CONFLICT (nombre) DO NOTHING;
+
+DO $$
+DECLARE
+    v_sistema_id UUID;
+    v_orden INTEGER := 0;
+    v_valor TEXT;
+BEGIN
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Rangos Amplios';
+
+    IF v_sistema_id IS NOT NULL THEN
+        FOR v_valor IN SELECT unnest(ARRAY['34-38', '39-42', '43-46'])
+        LOOP
+            v_orden := v_orden + 1;
+            INSERT INTO valores_talla (sistema_talla_id, valor, orden, activo)
+            VALUES (v_sistema_id, v_valor, v_orden, true)
+            ON CONFLICT (sistema_talla_id, valor) DO NOTHING;
+        END LOOP;
+    END IF;
+END $$;
+
+-- ============================================
 -- PASO 3: Tiendas de ejemplo
 -- ============================================
 
@@ -283,6 +370,46 @@ ON CONFLICT (user_id, tienda_id) DO NOTHING;
 COMMIT;
 
 -- ============================================
+-- PASO 7.5: CORREGIR ROLES DE USUARIOS (FIX)
+-- ============================================
+-- Este script fuerza la actualización de roles para usuarios existentes
+
+DO $$
+BEGIN
+    -- Actualizar rol de admin si existe
+    UPDATE auth.users
+    SET raw_user_meta_data = jsonb_set(
+        COALESCE(raw_user_meta_data, '{}'::jsonb),
+        '{rol}',
+        '"ADMIN"'::jsonb
+    )
+    WHERE email = 'admin@test.com'
+      AND (raw_user_meta_data->>'rol' IS NULL OR raw_user_meta_data->>'rol' != 'ADMIN');
+
+    -- Actualizar rol de gerente si existe
+    UPDATE auth.users
+    SET raw_user_meta_data = jsonb_set(
+        COALESCE(raw_user_meta_data, '{}'::jsonb),
+        '{rol}',
+        '"GERENTE"'::jsonb
+    )
+    WHERE email = 'gerente@test.com'
+      AND (raw_user_meta_data->>'rol' IS NULL OR raw_user_meta_data->>'rol' != 'GERENTE');
+
+    -- Actualizar rol de vendedor si existe
+    UPDATE auth.users
+    SET raw_user_meta_data = jsonb_set(
+        COALESCE(raw_user_meta_data, '{}'::jsonb),
+        '{rol}',
+        '"VENDEDOR"'::jsonb
+    )
+    WHERE email = 'vendedor@test.com'
+      AND (raw_user_meta_data->>'rol' IS NULL OR raw_user_meta_data->>'rol' != 'VENDEDOR');
+
+    RAISE NOTICE 'Roles de usuarios actualizados correctamente';
+END $$;
+
+-- ============================================
 -- PASO 8: Resumen de Seed
 -- ============================================
 
@@ -291,6 +418,8 @@ DECLARE
     v_marcas INTEGER;
     v_materiales INTEGER;
     v_tipos INTEGER;
+    v_sistemas_talla INTEGER;
+    v_valores_talla INTEGER;
     v_tiendas INTEGER;
     v_productos INTEGER;
     v_clientes INTEGER;
@@ -300,6 +429,8 @@ BEGIN
     SELECT COUNT(*) INTO v_marcas FROM marcas;
     SELECT COUNT(*) INTO v_materiales FROM materiales;
     SELECT COUNT(*) INTO v_tipos FROM tipos;
+    SELECT COUNT(*) INTO v_sistemas_talla FROM sistemas_talla;
+    SELECT COUNT(*) INTO v_valores_talla FROM valores_talla;
     SELECT COUNT(*) INTO v_tiendas FROM tiendas;
     SELECT COUNT(*) INTO v_productos FROM productos;
     SELECT COUNT(*) INTO v_clientes FROM clientes;
@@ -312,6 +443,8 @@ BEGIN
     RAISE NOTICE 'Marcas: %', v_marcas;
     RAISE NOTICE 'Materiales: %', v_materiales;
     RAISE NOTICE 'Tipos: %', v_tipos;
+    RAISE NOTICE 'Sistemas de tallas: %', v_sistemas_talla;
+    RAISE NOTICE 'Valores de tallas: %', v_valores_talla;
     RAISE NOTICE 'Tiendas: %', v_tiendas;
     RAISE NOTICE 'Productos: %', v_productos;
     RAISE NOTICE 'Clientes: %', v_clientes;

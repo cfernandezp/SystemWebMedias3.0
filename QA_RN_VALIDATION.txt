@@ -1,0 +1,85 @@
+### Validacion Reglas de Negocio (13 RN)
+
+RN-004-01: Tipos de Sistema de Tallas
+- ENUM tipo_sistema_enum: UNICA, NUMERO, LETRA, RANGO
+- Backend: migration 00000000000001_initial_schema.sql
+- Frontend: Models usan String con valores correctos
+- VEREDICTO: PASS
+
+RN-004-02: Unicidad de Nombre de Sistema
+- Constraint: sistemas_talla_nombre_unique UNIQUE (nombre)
+- Validacion case-insensitive: idx_sistemas_talla_nombre ON LOWER(nombre)
+- Backend: create_sistema_talla verifica EXISTS con LOWER(nombre)
+- Hint: duplicate_nombre
+- VEREDICTO: PASS
+
+RN-004-03: Configuracion de Valores Segun Tipo
+- Backend: validate_range_format() valida "N-M" para NUMERO/RANGO
+- Validacion: primer numero < segundo numero
+- Frontend: ValorRangoInput con regex ^\d+-\d+$
+- VEREDICTO: PASS
+
+RN-004-04: No Duplicidad de Valores en Sistema
+- Constraint: valores_talla_unique_per_system UNIQUE (sistema_talla_id, valor)
+- Validacion case-insensitive para LETRA en backend
+- Hint: duplicate_valor
+- VEREDICTO: PASS
+
+RN-004-05: No Superposicion de Rangos
+- Backend: validate_range_overlap() verifica (new_start <= existing_end) AND (new_end >= existing_start)
+- Hint: overlapping_ranges
+- VEREDICTO: PASS
+
+RN-004-06: Minimo Un Valor por Sistema
+- Backend: create_sistema_talla valida array NOT EMPTY excepto UNICA
+- Backend: delete_valor_talla verifica COUNT(*) > 1
+- Hint: last_value_cannot_delete
+- VEREDICTO: PASS
+
+RN-004-07: Inmutabilidad de Tipo de Sistema (CRITICO)
+- Backend: update_sistema_talla NO acepta p_tipo_sistema
+- Frontend: UpdateSistemaTallaRequest NO incluye tipoSistema
+- Frontend: SistemaTallaFormPage campo tipo DISABLED en edicion (enabled: !_isEditMode)
+- UI: Mensaje "El tipo de sistema no se puede modificar"
+- VEREDICTO: PASS (CRITICO VERIFICADO)
+
+RN-004-08: Proteccion de Valores con Productos Asociados
+- Backend: delete_valor_talla verifica productos_count
+- Parametro p_force: false bloquea, true ejecuta soft delete
+- Hint: valor_used_by_products
+- Placeholder: productos_count = 0 hasta HU productos
+- VEREDICTO: PASS (placeholder OK)
+
+RN-004-09: Desactivacion sin Afectar Productos
+- Backend: toggle_sistema_talla_activo cambia campo activo (NO elimina)
+- Mensaje: "Los productos existentes no se veran afectados"
+- VEREDICTO: PASS
+
+RN-004-10: Ordenamiento de Valores
+- Campo: orden INTEGER en valores_talla
+- Indice: idx_valores_talla_orden ON (sistema_talla_id, orden)
+- Backend: add_valor_talla auto-calcula MAX(orden)+1 si NULL
+- VEREDICTO: PASS
+
+RN-004-11: Restriccion de Acceso
+- Backend: Todas las funciones RPC verifican rol ADMIN antes de modificar
+- RLS policies: authenticated read, ADMIN write
+- DataSource: Mapea hint unauthorized a UnauthorizedException
+- VEREDICTO: PASS
+
+RN-004-12: Validacion de Formato de Rangos
+- Backend: validate_range_format() con regex ^\d+-\d+$
+- Solo numeros enteros positivos
+- Separador unico "-", sin espacios
+- Primer numero < segundo numero
+- Hints: invalid_range_format, invalid_range_order
+- VEREDICTO: PASS
+
+RN-004-13: Soft Delete - No Eliminacion Fisica
+- Campo activo BOOLEAN en sistemas_talla y valores_talla
+- delete_valor_talla: UPDATE SET activo=false (NO DELETE)
+- toggle_sistema_talla_activo: UPDATE SET activo=NOT activo
+- NO hay funciones DELETE fisico
+- VEREDICTO: PASS
+
+RESUMEN: 13/13 PASS (100%)

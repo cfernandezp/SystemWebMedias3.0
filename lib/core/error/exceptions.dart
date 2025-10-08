@@ -114,3 +114,33 @@ class DuplicateNameException extends AppException {
 class MaterialNotFoundException extends AppException {
   MaterialNotFoundException([super.message = 'El material no existe', super.statusCode = 404]);
 }
+
+/// E002-HU-003: Gestionar Catálogo de Tipos exceptions
+class TipoNotFoundException extends AppException {
+  TipoNotFoundException([super.message = 'El tipo no existe', super.statusCode = 404]);
+}
+
+/// E002-HU-004: Gestionar Sistemas de Tallas exceptions
+class DuplicateValueException extends AppException {
+  DuplicateValueException([super.message = 'Este valor ya existe en el sistema', super.statusCode = 409]);
+}
+
+class OverlappingRangesException extends AppException {
+  OverlappingRangesException([super.message = 'Los rangos no pueden superponerse', super.statusCode = 400]);
+}
+
+class LastValueException extends AppException {
+  LastValueException([super.message = 'No se puede eliminar el último valor del sistema', super.statusCode = 400]);
+}
+
+class ValorUsedByProductsException extends AppException {
+  ValorUsedByProductsException([super.message = 'Este valor está siendo usado por productos', super.statusCode = 400]);
+}
+
+class SistemaNotFoundException extends AppException {
+  SistemaNotFoundException([super.message = 'El sistema de tallas no existe', super.statusCode = 404]);
+}
+
+class ValorNotFoundException extends AppException {
+  ValorNotFoundException([super.message = 'El valor de talla no existe', super.statusCode = 404]);
+}

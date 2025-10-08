@@ -403,16 +403,16 @@ BEGIN
     ON CONFLICT (code) DO UPDATE SET parent_id = v_productos_id
     RETURNING id INTO v_productos_materiales_id;
 
-    -- Submenú: Tipos
+    -- Submenú: Tipos (HU-003)
     INSERT INTO menu_options (parent_id, code, label, icon, route, orden, activo)
-    VALUES (v_productos_id, 'productos-tipos', 'Tipos', 'category', '/tipos', 30, false)
-    ON CONFLICT (code) DO UPDATE SET parent_id = v_productos_id
+    VALUES (v_productos_id, 'productos-tipos', 'Tipos', 'category', '/tipos', 30, true)
+    ON CONFLICT (code) DO UPDATE SET parent_id = v_productos_id, activo = EXCLUDED.activo
     RETURNING id INTO v_productos_tipos_id;
 
-    -- Submenú: Sistemas de tallas
+    -- Submenú: Sistemas de tallas (HU-004)
     INSERT INTO menu_options (parent_id, code, label, icon, route, orden, activo)
-    VALUES (v_productos_id, 'productos-tallas', 'Sistemas de tallas', 'straighten', '/tallas', 40, false)
-    ON CONFLICT (code) DO UPDATE SET parent_id = v_productos_id
+    VALUES (v_productos_id, 'productos-tallas', 'Sistemas de tallas', 'straighten', '/sistemas-talla', 40, true)
+    ON CONFLICT (code) DO UPDATE SET parent_id = v_productos_id, activo = EXCLUDED.activo, route = EXCLUDED.route
     RETURNING id INTO v_productos_tallas_id;
 
     -- ========================================
@@ -613,7 +613,7 @@ BEGIN
         (v_config_id, 'VENDEDOR', false)
     ON CONFLICT (menu_option_id, role) DO NOTHING;
 
-    RAISE NOTICE 'Menús completos creados exitosamente (9 menús raíz + 25 submenús)';
+    RAISE NOTICE 'Menús completos creados exitosamente (9 menús raíz + 16 submenús)';
 END $$;
 
 COMMIT;

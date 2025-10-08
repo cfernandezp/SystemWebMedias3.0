@@ -29,6 +29,14 @@ import 'package:system_web_medias/features/catalogos/data/datasources/materiales
 import 'package:system_web_medias/features/catalogos/data/repositories/materiales_repository_impl.dart';
 import 'package:system_web_medias/features/catalogos/domain/repositories/materiales_repository.dart';
 import 'package:system_web_medias/features/catalogos/presentation/bloc/materiales_bloc.dart';
+import 'package:system_web_medias/features/catalogos/data/datasources/tipos_remote_datasource.dart';
+import 'package:system_web_medias/features/catalogos/data/repositories/tipos_repository_impl.dart';
+import 'package:system_web_medias/features/catalogos/domain/repositories/tipos_repository.dart';
+import 'package:system_web_medias/features/catalogos/presentation/bloc/tipos_bloc.dart';
+import 'package:system_web_medias/features/catalogos/data/datasources/sistemas_talla_remote_datasource.dart';
+import 'package:system_web_medias/features/catalogos/data/repositories/sistemas_talla_repository_impl.dart';
+import 'package:system_web_medias/features/catalogos/domain/repositories/sistemas_talla_repository.dart';
+import 'package:system_web_medias/features/catalogos/presentation/bloc/sistemas_talla/sistemas_talla_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -177,6 +185,52 @@ Future<void> init() async {
   // Data Sources - Materiales
   sl.registerLazySingleton<MaterialesRemoteDataSource>(
     () => MaterialesRemoteDataSourceImpl(
+      sl(),
+    ),
+  );
+
+  // ========== E002-HU-003: TIPOS ==========
+
+  // Bloc - Tipos
+  sl.registerFactory(
+    () => TiposBloc(
+      repository: sl(),
+    ),
+  );
+
+  // Repository - Tipos
+  sl.registerLazySingleton<TiposRepository>(
+    () => TiposRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data Sources - Tipos
+  sl.registerLazySingleton<TiposRemoteDataSource>(
+    () => TiposRemoteDataSourceImpl(
+      sl(),
+    ),
+  );
+
+  // ========== E002-HU-004: SISTEMAS DE TALLAS ==========
+
+  // Bloc - Sistemas de Tallas
+  sl.registerFactory(
+    () => SistemasTallaBloc(
+      repository: sl(),
+    ),
+  );
+
+  // Repository - Sistemas de Tallas
+  sl.registerLazySingleton<SistemasTallaRepository>(
+    () => SistemasTallaRepositoryImpl(
+      sl(),
+    ),
+  );
+
+  // Data Sources - Sistemas de Tallas
+  sl.registerLazySingleton<SistemasTallaRemoteDataSource>(
+    () => SistemasTallaRemoteDataSourceImpl(
       sl(),
     ),
   );

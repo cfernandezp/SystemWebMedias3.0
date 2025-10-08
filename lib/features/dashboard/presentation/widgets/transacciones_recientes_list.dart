@@ -184,17 +184,17 @@ class TransaccionesRecientesList extends StatelessWidget {
 
     switch (estado) {
       case TransaccionEstado.completada:
-        backgroundColor = const Color(0xFF4CAF50).withOpacity(0.1);
+        backgroundColor = const Color.fromRGBO(76, 175, 80, 0.1);
         textColor = const Color(0xFF4CAF50);
         label = 'Completada';
         break;
       case TransaccionEstado.pendiente:
-        backgroundColor = const Color(0xFFFF9800).withOpacity(0.1);
+        backgroundColor = const Color.fromRGBO(255, 152, 0, 0.1);
         textColor = const Color(0xFFFF9800);
         label = 'Pendiente';
         break;
       case TransaccionEstado.cancelada:
-        backgroundColor = const Color(0xFFF44336).withOpacity(0.1);
+        backgroundColor = const Color.fromRGBO(244, 67, 54, 0.1);
         textColor = const Color(0xFFF44336);
         label = 'Cancelada';
         break;

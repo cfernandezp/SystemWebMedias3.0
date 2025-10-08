@@ -216,7 +216,74 @@ COMMENT ON COLUMN tipos.imagen_url IS 'URL de imagen de referencia del tipo (opc
 COMMENT ON COLUMN tipos.activo IS 'Estado del tipo (soft delete) - RN-003-005, RN-003-006';
 
 -- ============================================
--- PASO 8: Habilitar RLS
+-- PASO 8: Tabla sistemas_talla (E002-HU-004)
+-- ============================================
+
+CREATE TABLE sistemas_talla (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre TEXT NOT NULL,
+    tipo_sistema tipo_sistema_enum NOT NULL,
+    descripcion TEXT,
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Constraints
+    CONSTRAINT sistemas_talla_nombre_unique UNIQUE (nombre),
+    CONSTRAINT sistemas_talla_nombre_length CHECK (LENGTH(nombre) <= 50 AND LENGTH(nombre) > 0),
+    CONSTRAINT sistemas_talla_descripcion_length CHECK (descripcion IS NULL OR LENGTH(descripcion) <= 200)
+);
+
+CREATE INDEX idx_sistemas_talla_nombre ON sistemas_talla(LOWER(nombre));
+CREATE INDEX idx_sistemas_talla_tipo_sistema ON sistemas_talla(tipo_sistema);
+CREATE INDEX idx_sistemas_talla_activo ON sistemas_talla(activo);
+CREATE INDEX idx_sistemas_talla_created_at ON sistemas_talla(created_at DESC);
+
+CREATE TRIGGER update_sistemas_talla_updated_at
+    BEFORE UPDATE ON sistemas_talla
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+COMMENT ON TABLE sistemas_talla IS 'E002-HU-004: Sistemas de tallas configurables (UNICA, NUMERO, LETRA, RANGO)';
+COMMENT ON COLUMN sistemas_talla.nombre IS 'Nombre del sistema (único, case-insensitive, max 50 caracteres) - RN-004-02';
+COMMENT ON COLUMN sistemas_talla.tipo_sistema IS 'Tipo de sistema (inmutable) - RN-004-01, RN-004-07';
+COMMENT ON COLUMN sistemas_talla.descripcion IS 'Descripción opcional del sistema (max 200 caracteres)';
+COMMENT ON COLUMN sistemas_talla.activo IS 'Estado del sistema (soft delete) - RN-004-09, RN-004-13';
+
+-- ============================================
+-- PASO 9: Tabla valores_talla (E002-HU-004)
+-- ============================================
+
+CREATE TABLE valores_talla (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sistema_talla_id UUID NOT NULL REFERENCES sistemas_talla(id) ON DELETE CASCADE,
+    valor TEXT NOT NULL,
+    orden INTEGER NOT NULL DEFAULT 0,
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Constraints
+    CONSTRAINT valores_talla_valor_length CHECK (LENGTH(valor) > 0 AND LENGTH(valor) <= 20),
+    CONSTRAINT valores_talla_unique_per_system UNIQUE (sistema_talla_id, valor)
+);
+
+CREATE INDEX idx_valores_talla_sistema ON valores_talla(sistema_talla_id);
+CREATE INDEX idx_valores_talla_orden ON valores_talla(sistema_talla_id, orden);
+CREATE INDEX idx_valores_talla_activo ON valores_talla(activo);
+
+CREATE TRIGGER update_valores_talla_updated_at
+    BEFORE UPDATE ON valores_talla
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+COMMENT ON TABLE valores_talla IS 'E002-HU-004: Valores individuales de cada sistema de talla';
+COMMENT ON COLUMN valores_talla.valor IS 'Valor de la talla (ej: "35-36", "M", "34-38", "ÚNICA") - RN-004-03, RN-004-04';
+COMMENT ON COLUMN valores_talla.orden IS 'Orden de visualización (ascendente) - RN-004-10';
+COMMENT ON COLUMN valores_talla.activo IS 'Estado del valor (soft delete) - RN-004-08, RN-004-13';
+
+-- ============================================
+-- PASO 10: Habilitar RLS
 -- ============================================
 
 ALTER TABLE marcas ENABLE ROW LEVEL SECURITY;
@@ -226,6 +293,8 @@ ALTER TABLE clientes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_tiendas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE materiales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tipos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sistemas_talla ENABLE ROW LEVEL SECURITY;
+ALTER TABLE valores_talla ENABLE ROW LEVEL SECURITY;
 
 -- Policies básicas
 CREATE POLICY authenticated_view_marcas ON marcas
@@ -288,9 +357,18 @@ CREATE POLICY authenticated_view_tipos ON tipos
     TO authenticated
     USING (true);
 
+CREATE POLICY authenticated_view_sistemas_talla ON sistemas_talla
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
+CREATE POLICY authenticated_view_valores_talla ON valores_talla
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
 -- Políticas de INSERT/UPDATE/DELETE NO son necesarias porque las funciones
--- SECURITY DEFINER (crear_material, actualizar_material, toggle_material_activo,
--- create_tipo, update_tipo, toggle_tipo_activo) manejan la autorización internamente
+-- SECURITY DEFINER manejan la autorización internamente
 
 COMMIT;
 

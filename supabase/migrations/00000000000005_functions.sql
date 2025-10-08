@@ -1786,7 +1786,27 @@ DECLARE
     v_error_hint TEXT;
     v_tipo_id UUID;
     v_result JSON;
+    v_user_rol TEXT;
+    v_user_id UUID;
 BEGIN
+    -- Obtener user_id del contexto de autenticación
+    v_user_id := auth.uid();
+
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'not_authenticated';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- RN-003-011: Verificar que usuario es ADMIN
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR v_user_rol != 'ADMIN' THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN pueden gestionar tipos';
+    END IF;
+
     -- Validaciones CA-003
     IF p_nombre IS NULL OR TRIM(p_nombre) = '' THEN
         v_error_hint := 'missing_nombre';
@@ -1846,7 +1866,7 @@ BEGIN
     -- RN-003-012: Registrar auditoría
     INSERT INTO audit_logs (user_id, event_type, metadata)
     VALUES (
-        auth.uid(),
+        v_user_id,
         'tipo_created',
         json_build_object(
             'tipo_id', v_tipo_id,
@@ -1894,14 +1914,35 @@ CREATE OR REPLACE FUNCTION update_tipo(
     p_id UUID,
     p_nombre TEXT,
     p_descripcion TEXT,
-    p_activo BOOLEAN
+    p_imagen_url TEXT DEFAULT NULL,
+    p_activo BOOLEAN DEFAULT NULL
 )
 RETURNS JSON AS $$
 DECLARE
     v_error_hint TEXT;
     v_result JSON;
     v_old_data RECORD;
+    v_user_rol TEXT;
+    v_user_id UUID;
 BEGIN
+    -- Obtener user_id del contexto de autenticación
+    v_user_id := auth.uid();
+
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'not_authenticated';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- RN-003-011: Verificar que usuario es ADMIN
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR v_user_rol != 'ADMIN' THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN pueden gestionar tipos';
+    END IF;
+
     -- Verificar que tipo existe
     SELECT * INTO v_old_data FROM tipos WHERE id = p_id;
 
@@ -1944,13 +1985,14 @@ BEGIN
     SET
         nombre = TRIM(p_nombre),
         descripcion = CASE WHEN p_descripcion IS NULL OR TRIM(p_descripcion) = '' THEN NULL ELSE TRIM(p_descripcion) END,
+        imagen_url = CASE WHEN p_imagen_url = '' THEN NULL ELSE COALESCE(p_imagen_url, imagen_url) END,
         activo = COALESCE(p_activo, activo)
     WHERE id = p_id;
 
     -- RN-003-012: Registrar auditoría
     INSERT INTO audit_logs (user_id, event_type, metadata)
     VALUES (
-        auth.uid(),
+        v_user_id,
         'tipo_updated',
         json_build_object(
             'tipo_id', p_id,
@@ -2005,7 +2047,27 @@ DECLARE
     v_result JSON;
     v_new_state BOOLEAN;
     v_productos_count INTEGER;
+    v_user_rol TEXT;
+    v_user_id UUID;
 BEGIN
+    -- Obtener user_id del contexto de autenticación
+    v_user_id := auth.uid();
+
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'not_authenticated';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- RN-003-011: Verificar que usuario es ADMIN
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR v_user_rol != 'ADMIN' THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN pueden gestionar tipos';
+    END IF;
+
     -- Verificar que tipo existe
     IF NOT EXISTS (SELECT 1 FROM tipos WHERE id = p_id) THEN
         v_error_hint := 'tipo_not_found';
@@ -2027,7 +2089,7 @@ BEGIN
     -- RN-003-012: Registrar auditoría
     INSERT INTO audit_logs (user_id, event_type, metadata)
     VALUES (
-        auth.uid(),
+        v_user_id,
         CASE WHEN v_new_state THEN 'tipo_activated' ELSE 'tipo_deactivated' END,
         json_build_object(
             'tipo_id', p_id,
@@ -2187,6 +2249,1095 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION get_tipos_activos IS 'E002-HU-003: Lista solo tipos activos para formularios de productos (RN-003-006)';
+
+-- ============================================
+-- SECCIÓN 7: FUNCIONES AUXILIARES SISTEMAS TALLA (E002-HU-004)
+-- ============================================
+
+-- E002-HU-004: Función auxiliar - Valida formato de rangos
+CREATE OR REPLACE FUNCTION validate_range_format(
+    p_valor TEXT,
+    OUT is_valid BOOLEAN,
+    OUT error_hint TEXT
+)
+AS $$
+DECLARE
+    v_parts TEXT[];
+    v_num1 INTEGER;
+    v_num2 INTEGER;
+BEGIN
+    is_valid := false;
+    error_hint := NULL;
+
+    -- Validar formato "N-M"
+    IF p_valor !~ '^\d+-\d+$' THEN
+        error_hint := 'invalid_range_format';
+        RETURN;
+    END IF;
+
+    -- Separar partes
+    v_parts := string_to_array(p_valor, '-');
+
+    IF array_length(v_parts, 1) != 2 THEN
+        error_hint := 'invalid_range_format';
+        RETURN;
+    END IF;
+
+    -- Convertir a enteros
+    BEGIN
+        v_num1 := v_parts[1]::INTEGER;
+        v_num2 := v_parts[2]::INTEGER;
+    EXCEPTION
+        WHEN OTHERS THEN
+            error_hint := 'invalid_range_format';
+            RETURN;
+    END;
+
+    -- RN-004-03: Validar primer número < segundo número
+    IF v_num1 >= v_num2 THEN
+        error_hint := 'invalid_range_order';
+        RETURN;
+    END IF;
+
+    is_valid := true;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+COMMENT ON FUNCTION validate_range_format IS 'E002-HU-004: Valida formato de rango "N-M" - RN-004-03, RN-004-12';
+
+-- E002-HU-004: Función auxiliar - Verifica superposición de rangos
+CREATE OR REPLACE FUNCTION validate_range_overlap(
+    p_sistema_id UUID,
+    p_valor_new TEXT,
+    p_valor_id_exclude UUID DEFAULT NULL,
+    OUT has_overlap BOOLEAN,
+    OUT error_hint TEXT
+)
+AS $$
+DECLARE
+    v_existing RECORD;
+    v_new_parts TEXT[];
+    v_new_start INTEGER;
+    v_new_end INTEGER;
+    v_existing_parts TEXT[];
+    v_existing_start INTEGER;
+    v_existing_end INTEGER;
+BEGIN
+    has_overlap := false;
+    error_hint := NULL;
+
+    -- Parsear rango nuevo
+    v_new_parts := string_to_array(p_valor_new, '-');
+    IF array_length(v_new_parts, 1) = 2 THEN
+        v_new_start := v_new_parts[1]::INTEGER;
+        v_new_end := v_new_parts[2]::INTEGER;
+    ELSE
+        -- Si no es rango, no hay superposición
+        RETURN;
+    END IF;
+
+    -- Verificar contra todos los valores existentes del sistema
+    FOR v_existing IN
+        SELECT valor
+        FROM valores_talla
+        WHERE sistema_talla_id = p_sistema_id
+          AND (p_valor_id_exclude IS NULL OR id != p_valor_id_exclude)
+          AND activo = true
+    LOOP
+        -- Parsear rango existente
+        v_existing_parts := string_to_array(v_existing.valor, '-');
+
+        IF array_length(v_existing_parts, 1) = 2 THEN
+            v_existing_start := v_existing_parts[1]::INTEGER;
+            v_existing_end := v_existing_parts[2]::INTEGER;
+
+            -- RN-004-05: Verificar superposición
+            -- Superposición si: (new_start <= existing_end) AND (new_end >= existing_start)
+            IF (v_new_start <= v_existing_end) AND (v_new_end >= v_existing_start) THEN
+                has_overlap := true;
+                error_hint := 'overlapping_ranges';
+                RETURN;
+            END IF;
+        END IF;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+COMMENT ON FUNCTION validate_range_overlap IS 'E002-HU-004: Verifica superposición de rangos numéricos - RN-004-05';
+
+-- ============================================
+-- SECCIÓN 8: FUNCIONES RPC SISTEMAS TALLA (E002-HU-004)
+-- ============================================
+
+-- E002-HU-004: get_sistemas_talla - Lista sistemas con filtros
+CREATE OR REPLACE FUNCTION get_sistemas_talla(
+    p_search TEXT DEFAULT NULL,
+    p_tipo_filter tipo_sistema_enum DEFAULT NULL,
+    p_activo_filter BOOLEAN DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+    v_sistemas JSON;
+    v_search_term TEXT;
+BEGIN
+    v_search_term := LOWER(TRIM(COALESCE(p_search, '')));
+
+    -- CA-001, CA-012: Listar con búsqueda multicriterio y filtros
+    SELECT json_agg(
+        json_build_object(
+            'id', s.id,
+            'nombre', s.nombre,
+            'tipo_sistema', s.tipo_sistema,
+            'descripcion', s.descripcion,
+            'activo', s.activo,
+            'valores_count', (
+                SELECT COUNT(*)
+                FROM valores_talla v
+                WHERE v.sistema_talla_id = s.id
+                  AND v.activo = true
+            ),
+            'created_at', s.created_at,
+            'updated_at', s.updated_at
+        ) ORDER BY s.nombre ASC
+    ) INTO v_sistemas
+    FROM sistemas_talla s
+    WHERE
+        (p_tipo_filter IS NULL OR s.tipo_sistema = p_tipo_filter)
+        AND (p_activo_filter IS NULL OR s.activo = p_activo_filter)
+        AND (
+            v_search_term = ''
+            OR LOWER(s.nombre) LIKE '%' || v_search_term || '%'
+        );
+
+    IF v_sistemas IS NULL THEN
+        v_sistemas := '[]'::json;
+    END IF;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', v_sistemas,
+        'message', 'Sistemas de tallas obtenidos'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', 'unknown'
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION get_sistemas_talla IS 'E002-HU-004: Lista sistemas de tallas con filtros (CA-001, CA-012, RN-004-11)';
+
+-- E002-HU-004: create_sistema_talla - Crea nuevo sistema con valores
+CREATE OR REPLACE FUNCTION create_sistema_talla(
+    p_nombre TEXT,
+    p_tipo_sistema tipo_sistema_enum,
+    p_descripcion TEXT DEFAULT NULL,
+    p_valores TEXT[] DEFAULT NULL,
+    p_activo BOOLEAN DEFAULT true
+)
+RETURNS JSON AS $$
+DECLARE
+    v_error_hint TEXT;
+    v_sistema_id UUID;
+    v_valor TEXT;
+    v_orden INTEGER := 0;
+    v_result JSON;
+    v_valores_result JSON;
+    v_user_rol TEXT;
+    v_user_id UUID;
+    v_validation RECORD;
+BEGIN
+    -- Obtener user_id del contexto de autenticación
+    v_user_id := auth.uid();
+
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'not_authenticated';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- RN-004-11: Verificar que usuario es ADMIN
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR v_user_rol != 'ADMIN' THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN pueden gestionar sistemas de tallas';
+    END IF;
+
+    -- CA-004: Validaciones
+    IF p_nombre IS NULL OR TRIM(p_nombre) = '' THEN
+        v_error_hint := 'missing_nombre';
+        RAISE EXCEPTION 'Nombre es requerido';
+    END IF;
+
+    IF p_tipo_sistema IS NULL THEN
+        v_error_hint := 'missing_tipo_sistema';
+        RAISE EXCEPTION 'Tipo de sistema es requerido';
+    END IF;
+
+    -- RN-004-02: Validar nombre único (case-insensitive)
+    IF LENGTH(TRIM(p_nombre)) > 50 THEN
+        v_error_hint := 'invalid_nombre_length';
+        RAISE EXCEPTION 'Nombre máximo 50 caracteres';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM sistemas_talla WHERE LOWER(nombre) = LOWER(TRIM(p_nombre))) THEN
+        v_error_hint := 'duplicate_nombre';
+        RAISE EXCEPTION 'Ya existe un sistema con este nombre';
+    END IF;
+
+    -- Validar descripción
+    IF p_descripcion IS NOT NULL AND LENGTH(p_descripcion) > 200 THEN
+        v_error_hint := 'invalid_descripcion_length';
+        RAISE EXCEPTION 'Descripción máximo 200 caracteres';
+    END IF;
+
+    -- RN-004-06: Validar mínimo 1 valor (excepto UNICA que se genera automáticamente)
+    IF p_tipo_sistema != 'UNICA' THEN
+        IF p_valores IS NULL OR array_length(p_valores, 1) = 0 THEN
+            v_error_hint := 'missing_valores';
+            RAISE EXCEPTION 'Debe configurar al menos un valor para este tipo';
+        END IF;
+    END IF;
+
+    -- Insertar sistema
+    INSERT INTO sistemas_talla (nombre, tipo_sistema, descripcion, activo)
+    VALUES (
+        TRIM(p_nombre),
+        p_tipo_sistema,
+        CASE WHEN p_descripcion IS NULL OR TRIM(p_descripcion) = '' THEN NULL ELSE TRIM(p_descripcion) END,
+        COALESCE(p_activo, true)
+    )
+    RETURNING id INTO v_sistema_id;
+
+    -- Insertar valores
+    IF p_tipo_sistema = 'UNICA' THEN
+        -- Tipo UNICA: agregar valor automático
+        INSERT INTO valores_talla (sistema_talla_id, valor, orden, activo)
+        VALUES (v_sistema_id, 'ÚNICA', 1, true);
+    ELSE
+        -- Otros tipos: procesar valores recibidos
+        FOREACH v_valor IN ARRAY p_valores
+        LOOP
+            v_orden := v_orden + 1;
+
+            -- RN-004-04: Validar no duplicados (case-insensitive para LETRA)
+            IF p_tipo_sistema = 'LETRA' THEN
+                IF EXISTS (
+                    SELECT 1
+                    FROM valores_talla
+                    WHERE sistema_talla_id = v_sistema_id
+                      AND LOWER(valor) = LOWER(TRIM(v_valor))
+                ) THEN
+                    v_error_hint := 'duplicate_valor';
+                    RAISE EXCEPTION 'No se permiten valores duplicados: %', v_valor;
+                END IF;
+            ELSE
+                IF EXISTS (
+                    SELECT 1
+                    FROM valores_talla
+                    WHERE sistema_talla_id = v_sistema_id
+                      AND valor = TRIM(v_valor)
+                ) THEN
+                    v_error_hint := 'duplicate_valor';
+                    RAISE EXCEPTION 'No se permiten valores duplicados: %', v_valor;
+                END IF;
+            END IF;
+
+            -- RN-004-03, RN-004-12: Validar formato según tipo
+            IF p_tipo_sistema IN ('NUMERO', 'RANGO') THEN
+                -- Validar formato rango
+                SELECT * INTO v_validation FROM validate_range_format(TRIM(v_valor));
+
+                IF NOT v_validation.is_valid THEN
+                    v_error_hint := v_validation.error_hint;
+                    RAISE EXCEPTION 'Formato inválido para valor: %', v_valor;
+                END IF;
+
+                -- RN-004-05: Validar no superposición
+                SELECT * INTO v_validation FROM validate_range_overlap(v_sistema_id, TRIM(v_valor));
+
+                IF v_validation.has_overlap THEN
+                    v_error_hint := v_validation.error_hint;
+                    RAISE EXCEPTION 'Los rangos no pueden superponerse: %', v_valor;
+                END IF;
+            END IF;
+
+            -- Insertar valor
+            INSERT INTO valores_talla (sistema_talla_id, valor, orden, activo)
+            VALUES (v_sistema_id, TRIM(v_valor), v_orden, true);
+        END LOOP;
+    END IF;
+
+    -- Registrar auditoría
+    INSERT INTO audit_logs (user_id, event_type, metadata)
+    VALUES (
+        v_user_id,
+        'sistema_talla_created',
+        json_build_object(
+            'sistema_id', v_sistema_id,
+            'nombre', TRIM(p_nombre),
+            'tipo_sistema', p_tipo_sistema
+        )::jsonb
+    );
+
+    -- Obtener sistema completo con valores
+    SELECT json_agg(
+        json_build_object(
+            'id', id,
+            'valor', valor,
+            'orden', orden,
+            'activo', activo
+        ) ORDER BY orden
+    ) INTO v_valores_result
+    FROM valores_talla
+    WHERE sistema_talla_id = v_sistema_id;
+
+    SELECT json_build_object(
+        'id', id,
+        'nombre', nombre,
+        'tipo_sistema', tipo_sistema,
+        'descripcion', descripcion,
+        'activo', activo,
+        'created_at', created_at,
+        'updated_at', updated_at
+    ) INTO v_result
+    FROM sistemas_talla
+    WHERE id = v_sistema_id;
+
+    v_result := jsonb_set(v_result::jsonb, '{valores}', COALESCE(v_valores_result, '[]'::json)::jsonb);
+
+    RETURN json_build_object(
+        'success', true,
+        'data', v_result,
+        'message', 'Sistema de tallas creado'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION create_sistema_talla IS 'E002-HU-004: Crea sistema de tallas con valores (CA-002 a CA-005, RN-004-01 a RN-004-06)';
+
+-- E002-HU-004: update_sistema_talla - Actualiza sistema (nombre, descripción, activo)
+CREATE OR REPLACE FUNCTION update_sistema_talla(
+    p_id UUID,
+    p_nombre TEXT,
+    p_descripcion TEXT DEFAULT NULL,
+    p_activo BOOLEAN DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+    v_error_hint TEXT;
+    v_result JSON;
+    v_old_data RECORD;
+    v_user_rol TEXT;
+    v_user_id UUID;
+BEGIN
+    -- Obtener user_id del contexto de autenticación
+    v_user_id := auth.uid();
+
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'not_authenticated';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- RN-004-11: Verificar que usuario es ADMIN
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR v_user_rol != 'ADMIN' THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN pueden gestionar sistemas de tallas';
+    END IF;
+
+    -- Verificar que sistema existe
+    SELECT * INTO v_old_data FROM sistemas_talla WHERE id = p_id;
+
+    IF NOT FOUND THEN
+        v_error_hint := 'sistema_not_found';
+        RAISE EXCEPTION 'El sistema no existe';
+    END IF;
+
+    -- CA-006: Validaciones
+    IF p_nombre IS NULL OR TRIM(p_nombre) = '' THEN
+        v_error_hint := 'missing_nombre';
+        RAISE EXCEPTION 'Nombre es requerido';
+    END IF;
+
+    -- RN-004-02: Validar nombre único (excepto sí mismo)
+    IF LENGTH(TRIM(p_nombre)) > 50 THEN
+        v_error_hint := 'invalid_nombre_length';
+        RAISE EXCEPTION 'Nombre máximo 50 caracteres';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM sistemas_talla
+        WHERE LOWER(nombre) = LOWER(TRIM(p_nombre))
+        AND id != p_id
+    ) THEN
+        v_error_hint := 'duplicate_nombre';
+        RAISE EXCEPTION 'Ya existe un sistema con este nombre';
+    END IF;
+
+    -- Validar descripción
+    IF p_descripcion IS NOT NULL AND LENGTH(p_descripcion) > 200 THEN
+        v_error_hint := 'invalid_descripcion_length';
+        RAISE EXCEPTION 'Descripción máximo 200 caracteres';
+    END IF;
+
+    -- RN-004-07: tipo_sistema NO se puede modificar (no está en parámetros)
+
+    -- CA-009: Actualizar sistema
+    UPDATE sistemas_talla
+    SET
+        nombre = TRIM(p_nombre),
+        descripcion = CASE WHEN p_descripcion IS NULL OR TRIM(p_descripcion) = '' THEN NULL ELSE TRIM(p_descripcion) END,
+        activo = COALESCE(p_activo, activo)
+    WHERE id = p_id;
+
+    -- Registrar auditoría
+    INSERT INTO audit_logs (user_id, event_type, metadata)
+    VALUES (
+        v_user_id,
+        'sistema_talla_updated',
+        json_build_object(
+            'sistema_id', p_id,
+            'old_nombre', v_old_data.nombre,
+            'new_nombre', TRIM(p_nombre)
+        )::jsonb
+    );
+
+    SELECT json_build_object(
+        'id', id,
+        'nombre', nombre,
+        'tipo_sistema', tipo_sistema,
+        'descripcion', descripcion,
+        'activo', activo,
+        'created_at', created_at,
+        'updated_at', updated_at
+    ) INTO v_result
+    FROM sistemas_talla
+    WHERE id = p_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', v_result,
+        'message', 'Sistema actualizado exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION update_sistema_talla IS 'E002-HU-004: Actualiza sistema (CA-006, CA-009, RN-004-07 tipo inmutable)';
+
+-- E002-HU-004: get_sistema_talla_valores - Obtiene sistema con todos sus valores
+CREATE OR REPLACE FUNCTION get_sistema_talla_valores(
+    p_sistema_id UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    v_sistema RECORD;
+    v_valores JSON;
+    v_error_hint TEXT;
+BEGIN
+    -- CA-010: Obtener sistema completo
+    SELECT * INTO v_sistema
+    FROM sistemas_talla
+    WHERE id = p_sistema_id;
+
+    IF NOT FOUND THEN
+        v_error_hint := 'sistema_not_found';
+        RAISE EXCEPTION 'El sistema no existe';
+    END IF;
+
+    -- Obtener valores con estadísticas
+    SELECT json_agg(
+        json_build_object(
+            'id', v.id,
+            'valor', v.valor,
+            'orden', v.orden,
+            'activo', v.activo,
+            'productos_count', 0  -- Placeholder: cuando exista relación con productos
+        ) ORDER BY v.orden
+    ) INTO v_valores
+    FROM valores_talla v
+    WHERE v.sistema_talla_id = p_sistema_id;
+
+    IF v_valores IS NULL THEN
+        v_valores := '[]'::json;
+    END IF;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'sistema', json_build_object(
+                'id', v_sistema.id,
+                'nombre', v_sistema.nombre,
+                'tipo_sistema', v_sistema.tipo_sistema,
+                'descripcion', v_sistema.descripcion,
+                'activo', v_sistema.activo,
+                'created_at', v_sistema.created_at,
+                'updated_at', v_sistema.updated_at
+            ),
+            'valores', v_valores
+        ),
+        'message', 'Sistema con valores obtenido'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION get_sistema_talla_valores IS 'E002-HU-004: Obtiene sistema con todos sus valores (CA-010)';
+
+-- E002-HU-004: add_valor_talla - Agrega nuevo valor a sistema
+CREATE OR REPLACE FUNCTION add_valor_talla(
+    p_sistema_id UUID,
+    p_valor TEXT,
+    p_orden INTEGER DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+    v_error_hint TEXT;
+    v_sistema RECORD;
+    v_orden_final INTEGER;
+    v_valor_id UUID;
+    v_result JSON;
+    v_user_rol TEXT;
+    v_user_id UUID;
+    v_validation RECORD;
+BEGIN
+    -- Obtener user_id del contexto de autenticación
+    v_user_id := auth.uid();
+
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'not_authenticated';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- RN-004-11: Verificar que usuario es ADMIN
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR v_user_rol != 'ADMIN' THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN pueden gestionar sistemas de tallas';
+    END IF;
+
+    -- Verificar que sistema existe
+    SELECT * INTO v_sistema FROM sistemas_talla WHERE id = p_sistema_id;
+
+    IF NOT FOUND THEN
+        v_error_hint := 'sistema_not_found';
+        RAISE EXCEPTION 'El sistema no existe';
+    END IF;
+
+    -- CA-007: Validaciones
+    IF p_valor IS NULL OR TRIM(p_valor) = '' THEN
+        v_error_hint := 'missing_valor';
+        RAISE EXCEPTION 'Valor es requerido';
+    END IF;
+
+    IF LENGTH(TRIM(p_valor)) > 20 THEN
+        v_error_hint := 'invalid_valor_length';
+        RAISE EXCEPTION 'Valor máximo 20 caracteres';
+    END IF;
+
+    -- RN-004-04: Validar no duplicados
+    IF v_sistema.tipo_sistema = 'LETRA' THEN
+        IF EXISTS (
+            SELECT 1
+            FROM valores_talla
+            WHERE sistema_talla_id = p_sistema_id
+              AND LOWER(valor) = LOWER(TRIM(p_valor))
+        ) THEN
+            v_error_hint := 'duplicate_valor';
+            RAISE EXCEPTION 'Ya existe este valor en el sistema';
+        END IF;
+    ELSE
+        IF EXISTS (
+            SELECT 1
+            FROM valores_talla
+            WHERE sistema_talla_id = p_sistema_id
+              AND valor = TRIM(p_valor)
+        ) THEN
+            v_error_hint := 'duplicate_valor';
+            RAISE EXCEPTION 'Ya existe este valor en el sistema';
+        END IF;
+    END IF;
+
+    -- RN-004-03, RN-004-12: Validar formato según tipo
+    IF v_sistema.tipo_sistema IN ('NUMERO', 'RANGO') THEN
+        -- Validar formato rango
+        SELECT * INTO v_validation FROM validate_range_format(TRIM(p_valor));
+
+        IF NOT v_validation.is_valid THEN
+            v_error_hint := v_validation.error_hint;
+            RAISE EXCEPTION 'Formato inválido para valor de tipo %', v_sistema.tipo_sistema;
+        END IF;
+
+        -- RN-004-05: Validar no superposición
+        SELECT * INTO v_validation FROM validate_range_overlap(p_sistema_id, TRIM(p_valor));
+
+        IF v_validation.has_overlap THEN
+            v_error_hint := v_validation.error_hint;
+            RAISE EXCEPTION 'Los rangos no pueden superponerse';
+        END IF;
+    END IF;
+
+    -- Calcular orden final
+    IF p_orden IS NULL THEN
+        SELECT COALESCE(MAX(orden), 0) + 1
+        INTO v_orden_final
+        FROM valores_talla
+        WHERE sistema_talla_id = p_sistema_id;
+    ELSE
+        v_orden_final := p_orden;
+    END IF;
+
+    -- Insertar valor
+    INSERT INTO valores_talla (sistema_talla_id, valor, orden, activo)
+    VALUES (p_sistema_id, TRIM(p_valor), v_orden_final, true)
+    RETURNING id INTO v_valor_id;
+
+    -- Registrar auditoría
+    INSERT INTO audit_logs (user_id, event_type, metadata)
+    VALUES (
+        v_user_id,
+        'valor_talla_added',
+        json_build_object(
+            'sistema_id', p_sistema_id,
+            'valor_id', v_valor_id,
+            'valor', TRIM(p_valor)
+        )::jsonb
+    );
+
+    SELECT json_build_object(
+        'id', id,
+        'valor', valor,
+        'orden', orden,
+        'activo', activo
+    ) INTO v_result
+    FROM valores_talla
+    WHERE id = v_valor_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', v_result,
+        'message', 'Valor agregado exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION add_valor_talla IS 'E002-HU-004: Agrega nuevo valor a sistema (CA-007, RN-004-03 a RN-004-05)';
+
+-- E002-HU-004: update_valor_talla - Actualiza valor existente
+CREATE OR REPLACE FUNCTION update_valor_talla(
+    p_valor_id UUID,
+    p_valor TEXT,
+    p_orden INTEGER DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+    v_error_hint TEXT;
+    v_old_data RECORD;
+    v_sistema RECORD;
+    v_result JSON;
+    v_user_rol TEXT;
+    v_user_id UUID;
+    v_validation RECORD;
+BEGIN
+    -- Obtener user_id del contexto de autenticación
+    v_user_id := auth.uid();
+
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'not_authenticated';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- RN-004-11: Verificar que usuario es ADMIN
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR v_user_rol != 'ADMIN' THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN pueden gestionar sistemas de tallas';
+    END IF;
+
+    -- Verificar que valor existe
+    SELECT v.*, s.tipo_sistema
+    INTO v_old_data
+    FROM valores_talla v
+    JOIN sistemas_talla s ON v.sistema_talla_id = s.id
+    WHERE v.id = p_valor_id;
+
+    IF NOT FOUND THEN
+        v_error_hint := 'valor_not_found';
+        RAISE EXCEPTION 'El valor no existe';
+    END IF;
+
+    -- CA-007: Validaciones
+    IF p_valor IS NULL OR TRIM(p_valor) = '' THEN
+        v_error_hint := 'missing_valor';
+        RAISE EXCEPTION 'Valor es requerido';
+    END IF;
+
+    IF LENGTH(TRIM(p_valor)) > 20 THEN
+        v_error_hint := 'invalid_valor_length';
+        RAISE EXCEPTION 'Valor máximo 20 caracteres';
+    END IF;
+
+    -- RN-004-04: Validar no duplicados (excepto sí mismo)
+    IF v_old_data.tipo_sistema = 'LETRA' THEN
+        IF EXISTS (
+            SELECT 1
+            FROM valores_talla
+            WHERE sistema_talla_id = v_old_data.sistema_talla_id
+              AND LOWER(valor) = LOWER(TRIM(p_valor))
+              AND id != p_valor_id
+        ) THEN
+            v_error_hint := 'duplicate_valor';
+            RAISE EXCEPTION 'Ya existe este valor en el sistema';
+        END IF;
+    ELSE
+        IF EXISTS (
+            SELECT 1
+            FROM valores_talla
+            WHERE sistema_talla_id = v_old_data.sistema_talla_id
+              AND valor = TRIM(p_valor)
+              AND id != p_valor_id
+        ) THEN
+            v_error_hint := 'duplicate_valor';
+            RAISE EXCEPTION 'Ya existe este valor en el sistema';
+        END IF;
+    END IF;
+
+    -- RN-004-03, RN-004-12: Validar formato según tipo
+    IF v_old_data.tipo_sistema IN ('NUMERO', 'RANGO') THEN
+        -- Validar formato rango
+        SELECT * INTO v_validation FROM validate_range_format(TRIM(p_valor));
+
+        IF NOT v_validation.is_valid THEN
+            v_error_hint := v_validation.error_hint;
+            RAISE EXCEPTION 'Formato inválido para valor de tipo %', v_old_data.tipo_sistema;
+        END IF;
+
+        -- RN-004-05: Validar no superposición (excluyendo este valor)
+        SELECT * INTO v_validation FROM validate_range_overlap(v_old_data.sistema_talla_id, TRIM(p_valor), p_valor_id);
+
+        IF v_validation.has_overlap THEN
+            v_error_hint := v_validation.error_hint;
+            RAISE EXCEPTION 'Los rangos no pueden superponerse';
+        END IF;
+    END IF;
+
+    -- Actualizar valor
+    UPDATE valores_talla
+    SET
+        valor = TRIM(p_valor),
+        orden = COALESCE(p_orden, orden)
+    WHERE id = p_valor_id;
+
+    -- Registrar auditoría
+    INSERT INTO audit_logs (user_id, event_type, metadata)
+    VALUES (
+        v_user_id,
+        'valor_talla_updated',
+        json_build_object(
+            'valor_id', p_valor_id,
+            'old_valor', v_old_data.valor,
+            'new_valor', TRIM(p_valor)
+        )::jsonb
+    );
+
+    SELECT json_build_object(
+        'id', id,
+        'valor', valor,
+        'orden', orden,
+        'activo', activo
+    ) INTO v_result
+    FROM valores_talla
+    WHERE id = p_valor_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', v_result,
+        'message', 'Valor actualizado exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION update_valor_talla IS 'E002-HU-004: Actualiza valor existente (CA-007, RN-004-03 a RN-004-05)';
+
+-- E002-HU-004: delete_valor_talla - Elimina (soft delete) valor
+CREATE OR REPLACE FUNCTION delete_valor_talla(
+    p_valor_id UUID,
+    p_force BOOLEAN DEFAULT false
+)
+RETURNS JSON AS $$
+DECLARE
+    v_error_hint TEXT;
+    v_valor RECORD;
+    v_valores_count INTEGER;
+    v_productos_count INTEGER;
+    v_user_rol TEXT;
+    v_user_id UUID;
+BEGIN
+    -- Obtener user_id del contexto de autenticación
+    v_user_id := auth.uid();
+
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'not_authenticated';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- RN-004-11: Verificar que usuario es ADMIN
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR v_user_rol != 'ADMIN' THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN pueden gestionar sistemas de tallas';
+    END IF;
+
+    -- Verificar que valor existe
+    SELECT * INTO v_valor FROM valores_talla WHERE id = p_valor_id;
+
+    IF NOT FOUND THEN
+        v_error_hint := 'valor_not_found';
+        RAISE EXCEPTION 'El valor no existe';
+    END IF;
+
+    -- RN-004-06: Validar que no es el último valor del sistema
+    SELECT COUNT(*)
+    INTO v_valores_count
+    FROM valores_talla
+    WHERE sistema_talla_id = v_valor.sistema_talla_id
+      AND activo = true;
+
+    IF v_valores_count <= 1 THEN
+        v_error_hint := 'last_value_cannot_delete';
+        RAISE EXCEPTION 'No se puede eliminar el último valor del sistema';
+    END IF;
+
+    -- RN-004-08: Verificar si hay productos usando este valor
+    v_productos_count := 0;  -- Placeholder: cuando exista relación con productos
+    -- SELECT COUNT(*) INTO v_productos_count FROM productos WHERE valor_talla_id = p_valor_id;
+
+    IF v_productos_count > 0 THEN
+        IF NOT p_force THEN
+            v_error_hint := 'valor_used_by_products';
+            RETURN json_build_object(
+                'success', false,
+                'error', json_build_object(
+                    'code', '45000',
+                    'message', 'Este valor está siendo usado en ' || v_productos_count || ' productos',
+                    'hint', v_error_hint,
+                    'productos_count', v_productos_count
+                )
+            );
+        END IF;
+    END IF;
+
+    -- CA-008: Soft delete (desactivar)
+    UPDATE valores_talla
+    SET activo = false
+    WHERE id = p_valor_id;
+
+    -- Registrar auditoría
+    INSERT INTO audit_logs (user_id, event_type, metadata)
+    VALUES (
+        v_user_id,
+        'valor_talla_deleted',
+        json_build_object(
+            'valor_id', p_valor_id,
+            'valor', v_valor.valor,
+            'force', p_force,
+            'productos_count', v_productos_count
+        )::jsonb
+    );
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_valor_id,
+            'productos_affected', v_productos_count,
+            'message', 'Valor eliminado exitosamente'
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION delete_valor_talla IS 'E002-HU-004: Elimina (soft delete) valor (CA-008, RN-004-06, RN-004-08, RN-004-13)';
+
+-- E002-HU-004: toggle_sistema_talla_activo - Activa/desactiva sistema
+CREATE OR REPLACE FUNCTION toggle_sistema_talla_activo(
+    p_id UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    v_error_hint TEXT;
+    v_result JSON;
+    v_new_state BOOLEAN;
+    v_productos_count INTEGER;
+    v_user_rol TEXT;
+    v_user_id UUID;
+BEGIN
+    -- Obtener user_id del contexto de autenticación
+    v_user_id := auth.uid();
+
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'not_authenticated';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- RN-004-11: Verificar que usuario es ADMIN
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR v_user_rol != 'ADMIN' THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN pueden gestionar sistemas de tallas';
+    END IF;
+
+    -- Verificar que sistema existe
+    IF NOT EXISTS (SELECT 1 FROM sistemas_talla WHERE id = p_id) THEN
+        v_error_hint := 'sistema_not_found';
+        RAISE EXCEPTION 'El sistema no existe';
+    END IF;
+
+    -- Obtener contador de productos asociados (placeholder)
+    v_productos_count := 0;
+    -- SELECT COUNT(*) INTO v_productos_count FROM productos WHERE sistema_talla_id = p_id;
+
+    -- CA-011, RN-004-09: Toggle estado (soft delete)
+    UPDATE sistemas_talla
+    SET activo = NOT activo
+    WHERE id = p_id
+    RETURNING activo INTO v_new_state;
+
+    -- Registrar auditoría
+    INSERT INTO audit_logs (user_id, event_type, metadata)
+    VALUES (
+        v_user_id,
+        CASE WHEN v_new_state THEN 'sistema_talla_activated' ELSE 'sistema_talla_deactivated' END,
+        json_build_object(
+            'sistema_id', p_id,
+            'productos_count', v_productos_count
+        )::jsonb
+    );
+
+    SELECT json_build_object(
+        'id', id,
+        'nombre', nombre,
+        'tipo_sistema', tipo_sistema,
+        'descripcion', descripcion,
+        'activo', activo,
+        'created_at', created_at,
+        'updated_at', updated_at,
+        'productos_count', v_productos_count
+    ) INTO v_result
+    FROM sistemas_talla
+    WHERE id = p_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', v_result,
+        'message', CASE
+            WHEN v_new_state THEN 'Sistema reactivado exitosamente'
+            ELSE 'Sistema desactivado exitosamente. Los productos existentes no se verán afectados'
+        END
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION toggle_sistema_talla_activo IS 'E002-HU-004: Activa/desactiva sistema (CA-011, RN-004-09, RN-004-13)';
 
 COMMIT;
 

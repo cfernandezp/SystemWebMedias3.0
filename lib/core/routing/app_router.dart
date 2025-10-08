@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import 'package:system_web_medias/core/injection/injection_container.dart';
 import 'package:system_web_medias/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:system_web_medias/features/auth/presentation/bloc/auth_event.dart';
@@ -16,6 +17,10 @@ import 'package:system_web_medias/features/catalogos/presentation/pages/marcas_l
 import 'package:system_web_medias/features/catalogos/presentation/pages/marca_form_page.dart';
 import 'package:system_web_medias/features/catalogos/presentation/pages/materiales_list_page.dart';
 import 'package:system_web_medias/features/catalogos/presentation/pages/material_form_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/tipos_list_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/tipo_form_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/sistemas_talla_list_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/sistema_talla_form_page.dart';
 import 'package:system_web_medias/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_bloc.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_event.dart';
@@ -95,6 +100,31 @@ class AppRouter {
         builder: (context, state) {
           final token = state.pathParameters['token']!;
           return ResetPasswordPage(token: token);
+        },
+      ),
+      // RUTA TEMPORAL: Force logout
+      GoRoute(
+        path: '/force-logout',
+        name: 'force-logout',
+        builder: (context, state) {
+          // Limpiar sesión de Supabase
+          sl<SupabaseClient>().auth.signOut();
+          // Redirigir a login
+          Future.delayed(Duration.zero, () {
+            context.go('/login');
+          });
+          return const Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Cerrando sesión...'),
+                ],
+              ),
+            ),
+          );
         },
       ),
 
@@ -178,6 +208,34 @@ class AppRouter {
             builder: (context, state) {
               final arguments = state.extra as Map<String, dynamic>?;
               return MaterialFormPage(arguments: arguments);
+            },
+          ),
+          // HU-003: Gestionar Catálogo de Tipos
+          GoRoute(
+            path: '/tipos',
+            name: 'tipos',
+            builder: (context, state) => const TiposListPage(),
+          ),
+          GoRoute(
+            path: '/tipos-form',
+            name: 'tipos-form',
+            builder: (context, state) {
+              final arguments = state.extra as Map<String, dynamic>?;
+              return TipoFormPage(arguments: arguments);
+            },
+          ),
+          // HU-004: Gestionar Sistemas de Tallas
+          GoRoute(
+            path: '/sistemas-talla',
+            name: 'sistemas-talla',
+            builder: (context, state) => const SistemasTallaListPage(),
+          ),
+          GoRoute(
+            path: '/sistemas-talla-form',
+            name: 'sistemas-talla-form',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              return SistemaTallaFormPage(sistema: extra?['sistema']);
             },
           ),
         ],
@@ -297,6 +355,10 @@ class _MainLayoutWrapper extends StatelessWidget {
       '/marca-form': ('Formulario de Marca', null),
       '/materiales': ('Catálogo de Materiales', '/materiales'),
       '/materiales-form': ('Formulario de Material', null),
+      '/tipos': ('Catálogo de Tipos', '/tipos'),
+      '/tipos-form': ('Formulario de Tipo', null),
+      '/sistemas-talla': ('Sistemas de Tallas', '/sistemas-talla'),
+      '/sistemas-talla-form': ('Formulario de Sistema de Tallas', null),
     };
 
     final current = routeMap[route];
