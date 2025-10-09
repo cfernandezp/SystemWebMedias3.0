@@ -21,6 +21,9 @@ import 'package:system_web_medias/features/catalogos/presentation/pages/tipos_li
 import 'package:system_web_medias/features/catalogos/presentation/pages/tipo_form_page.dart';
 import 'package:system_web_medias/features/catalogos/presentation/pages/sistemas_talla_list_page.dart';
 import 'package:system_web_medias/features/catalogos/presentation/pages/sistema_talla_form_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/colores_list_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/color_form_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/colores_estadisticas_page.dart';
 import 'package:system_web_medias/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_bloc.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_event.dart';
@@ -238,6 +241,25 @@ class AppRouter {
               return SistemaTallaFormPage(sistema: extra?['sistema']);
             },
           ),
+          // HU-005: Gestionar Catálogo de Colores
+          GoRoute(
+            path: '/colores',
+            name: 'colores',
+            builder: (context, state) => const ColoresListPage(),
+          ),
+          GoRoute(
+            path: '/color-form',
+            name: 'color-form',
+            builder: (context, state) {
+              final arguments = state.extra as Map<String, dynamic>?;
+              return ColorFormPage(arguments: arguments);
+            },
+          ),
+          GoRoute(
+            path: '/colores-estadisticas',
+            name: 'colores-estadisticas',
+            builder: (context, state) => const ColoresEstadisticasPage(),
+          ),
         ],
       ),
     ],
@@ -359,6 +381,9 @@ class _MainLayoutWrapper extends StatelessWidget {
       '/tipos-form': ('Formulario de Tipo', null),
       '/sistemas-talla': ('Sistemas de Tallas', '/sistemas-talla'),
       '/sistemas-talla-form': ('Formulario de Sistema de Tallas', null),
+      '/colores': ('Catálogo de Colores', '/colores'),
+      '/color-form': ('Formulario de Color', null),
+      '/colores-estadisticas': ('Estadísticas de Colores', null),
     };
 
     final current = routeMap[route];

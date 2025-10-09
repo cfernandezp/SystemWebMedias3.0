@@ -48,9 +48,9 @@ class _SistemasTallaListPageContentState extends State<_SistemasTallaListPageCon
     ));
   }
 
-  void _handleEdit(BuildContext context, SistemaTallaModel sistema) {
+  Future<void> _handleEdit(BuildContext context, SistemaTallaModel sistema) async {
     final bloc = context.read<SistemasTallaBloc>();
-    context.push(
+    await context.push(
       '/sistemas-talla-form',
       extra: {
         'mode': 'edit',
@@ -58,16 +58,18 @@ class _SistemasTallaListPageContentState extends State<_SistemasTallaListPageCon
           'id': sistema.id,
           'nombre': sistema.nombre,
           'tipo_sistema': sistema.tipoSistema,
-          'descripcion': sistema.descripcion,
+          'descripcion': sistema.descripcion ?? '',
           'activo': sistema.activo,
         },
         'bloc': bloc,
       },
     );
+    // Recargar lista al regresar
+    _loadData();
   }
 
-  void _showValoresModal(BuildContext context, SistemaTallaModel sistema) {
-    showDialog(
+  Future<void> _showValoresModal(BuildContext context, SistemaTallaModel sistema) async {
+    await showDialog(
       context: context,
       builder: (dialogContext) => BlocProvider.value(
         value: context.read<SistemasTallaBloc>(),
@@ -85,9 +87,9 @@ class _SistemasTallaListPageContentState extends State<_SistemasTallaListPageCon
                   'activo': v.activo,
                   'productosCount': v.productosCount,
                 }).toList(),
-                onEdit: () {
+                onEdit: () async {
                   Navigator.of(dialogContext).pop();
-                  _handleEdit(context, state.sistema);
+                  await _handleEdit(context, state.sistema);
                 },
               );
             }
@@ -103,6 +105,8 @@ class _SistemasTallaListPageContentState extends State<_SistemasTallaListPageCon
         ),
       ),
     );
+    // Recargar lista al cerrar el modal
+    _loadData();
   }
 
   @override
@@ -144,10 +148,13 @@ class _SistemasTallaListPageContentState extends State<_SistemasTallaListPageCon
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          context.pushNamed('sistemas-talla-form');
+        onPressed: () async {
+          await context.pushNamed('sistemas-talla-form');
+          // Recargar lista al regresar
+          _loadData();
         },
         backgroundColor: theme.colorScheme.primary,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Agregar Sistema'),
       ),

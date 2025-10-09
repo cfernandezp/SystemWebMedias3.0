@@ -144,6 +144,33 @@ BEGIN
 END $$;
 
 -- ============================================
+-- PASO 2D: Colores de ejemplo (E002-HU-005)
+-- ============================================
+
+INSERT INTO colores (nombre, codigo_hex, activo) VALUES
+    ('Rojo', '#FF0000', true),
+    ('Negro', '#000000', true),
+    ('Blanco', '#FFFFFF', true),
+    ('Azul', '#0000FF', true),
+    ('Verde', '#008000', true),
+    ('Amarillo', '#FFFF00', true),
+    ('Naranja', '#FFA500', true),
+    ('Rosa', '#FFC0CB', true),
+    ('Gris', '#808080', true),
+    ('Morado', '#800080', true),
+    ('Café', '#8B4513', true),
+    ('Azul Marino', '#000080', true),
+    ('Verde Oscuro', '#006400', true),
+    ('Rojo Oscuro', '#8B0000', true),
+    ('Gris Oscuro', '#404040', true),
+    ('Beige', '#F5F5DC', true),
+    ('Turquesa', '#40E0D0', true),
+    ('Fucsia', '#FF00FF', true),
+    ('Verde Lima', '#00FF00', true),
+    ('Azul Cielo', '#87CEEB', true)
+ON CONFLICT (nombre) DO NOTHING;
+
+-- ============================================
 -- PASO 3: Tiendas de ejemplo
 -- ============================================
 
@@ -420,6 +447,7 @@ DECLARE
     v_tipos INTEGER;
     v_sistemas_talla INTEGER;
     v_valores_talla INTEGER;
+    v_colores INTEGER;
     v_tiendas INTEGER;
     v_productos INTEGER;
     v_clientes INTEGER;
@@ -431,6 +459,7 @@ BEGIN
     SELECT COUNT(*) INTO v_tipos FROM tipos;
     SELECT COUNT(*) INTO v_sistemas_talla FROM sistemas_talla;
     SELECT COUNT(*) INTO v_valores_talla FROM valores_talla;
+    SELECT COUNT(*) INTO v_colores FROM colores;
     SELECT COUNT(*) INTO v_tiendas FROM tiendas;
     SELECT COUNT(*) INTO v_productos FROM productos;
     SELECT COUNT(*) INTO v_clientes FROM clientes;
@@ -445,6 +474,7 @@ BEGIN
     RAISE NOTICE 'Tipos: %', v_tipos;
     RAISE NOTICE 'Sistemas de tallas: %', v_sistemas_talla;
     RAISE NOTICE 'Valores de tallas: %', v_valores_talla;
+    RAISE NOTICE 'Colores: %', v_colores;
     RAISE NOTICE 'Tiendas: %', v_tiendas;
     RAISE NOTICE 'Productos: %', v_productos;
     RAISE NOTICE 'Clientes: %', v_clientes;

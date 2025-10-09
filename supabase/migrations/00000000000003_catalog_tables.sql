@@ -283,7 +283,115 @@ COMMENT ON COLUMN valores_talla.orden IS 'Orden de visualización (ascendente) -
 COMMENT ON COLUMN valores_talla.activo IS 'Estado del valor (soft delete) - RN-004-08, RN-004-13';
 
 -- ============================================
--- PASO 10: Habilitar RLS
+-- PASO 10: Tabla colores (E002-HU-005)
+-- ============================================
+
+CREATE TABLE colores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre VARCHAR(50) NOT NULL,
+    codigo_hex VARCHAR(7) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Constraints
+    CONSTRAINT colores_nombre_unique UNIQUE (nombre),
+    CONSTRAINT colores_nombre_length CHECK (LENGTH(nombre) >= 3 AND LENGTH(nombre) <= 30),
+    CONSTRAINT colores_nombre_no_special_chars CHECK (nombre ~ '^[A-Za-zÀ-ÿ\s\-]+$'),
+    CONSTRAINT colores_hex_format CHECK (codigo_hex ~ '^#[0-9A-Fa-f]{6}$')
+);
+
+CREATE INDEX idx_colores_nombre ON colores(LOWER(nombre));
+CREATE INDEX idx_colores_activo ON colores(activo);
+CREATE INDEX idx_colores_created_at ON colores(created_at DESC);
+
+CREATE TRIGGER update_colores_updated_at
+    BEFORE UPDATE ON colores
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+COMMENT ON TABLE colores IS 'E002-HU-005: Catálogo de colores base con código hexadecimal';
+COMMENT ON COLUMN colores.nombre IS 'Nombre del color (único case-insensitive, 3-30 caracteres, solo letras/espacios/guiones) - RN-025';
+COMMENT ON COLUMN colores.codigo_hex IS 'Código hexadecimal formato #RRGGBB - RN-026';
+COMMENT ON COLUMN colores.activo IS 'Estado del color (soft delete) - RN-029, RN-032';
+
+-- ============================================
+-- PASO 11: Tabla producto_colores (E002-HU-005)
+-- ============================================
+
+CREATE TABLE producto_colores (
+    producto_id UUID PRIMARY KEY REFERENCES productos(id) ON DELETE CASCADE,
+    colores TEXT[] NOT NULL,
+    cantidad_colores INTEGER GENERATED ALWAYS AS (array_length(colores, 1)) STORED,
+    tipo_color VARCHAR(20) GENERATED ALWAYS AS (
+        CASE
+            WHEN array_length(colores, 1) = 1 THEN 'Unicolor'
+            WHEN array_length(colores, 1) = 2 THEN 'Bicolor'
+            WHEN array_length(colores, 1) = 3 THEN 'Tricolor'
+            ELSE 'Multicolor'
+        END
+    ) STORED,
+    descripcion_visual TEXT,
+
+    -- Constraints
+    CONSTRAINT producto_colores_min_colores CHECK (array_length(colores, 1) >= 1),
+    CONSTRAINT producto_colores_max_colores CHECK (array_length(colores, 1) <= 5),
+    CONSTRAINT producto_colores_descripcion_length CHECK (
+        descripcion_visual IS NULL OR
+        LENGTH(descripcion_visual) <= 100
+    ),
+    CONSTRAINT producto_colores_descripcion_only_multicolor CHECK (
+        (array_length(colores, 1) >= 2 AND descripcion_visual IS NOT NULL) OR
+        (array_length(colores, 1) = 1 AND descripcion_visual IS NULL) OR
+        descripcion_visual IS NULL
+    )
+);
+
+CREATE INDEX idx_producto_colores_tipo ON producto_colores(tipo_color);
+CREATE INDEX idx_producto_colores_cantidad ON producto_colores(cantidad_colores);
+CREATE INDEX idx_producto_colores_gin ON producto_colores USING GIN(colores);
+
+COMMENT ON TABLE producto_colores IS 'E002-HU-005: Combinaciones de colores asignadas a productos';
+COMMENT ON COLUMN producto_colores.colores IS 'Array de nombres de colores en orden (orden significativo) - RN-027, RN-028';
+COMMENT ON COLUMN producto_colores.cantidad_colores IS 'Cantidad de colores (columna generada automática) - RN-031';
+COMMENT ON COLUMN producto_colores.tipo_color IS 'Clasificación automática (Unicolor/Bicolor/Tricolor/Multicolor) - RN-031';
+COMMENT ON COLUMN producto_colores.descripcion_visual IS 'Descripción opcional solo para multicolor (max 100 caracteres) - RN-034';
+
+-- ============================================
+-- PASO 12: Trigger para validar colores existentes
+-- ============================================
+
+CREATE OR REPLACE FUNCTION validate_producto_colores()
+RETURNS TRIGGER AS $$
+DECLARE
+    color_name TEXT;
+    color_exists BOOLEAN;
+BEGIN
+    -- Validar que cada color exista en tabla colores
+    FOREACH color_name IN ARRAY NEW.colores
+    LOOP
+        SELECT EXISTS(
+            SELECT 1 FROM colores WHERE LOWER(nombre) = LOWER(color_name)
+        ) INTO color_exists;
+
+        IF NOT color_exists THEN
+            RAISE EXCEPTION 'El color "%" no existe en el catálogo', color_name;
+        END IF;
+    END LOOP;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER validate_producto_colores_trigger
+    BEFORE INSERT OR UPDATE ON producto_colores
+    FOR EACH ROW
+    EXECUTE FUNCTION validate_producto_colores();
+
+COMMENT ON FUNCTION validate_producto_colores IS 'E002-HU-005: Valida que todos los colores en producto_colores existan en tabla colores';
+
+-- ============================================
+-- PASO 13: Habilitar RLS
 -- ============================================
 
 ALTER TABLE marcas ENABLE ROW LEVEL SECURITY;
@@ -295,6 +403,8 @@ ALTER TABLE materiales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tipos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sistemas_talla ENABLE ROW LEVEL SECURITY;
 ALTER TABLE valores_talla ENABLE ROW LEVEL SECURITY;
+ALTER TABLE colores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE producto_colores ENABLE ROW LEVEL SECURITY;
 
 -- Policies básicas
 CREATE POLICY authenticated_view_marcas ON marcas
@@ -367,6 +477,16 @@ CREATE POLICY authenticated_view_valores_talla ON valores_talla
     TO authenticated
     USING (true);
 
+CREATE POLICY authenticated_view_colores ON colores
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
+CREATE POLICY authenticated_view_producto_colores ON producto_colores
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
 -- Políticas de INSERT/UPDATE/DELETE NO son necesarias porque las funciones
 -- SECURITY DEFINER manejan la autorización internamente
 
@@ -379,6 +499,10 @@ COMMIT;
 --   - marcas (códigos 3 letras)
 --   - materiales (códigos 3 letras, descripción opcional)
 --   - tipos (códigos 3 letras, descripción e imagen opcional)
+--   - sistemas_talla (UNICA, NUMERO, LETRA, RANGO)
+--   - valores_talla (valores por sistema)
+--   - colores (catálogo base con código hex)
+--   - producto_colores (combinaciones con clasificación automática)
 --   - tiendas (sucursales)
 --   - productos (medias)
 --   - clientes

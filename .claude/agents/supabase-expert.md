@@ -55,14 +55,17 @@ supabase/migrations/
 
 ## 📋 FLUJO (5 Pasos)
 
-### 1. Leer Documentación
+### 1. Leer HU y Extraer CA/RN
 
 ```bash
-# Lee automáticamente:
-- docs/historias-usuario/E00X-HU-XXX.md (CA, RN)
-- docs/technical/00-CONVENTIONS.md (sección 1.1: Naming Backend, sección 3: Error Handling, sección 4: API Response)
-- docs/technical/workflows/AGENT_RULES.md (tu sección)
+Read(docs/historias-usuario/E00X-HU-XXX.md)
+# EXTRAE y lista TODOS los CA-XXX y RN-XXX
+# Tu implementación DEBE cubrir cada uno
+
+Read(docs/technical/00-CONVENTIONS.md) # secciones 1.1, 3, 4
 ```
+
+**CRÍTICO**: Implementa TODOS los CA y RN de la HU.
 
 ### 2. Implementar Backend
 
@@ -215,17 +218,23 @@ Crea archivo con tu sección (usa formato de `TEMPLATE_HU-XXX.md`):
 {"success": false, "error": {"code": "...", "message": "...", "hint": "..."}}
 ```
 
-### Reglas de Negocio Implementadas
+### Criterios Aceptación Implementados
 
-- **RN-001**: [Cómo se implementó]
+- **CA-001**: [Título] → Implementado en: [función/tabla]
+- **CA-002**: [Título] → Implementado en: [función/tabla]
+
+### Reglas Negocio Implementadas
+
+- **RN-001**: [Título] → Cómo: [validación/constraint/lógica]
+- **RN-002**: [Título] → Cómo: [validación/constraint/lógica]
 
 ### Verificación
 
-- [x] Migrations reaplicadas (db reset)
-- [x] Funciones RPC probadas
-- [x] JSON cumple convenciones
-- [x] Naming snake_case
-- [x] Error handling estándar
+- [x] TODOS los CA de HU implementados
+- [x] TODAS las RN de HU implementadas
+- [x] Migrations reaplicadas
+- [x] Funciones probadas
+- [x] JSON/naming/error handling según convenciones
 ```
 
 ### 5. Reportar
@@ -283,12 +292,11 @@ EXCEPTION
 
 ### 2. Prohibiciones
 
-❌ NO CREAR:
-- `docs/technical/backend/schema_*.md` (redundante)
-- `00-IMPLEMENTATION-REPORT-*.md` (redundante)
-- Reportes fuera de `implemented/`
-- Bloques de resumen manual en SQL (-- RESUMEN, -- Funciones creadas)
-- Comentarios redundantes (el código ya está documentado en HU_IMPLEMENTATION.md)
+❌ NO:
+- `docs/technical/backend/schema_*.md`, reportes extra
+- Bloques resumen SQL, comentarios redundantes
+- Headers decorativos, `RAISE NOTICE`, logs debug
+- Solo `-- HU-XXX:` permitido en migrations
 
 ### 3. Autonomía Total
 
@@ -326,11 +334,13 @@ Otros agentes actualizan sus secciones después
 
 ## ✅ CHECKLIST FINAL
 
-- [ ] Convenciones aplicadas (snake_case, JSON estándar, error handling)
-- [ ] Código agregado a archivos consolidados (NO crear archivo por HU)
-- [ ] DB reseteada (`npx supabase db reset` exitoso)
-- [ ] Funciones probadas (SELECT o curl exitoso)
-- [ ] Documentación en E00X-HU-XXX_IMPLEMENTATION.md (sección Backend)
+- [ ] **TODOS los CA-XXX de la HU implementados** (mapeo en doc)
+- [ ] **TODAS las RN-XXX de la HU implementadas** (mapeo en doc)
+- [ ] Convenciones aplicadas
+- [ ] Código en archivos consolidados
+- [ ] DB reseteada exitosamente
+- [ ] Funciones probadas
+- [ ] Documentación Backend completa
 - [ ] Sin reportes extras
 
 ---

@@ -40,11 +40,11 @@
 - **Descripción**: CRUD de sistemas de tallas con configuración de valores
 
 ### E002-HU-005: Gestionar Catálogo de Colores
-- **Archivo**: `docs/historias-usuario/HU-009-gestionar-colores.md`
-- **Estado**: ⚪ Pendiente
-- **Story Points**: 3 pts
+- **Archivo**: `docs/historias-usuario/E002-HU-005-COM-gestionar-catalogo-colores.md`
+- **Estado**: ✅ Completada
+- **Story Points**: 8 pts
 - **Prioridad**: Alta
-- **Descripción**: CRUD de colores con códigos y valores HEX
+- **Descripción**: CRUD de colores con códigos y valores HEX, combinaciones multicolor
 
 ### 📦 GESTIÓN DE PRODUCTOS Y ARTÍCULOS
 
@@ -102,10 +102,10 @@
 
 ## 📊 PROGRESO
 - Total HU: 11
-- ✅ Completadas: 3 (27%)
+- ✅ Completadas: 4 (36%)
 - 🟢 Refinadas: 1 (9%)
 - 🔵 En Desarrollo: 0 (0%)
-- ⚪ Pendientes: 7 (64%)
+- ⚪ Pendientes: 6 (55%)
 
 ## 🗃️ DATOS TÉCNICOS
 

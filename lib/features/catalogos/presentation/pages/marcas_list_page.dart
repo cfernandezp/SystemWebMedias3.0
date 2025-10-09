@@ -7,7 +7,6 @@ import 'package:system_web_medias/features/catalogos/presentation/bloc/marcas_ev
 import 'package:system_web_medias/features/catalogos/presentation/bloc/marcas_state.dart';
 import 'package:system_web_medias/features/catalogos/presentation/widgets/marca_card.dart';
 import 'package:system_web_medias/features/catalogos/presentation/widgets/marca_search_bar.dart';
-import 'package:system_web_medias/shared/design_system/atoms/corporate_button.dart';
 
 /// Página principal de listado de marcas (CA-001)
 ///
@@ -68,7 +67,11 @@ class _MarcasListView extends StatelessWidget {
                     },
                   ),
 
-                if (state is MarcasLoaded || state is MarcaOperationSuccess) const SizedBox(height: 24),
+                if (state is MarcasLoaded || state is MarcaOperationSuccess) const SizedBox(height: 16),
+
+                // Counter
+                _buildCounter(context, state),
+                const SizedBox(height: 24),
 
                 // Lista de marcas
                 Expanded(
@@ -79,6 +82,16 @@ class _MarcasListView extends StatelessWidget {
           );
         },
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          final bloc = context.read<MarcasBloc>();
+          context.push('/marca-form', extra: {'bloc': bloc});
+        },
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Agregar Marca'),
+      ),
     );
   }
 
@@ -88,17 +101,6 @@ class _MarcasListView extends StatelessWidget {
     bool isDesktop,
     MarcasState state,
   ) {
-    int activasCount = 0;
-    int inactivasCount = 0;
-
-    if (state is MarcasLoaded) {
-      activasCount = state.marcasActivas;
-      inactivasCount = state.marcasInactivas;
-    } else if (state is MarcaOperationSuccess) {
-      activasCount = state.marcas.where((m) => m.activo).length;
-      inactivasCount = state.marcas.where((m) => !m.activo).length;
-    }
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -114,25 +116,73 @@ class _MarcasListView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              '$activasCount activas / $inactivasCount inactivas',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF6B7280),
-              ),
-            ),
+            _buildBreadcrumbs(context),
           ],
         ),
-        CorporateButton(
-          text: 'Agregar Nueva Marca',
-          icon: Icons.add,
-          onPressed: () {
-            // Pasar la instancia del Bloc para compartir estado
-            final bloc = context.read<MarcasBloc>();
-            context.push('/marca-form', extra: {'bloc': bloc});
-          },
+      ],
+    );
+  }
+
+  Widget _buildBreadcrumbs(BuildContext context) {
+    return Row(
+      children: [
+        InkWell(
+          onTap: () => context.go('/dashboard'),
+          child: Text(
+            'Dashboard',
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.primary,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Text('>', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+        ),
+        const Text(
+          'Catálogos',
+          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Text('>', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+        ),
+        const Text(
+          'Marcas',
+          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
         ),
       ],
+    );
+  }
+
+  Widget _buildCounter(BuildContext context, MarcasState state) {
+    int activas = 0;
+    int inactivas = 0;
+
+    if (state is MarcasLoaded) {
+      activas = state.marcasActivas;
+      inactivas = state.marcasInactivas;
+    } else if (state is MarcaOperationSuccess) {
+      activas = state.marcas.where((m) => m.activo).length;
+      inactivas = state.marcas.where((m) => !m.activo).length;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '$activas marcas activas / $inactivas inactivas',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
     );
   }
 

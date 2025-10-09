@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/injection/injection_container.dart';
 import '../../../../shared/design_system/atoms/corporate_button.dart';
 import '../../../../shared/design_system/atoms/corporate_form_field.dart';
 import '../widgets/valor_rango_input.dart';
@@ -9,6 +10,8 @@ import '../widgets/valor_talla_delete_confirm_dialog.dart';
 import '../bloc/sistemas_talla/sistemas_talla_bloc.dart';
 import '../bloc/sistemas_talla/sistemas_talla_event.dart';
 import '../bloc/sistemas_talla/sistemas_talla_state.dart';
+import '../../data/models/create_sistema_talla_request.dart';
+import '../../data/models/update_sistema_talla_request.dart';
 
 /// Página de formulario para crear/editar sistema de tallas (CA-002, CA-003, CA-006, CA-007, CA-008)
 ///
@@ -18,7 +21,7 @@ import '../bloc/sistemas_talla/sistemas_talla_state.dart';
 /// - CA-006: Editar sistema existente
 /// - CA-007: Gestión de valores en edición (agregar, modificar, eliminar)
 /// - CA-008: Validación de eliminación de valores
-class SistemaTallaFormPage extends StatefulWidget {
+class SistemaTallaFormPage extends StatelessWidget {
   final Map<String, dynamic>? sistema;
 
   const SistemaTallaFormPage({
@@ -27,10 +30,27 @@ class SistemaTallaFormPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<SistemaTallaFormPage> createState() => _SistemaTallaFormPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => sl<SistemasTallaBloc>(),
+      child: _SistemaTallaFormPageContent(sistema: sistema),
+    );
+  }
 }
 
-class _SistemaTallaFormPageState extends State<SistemaTallaFormPage> {
+class _SistemaTallaFormPageContent extends StatefulWidget {
+  final Map<String, dynamic>? sistema;
+
+  const _SistemaTallaFormPageContent({
+    Key? key,
+    this.sistema,
+  }) : super(key: key);
+
+  @override
+  State<_SistemaTallaFormPageContent> createState() => _SistemaTallaFormPageContentState();
+}
+
+class _SistemaTallaFormPageContentState extends State<_SistemaTallaFormPageContent> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _descripcionController = TextEditingController();
@@ -49,10 +69,11 @@ class _SistemaTallaFormPageState extends State<SistemaTallaFormPage> {
 
     if (widget.sistema != null) {
       _isEditMode = true;
-      _nombreController.text = widget.sistema!['nombre'] ?? '';
-      _descripcionController.text = widget.sistema!['descripcion'] ?? '';
-      _tipoSistema = widget.sistema!['tipo_sistema'] ?? 'NUMERO';
-      _activo = widget.sistema!['activo'] ?? true;
+      _nombreController.text = widget.sistema!['nombre']?.toString() ?? '';
+      final descripcion = widget.sistema!['descripcion'];
+      _descripcionController.text = descripcion != null ? descripcion.toString() : '';
+      _tipoSistema = widget.sistema!['tipo_sistema']?.toString() ?? 'NUMERO';
+      _activo = widget.sistema!['activo'] as bool? ?? true;
 
       // Cargar valores existentes en modo edición
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -314,6 +335,40 @@ class _SistemaTallaFormPageState extends State<SistemaTallaFormPage> {
           _loadExistingValores();
         }
 
+        if (state is SistemaTallaCreated) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text('Sistema creado exitosamente'),
+                ],
+              ),
+              backgroundColor: Color(0xFF4CAF50),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          context.pop();
+        }
+
+        if (state is SistemaTallaUpdated) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text('Sistema actualizado exitosamente'),
+                ],
+              ),
+              backgroundColor: Color(0xFF4CAF50),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          context.pop();
+        }
+
         if (state is SistemasTallaError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -557,7 +612,7 @@ class _SistemaTallaFormPageState extends State<SistemaTallaFormPage> {
           }),
           const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: _addValorField,
+            onPressed: _isLoading ? null : _addValorField,
             icon: const Icon(Icons.add),
             label: Text(_isEditMode ? 'Agregar Rango Nuevo' : 'Agregar Rango'),
             style: OutlinedButton.styleFrom(
@@ -603,7 +658,7 @@ class _SistemaTallaFormPageState extends State<SistemaTallaFormPage> {
           }),
           const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: _addValorField,
+            onPressed: _isLoading ? null : _addValorField,
             icon: const Icon(Icons.add),
             label: Text(_isEditMode ? 'Agregar Talla Nueva' : 'Agregar Talla'),
             style: OutlinedButton.styleFrom(
@@ -616,26 +671,90 @@ class _SistemaTallaFormPageState extends State<SistemaTallaFormPage> {
   }
 
   void _handleSubmit() {
-    if (_formKey.currentState?.validate() ?? false) {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    // Validar valores para tipos no-UNICA
+    if (_tipoSistema != 'UNICA' && _valoresControllers.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              Text(_isEditMode
-                  ? 'Sistema actualizado exitosamente'
-                  : 'Sistema creado exitosamente'),
+              Icon(Icons.error, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Debe agregar al menos un valor al sistema'),
             ],
           ),
-          backgroundColor: const Color(0xFF4CAF50),
+          backgroundColor: Color(0xFFF44336),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
         ),
       );
-      context.pop();
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Preparar valores solo en modo creación
+    List<String>? valores;
+    if (!_isEditMode && _tipoSistema != 'UNICA') {
+      valores = _valoresControllers
+          .map((c) => c.text.trim())
+          .where((v) => v.isNotEmpty)
+          .toList();
+
+      if (valores.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Los valores no pueden estar vacíos'),
+              ],
+            ),
+            backgroundColor: Color(0xFFF44336),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+    }
+
+    if (_isEditMode) {
+      // Modo edición: solo actualizar sistema (valores se gestionan por separado)
+      context.read<SistemasTallaBloc>().add(
+            UpdateSistemaTallaEvent(
+              UpdateSistemaTallaRequest(
+                id: widget.sistema!['id'],
+                nombre: _nombreController.text.trim(),
+                descripcion: _descripcionController.text.trim().isEmpty
+                    ? null
+                    : _descripcionController.text.trim(),
+                activo: _activo,
+              ),
+            ),
+          );
+    } else {
+      // Modo creación: crear sistema con valores
+      context.read<SistemasTallaBloc>().add(
+            CreateSistemaTallaEvent(
+              CreateSistemaTallaRequest(
+                nombre: _nombreController.text.trim(),
+                tipoSistema: _tipoSistema,
+                descripcion: _descripcionController.text.trim().isEmpty
+                    ? null
+                    : _descripcionController.text.trim(),
+                valores: valores ?? [],
+                activo: _activo,
+              ),
+            ),
+          );
     }
   }
 }

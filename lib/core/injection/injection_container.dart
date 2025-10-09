@@ -37,6 +37,16 @@ import 'package:system_web_medias/features/catalogos/data/datasources/sistemas_t
 import 'package:system_web_medias/features/catalogos/data/repositories/sistemas_talla_repository_impl.dart';
 import 'package:system_web_medias/features/catalogos/domain/repositories/sistemas_talla_repository.dart';
 import 'package:system_web_medias/features/catalogos/presentation/bloc/sistemas_talla/sistemas_talla_bloc.dart';
+import 'package:system_web_medias/features/catalogos/data/datasources/colores_remote_datasource.dart';
+import 'package:system_web_medias/features/catalogos/data/repositories/colores_repository_impl.dart';
+import 'package:system_web_medias/features/catalogos/domain/repositories/colores_repository.dart';
+import 'package:system_web_medias/features/catalogos/domain/usecases/get_colores_list.dart';
+import 'package:system_web_medias/features/catalogos/domain/usecases/create_color.dart';
+import 'package:system_web_medias/features/catalogos/domain/usecases/update_color.dart';
+import 'package:system_web_medias/features/catalogos/domain/usecases/delete_color.dart';
+import 'package:system_web_medias/features/catalogos/domain/usecases/get_productos_by_color.dart';
+import 'package:system_web_medias/features/catalogos/domain/usecases/get_colores_estadisticas.dart';
+import 'package:system_web_medias/features/catalogos/presentation/bloc/colores_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -232,6 +242,42 @@ Future<void> init() async {
   sl.registerLazySingleton<SistemasTallaRemoteDataSource>(
     () => SistemasTallaRemoteDataSourceImpl(
       sl(),
+    ),
+  );
+
+  // ========== E002-HU-005: COLORES ==========
+
+  // Bloc - Colores
+  sl.registerFactory(
+    () => ColoresBloc(
+      getColoresList: sl(),
+      createColor: sl(),
+      updateColor: sl(),
+      deleteColor: sl(),
+      getProductosByColor: sl(),
+      getColoresEstadisticas: sl(),
+    ),
+  );
+
+  // Use Cases - Colores
+  sl.registerLazySingleton(() => GetColoresList(sl()));
+  sl.registerLazySingleton(() => CreateColor(sl()));
+  sl.registerLazySingleton(() => UpdateColor(sl()));
+  sl.registerLazySingleton(() => DeleteColor(sl()));
+  sl.registerLazySingleton(() => GetProductosByColor(sl()));
+  sl.registerLazySingleton(() => GetColoresEstadisticas(sl()));
+
+  // Repository - Colores
+  sl.registerLazySingleton<ColoresRepository>(
+    () => ColoresRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data Sources - Colores
+  sl.registerLazySingleton<ColoresRemoteDataSource>(
+    () => ColoresRemoteDataSourceImpl(
+      supabase: sl(),
     ),
   );
 }

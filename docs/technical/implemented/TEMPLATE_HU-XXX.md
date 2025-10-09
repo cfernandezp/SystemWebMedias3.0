@@ -53,17 +53,20 @@
 - **Reglas de negocio**: RN-003
 - [Similar estructura...]
 
-### Reglas de Negocio Implementadas
-- **RN-001**: [Descripción de la regla implementada]
-- **RN-002**: [Descripción de la regla implementada]
-- **RN-003**: [Descripción de la regla implementada]
+### Criterios Aceptación Implementados
+- **CA-001**: [Título CA] → Implementado en: [función/tabla/constraint]
+- **CA-002**: [Título CA] → Implementado en: [función/tabla/constraint]
+
+### Reglas Negocio Implementadas
+- **RN-001**: [Título RN] → Cómo: [validación/constraint/lógica en SQL]
+- **RN-002**: [Título RN] → Cómo: [validación/constraint/lógica en SQL]
 
 ### Verificación Backend
+- [ ] TODOS los CA de HU implementados
+- [ ] TODAS las RN de HU implementadas
 - [ ] Migrations aplicadas sin errores
-- [ ] Funciones RPC probadas manualmente
-- [ ] Retornos JSON cumplen `00-CONVENTIONS.md`
-- [ ] Naming conventions aplicadas (snake_case)
-- [ ] Error handling con patrón estándar
+- [ ] Funciones RPC probadas
+- [ ] JSON/naming/error handling según convenciones
 
 ### Notas Backend
 [Cualquier consideración especial, decisiones técnicas, etc.]
@@ -111,12 +114,17 @@ routes: {
 - **Typography**: `Theme.of(context).textTheme.titleLarge`
 - **Responsive**: Breakpoints Mobile (< 600px), Desktop (>= 600px)
 
+### Criterios Aceptación Cubiertos
+- **CA-001**: [Título CA] → UI: [página/widget que lo cubre visualmente]
+- **CA-002**: [Título CA] → UI: [página/widget que lo cubre visualmente]
+
 ### Verificación UI
+- [ ] TODOS los CA de HU cubiertos en UI
 - [ ] UI renderiza correctamente
-- [ ] Sin colores hardcoded (no `Color(0xFF...)`)
-- [ ] Routing flat aplicado (sin prefijos `/auth/`, `/admin/`)
-- [ ] Responsive funciona (mobile + desktop)
-- [ ] Estados de loading/success/error visibles
+- [ ] Sin colores hardcoded
+- [ ] Routing flat aplicado
+- [ ] Responsive funciona
+- [ ] Estados loading/error visibles
 
 ### Notas UI
 [Cualquier consideración especial, decisiones de diseño, etc.]
@@ -201,15 +209,22 @@ DataSource → Model → Repository → Bloc (State)
 Bloc (State) → UI (rebuild)
 ```
 
+### Criterios Aceptación Integrados
+- **CA-001**: [Título CA] → Integrado en: [bloc/repository/datasource específico]
+- **CA-002**: [Título CA] → Integrado en: [bloc/repository/datasource específico]
+
+### Reglas Negocio Validadas
+- **RN-001**: [Título RN] → Validado en: [datasource/repository con lógica]
+
 ### Verificación Frontend
+- [ ] TODOS los CA de HU integrados end-to-end
+- [ ] TODAS las RN de HU validadas en frontend
 - [ ] Models con mapping explícito (snake_case ↔ camelCase)
-- [ ] DataSource llama funciones RPC correctas
-- [ ] Repository implementa Either<Failure, Success>
-- [ ] Bloc maneja todos los estados correctamente
+- [ ] DataSource llama RPC correctas
+- [ ] Repository Either<Failure, Success>
+- [ ] Bloc estados correctos
 - [ ] `flutter analyze` sin errores
-- [ ] App compila sin errores
-- [ ] Flujo end-to-end funciona (UI → Backend → UI)
-- [ ] Navegación entre páginas funciona
+- [ ] Flujo end-to-end funciona
 
 ### Notas Frontend
 [Cualquier consideración especial, decisiones arquitectónicas, etc.]

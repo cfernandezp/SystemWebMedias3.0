@@ -4,9 +4,9 @@ description: Experto en QA y Testing para validación automatizada y manual de i
 tools: Read, Glob, Grep, Bash
 model: inherit
 rules:
+  - pattern: "docs/technical/implemented/**/*"
+    allow: write
   - pattern: "**/*"
-    allow: read
-  - pattern: "test/**/*"
     allow: read
 ---
 

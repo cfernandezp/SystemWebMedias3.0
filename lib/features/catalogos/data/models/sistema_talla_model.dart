@@ -43,10 +43,14 @@ class SistemaTallaModel extends Equatable {
       nombre: json['nombre'] as String,
       tipoSistema: json['tipo_sistema'] as String,              // ⭐ snake_case → camelCase
       descripcion: json['descripcion'] as String?,
-      activo: json['activo'] as bool,
+      activo: json['activo'] as bool? ?? true,
       valoresCount: json['valores_count'] as int? ?? 0,         // ⭐ snake_case → camelCase
-      createdAt: DateTime.parse(json['created_at'] as String),  // ⭐ snake_case → camelCase
-      updatedAt: DateTime.parse(json['updated_at'] as String),  // ⭐ snake_case → camelCase
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),                                      // ⭐ snake_case → camelCase
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),                                      // ⭐ snake_case → camelCase
     );
   }
 

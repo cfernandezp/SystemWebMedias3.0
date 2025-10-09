@@ -3339,6 +3339,613 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION toggle_sistema_talla_activo IS 'E002-HU-004: Activa/desactiva sistema (CA-011, RN-004-09, RN-004-13)';
 
+-- ============================================
+-- SECCIÓN 6: FUNCIONES DE COLORES (E002-HU-005)
+-- ============================================
+
+-- HU-005: listar_colores - Lista todos los colores con contador de productos
+CREATE OR REPLACE FUNCTION listar_colores()
+RETURNS JSON AS $$
+DECLARE
+    v_result JSON;
+    v_error_hint TEXT;
+BEGIN
+    -- CA-001: Retornar todos los colores ordenados por nombre con contador de productos
+    SELECT json_agg(
+        json_build_object(
+            'id', c.id,
+            'nombre', c.nombre,
+            'codigo_hex', c.codigo_hex,
+            'activo', c.activo,
+            'productos_count', COALESCE((
+                SELECT COUNT(*)
+                FROM producto_colores pc
+                WHERE c.nombre = ANY(pc.colores)
+            ), 0),
+            'created_at', c.created_at,
+            'updated_at', c.updated_at
+        ) ORDER BY LOWER(c.nombre)
+    ) INTO v_result
+    FROM colores c;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', COALESCE(v_result, '[]'::json),
+        'message', 'Colores listados exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION listar_colores IS 'E002-HU-005: Lista todos los colores con contador de productos (CA-001)';
+
+-- HU-005: crear_color - Crea nuevo color base
+CREATE OR REPLACE FUNCTION crear_color(
+    p_nombre TEXT,
+    p_codigo_hex TEXT
+)
+RETURNS JSON AS $$
+DECLARE
+    v_result JSON;
+    v_error_hint TEXT;
+    v_user_id UUID;
+    v_user_rol TEXT;
+    v_color_id UUID;
+BEGIN
+    -- Obtener usuario autenticado
+    v_user_id := auth.uid();
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- Verificar que usuario es ADMIN o GERENTE
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR (v_user_rol != 'ADMIN' AND v_user_rol != 'GERENTE') THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN o GERENTE pueden gestionar colores';
+    END IF;
+
+    -- RN-025: Validar unicidad de nombre (case-insensitive)
+    IF EXISTS (SELECT 1 FROM colores WHERE LOWER(nombre) = LOWER(TRIM(p_nombre))) THEN
+        v_error_hint := 'duplicate_name';
+        RAISE EXCEPTION 'Este color ya existe en el catálogo';
+    END IF;
+
+    -- RN-026: Validar formato hexadecimal
+    IF p_codigo_hex !~ '^#[0-9A-Fa-f]{6}$' THEN
+        v_error_hint := 'invalid_hex_format';
+        RAISE EXCEPTION 'El código hexadecimal debe tener formato #RRGGBB (ej: #FF0000)';
+    END IF;
+
+    -- RN-025: Validar longitud del nombre (3-30 caracteres)
+    IF LENGTH(TRIM(p_nombre)) < 3 OR LENGTH(TRIM(p_nombre)) > 30 THEN
+        v_error_hint := 'invalid_name_length';
+        RAISE EXCEPTION 'El nombre debe tener entre 3 y 30 caracteres';
+    END IF;
+
+    -- RN-025: Validar solo letras, espacios y guiones
+    IF TRIM(p_nombre) !~ '^[A-Za-zÀ-ÿ\s\-]+$' THEN
+        v_error_hint := 'invalid_name_chars';
+        RAISE EXCEPTION 'El nombre solo puede contener letras, espacios y guiones';
+    END IF;
+
+    -- CA-002: Crear color
+    INSERT INTO colores (nombre, codigo_hex)
+    VALUES (TRIM(p_nombre), UPPER(p_codigo_hex))
+    RETURNING id INTO v_color_id;
+
+    -- Registrar auditoría
+    INSERT INTO audit_logs (user_id, event_type, metadata)
+    VALUES (
+        v_user_id,
+        'color_created',
+        json_build_object(
+            'color_id', v_color_id,
+            'nombre', p_nombre,
+            'codigo_hex', p_codigo_hex
+        )::jsonb
+    );
+
+    -- Obtener color creado
+    SELECT json_build_object(
+        'id', id,
+        'nombre', nombre,
+        'codigo_hex', codigo_hex,
+        'activo', activo,
+        'productos_count', 0,
+        'created_at', created_at,
+        'updated_at', updated_at
+    ) INTO v_result
+    FROM colores
+    WHERE id = v_color_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', v_result,
+        'message', 'Color creado exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION crear_color IS 'E002-HU-005: Crea nuevo color base (CA-002, CA-003, RN-025, RN-026)';
+
+-- HU-005: editar_color - Edita color existente
+CREATE OR REPLACE FUNCTION editar_color(
+    p_id UUID,
+    p_nombre TEXT,
+    p_codigo_hex TEXT
+)
+RETURNS JSON AS $$
+DECLARE
+    v_result JSON;
+    v_error_hint TEXT;
+    v_user_id UUID;
+    v_user_rol TEXT;
+    v_productos_count INTEGER;
+BEGIN
+    -- Obtener usuario autenticado
+    v_user_id := auth.uid();
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- Verificar que usuario es ADMIN o GERENTE
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR (v_user_rol != 'ADMIN' AND v_user_rol != 'GERENTE') THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN o GERENTE pueden gestionar colores';
+    END IF;
+
+    -- Verificar que color existe
+    IF NOT EXISTS (SELECT 1 FROM colores WHERE id = p_id) THEN
+        v_error_hint := 'color_not_found';
+        RAISE EXCEPTION 'El color no existe';
+    END IF;
+
+    -- RN-025: Validar unicidad de nombre (excepto mismo registro)
+    IF EXISTS (
+        SELECT 1 FROM colores
+        WHERE LOWER(nombre) = LOWER(TRIM(p_nombre))
+        AND id != p_id
+    ) THEN
+        v_error_hint := 'duplicate_name';
+        RAISE EXCEPTION 'Ya existe otro color con este nombre';
+    END IF;
+
+    -- RN-026: Validar formato hexadecimal
+    IF p_codigo_hex !~ '^#[0-9A-Fa-f]{6}$' THEN
+        v_error_hint := 'invalid_hex_format';
+        RAISE EXCEPTION 'El código hexadecimal debe tener formato #RRGGBB (ej: #FF0000)';
+    END IF;
+
+    -- RN-025: Validar longitud del nombre (3-30 caracteres)
+    IF LENGTH(TRIM(p_nombre)) < 3 OR LENGTH(TRIM(p_nombre)) > 30 THEN
+        v_error_hint := 'invalid_name_length';
+        RAISE EXCEPTION 'El nombre debe tener entre 3 y 30 caracteres';
+    END IF;
+
+    -- RN-025: Validar solo letras, espacios y guiones
+    IF TRIM(p_nombre) !~ '^[A-Za-zÀ-ÿ\s\-]+$' THEN
+        v_error_hint := 'invalid_name_chars';
+        RAISE EXCEPTION 'El nombre solo puede contener letras, espacios y guiones';
+    END IF;
+
+    -- RN-030: Contar productos afectados
+    SELECT COUNT(*) INTO v_productos_count
+    FROM producto_colores pc
+    WHERE (SELECT nombre FROM colores WHERE id = p_id) = ANY(pc.colores);
+
+    -- CA-006: Actualizar color
+    UPDATE colores
+    SET nombre = TRIM(p_nombre),
+        codigo_hex = UPPER(p_codigo_hex)
+    WHERE id = p_id;
+
+    -- Registrar auditoría
+    INSERT INTO audit_logs (user_id, event_type, metadata)
+    VALUES (
+        v_user_id,
+        'color_updated',
+        json_build_object(
+            'color_id', p_id,
+            'nombre', p_nombre,
+            'codigo_hex', p_codigo_hex,
+            'productos_afectados', v_productos_count
+        )::jsonb
+    );
+
+    -- Obtener color actualizado
+    SELECT json_build_object(
+        'id', id,
+        'nombre', nombre,
+        'codigo_hex', codigo_hex,
+        'activo', activo,
+        'productos_count', v_productos_count,
+        'created_at', created_at,
+        'updated_at', updated_at
+    ) INTO v_result
+    FROM colores
+    WHERE id = p_id;
+
+    v_error_hint := 'products_affected';
+    RETURN json_build_object(
+        'success', true,
+        'data', v_result,
+        'message', CASE
+            WHEN v_productos_count > 0 THEN
+                'Color actualizado exitosamente. Este cambio afecta a ' || v_productos_count || ' producto(s)'
+            ELSE
+                'Color actualizado exitosamente'
+        END
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION editar_color IS 'E002-HU-005: Edita color existente (CA-006, RN-025, RN-026, RN-030)';
+
+-- HU-005: eliminar_color - Elimina o desactiva color según uso
+CREATE OR REPLACE FUNCTION eliminar_color(
+    p_id UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    v_result JSON;
+    v_error_hint TEXT;
+    v_user_id UUID;
+    v_user_rol TEXT;
+    v_productos_count INTEGER;
+    v_color_nombre TEXT;
+    v_deleted BOOLEAN := false;
+    v_deactivated BOOLEAN := false;
+BEGIN
+    -- Obtener usuario autenticado
+    v_user_id := auth.uid();
+    IF v_user_id IS NULL THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Usuario no autenticado';
+    END IF;
+
+    -- Verificar que usuario es ADMIN
+    SELECT raw_user_meta_data->>'rol' INTO v_user_rol
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_rol IS NULL OR v_user_rol != 'ADMIN' THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo usuarios ADMIN pueden eliminar colores';
+    END IF;
+
+    -- Verificar que color existe
+    SELECT nombre INTO v_color_nombre
+    FROM colores
+    WHERE id = p_id;
+
+    IF v_color_nombre IS NULL THEN
+        v_error_hint := 'color_not_found';
+        RAISE EXCEPTION 'El color no existe';
+    END IF;
+
+    -- RN-029: Verificar si color está en uso
+    SELECT COUNT(*) INTO v_productos_count
+    FROM producto_colores
+    WHERE v_color_nombre = ANY(colores);
+
+    IF v_productos_count > 0 THEN
+        -- RN-029: Color en uso → solo desactivar
+        v_error_hint := 'has_products_use_deactivate';
+
+        UPDATE colores
+        SET activo = false
+        WHERE id = p_id;
+
+        v_deactivated := true;
+
+        -- Registrar auditoría
+        INSERT INTO audit_logs (user_id, event_type, metadata)
+        VALUES (
+            v_user_id,
+            'color_deactivated',
+            json_build_object(
+                'color_id', p_id,
+                'nombre', v_color_nombre,
+                'productos_count', v_productos_count
+            )::jsonb
+        );
+
+        RETURN json_build_object(
+            'success', true,
+            'data', json_build_object(
+                'deleted', v_deleted,
+                'deactivated', v_deactivated,
+                'productos_count', v_productos_count
+            ),
+            'message', 'El color está en uso en ' || v_productos_count || ' producto(s). Se ha desactivado en lugar de eliminarse'
+        );
+    ELSE
+        -- RN-029: Color sin uso → eliminar permanente
+        DELETE FROM colores WHERE id = p_id;
+        v_deleted := true;
+
+        -- Registrar auditoría
+        INSERT INTO audit_logs (user_id, event_type, metadata)
+        VALUES (
+            v_user_id,
+            'color_deleted',
+            json_build_object(
+                'color_id', p_id,
+                'nombre', v_color_nombre
+            )::jsonb
+        );
+
+        RETURN json_build_object(
+            'success', true,
+            'data', json_build_object(
+                'deleted', v_deleted,
+                'deactivated', v_deactivated,
+                'productos_count', 0
+            ),
+            'message', 'Color eliminado permanentemente'
+        );
+    END IF;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION eliminar_color IS 'E002-HU-005: Elimina o desactiva color según uso (CA-007, CA-008, RN-029)';
+
+-- HU-005: obtener_productos_por_color - Busca productos por color
+CREATE OR REPLACE FUNCTION obtener_productos_por_color(
+    p_color_nombre TEXT,
+    p_exacto BOOLEAN DEFAULT false
+)
+RETURNS JSON AS $$
+DECLARE
+    v_result JSON;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar que color existe
+    IF NOT EXISTS (SELECT 1 FROM colores WHERE LOWER(nombre) = LOWER(p_color_nombre)) THEN
+        v_error_hint := 'color_not_found';
+        RAISE EXCEPTION 'El color no existe en el catálogo';
+    END IF;
+
+    IF p_exacto THEN
+        -- RN-033: Búsqueda exacta (solo ese color, unicolor)
+        SELECT json_agg(
+            json_build_object(
+                'id', p.id,
+                'nombre', p.nombre,
+                'descripcion', p.descripcion,
+                'precio', p.precio,
+                'colores', pc.colores,
+                'tipo_color', pc.tipo_color,
+                'cantidad_colores', pc.cantidad_colores,
+                'descripcion_visual', pc.descripcion_visual
+            )
+        ) INTO v_result
+        FROM productos p
+        INNER JOIN producto_colores pc ON p.id = pc.producto_id
+        WHERE pc.colores = ARRAY[p_color_nombre]::TEXT[]
+        AND p.activo = true;
+    ELSE
+        -- RN-033: Búsqueda inclusiva (contiene el color)
+        SELECT json_agg(
+            json_build_object(
+                'id', p.id,
+                'nombre', p.nombre,
+                'descripcion', p.descripcion,
+                'precio', p.precio,
+                'colores', pc.colores,
+                'tipo_color', pc.tipo_color,
+                'cantidad_colores', pc.cantidad_colores,
+                'descripcion_visual', pc.descripcion_visual
+            )
+        ) INTO v_result
+        FROM productos p
+        INNER JOIN producto_colores pc ON p.id = pc.producto_id
+        WHERE p_color_nombre = ANY(pc.colores)
+        AND p.activo = true;
+    END IF;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', COALESCE(v_result, '[]'::json),
+        'message', CASE
+            WHEN p_exacto THEN 'Productos con color exacto listados exitosamente'
+            ELSE 'Productos que contienen el color listados exitosamente'
+        END
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION obtener_productos_por_color IS 'E002-HU-005: Busca productos por color (CA-009, CA-010, RN-033)';
+
+-- HU-005: estadisticas_colores - Estadísticas de uso de colores
+CREATE OR REPLACE FUNCTION estadisticas_colores()
+RETURNS JSON AS $$
+DECLARE
+    v_result JSON;
+    v_error_hint TEXT;
+    v_total_productos INTEGER;
+    v_productos_unicolor INTEGER;
+    v_productos_multicolor INTEGER;
+    v_porcentaje_unicolor DECIMAL;
+    v_porcentaje_multicolor DECIMAL;
+    v_productos_por_color JSON;
+    v_top_combinaciones JSON;
+    v_colores_menos_usados JSON;
+BEGIN
+    -- RN-035: Cantidad total de productos con colores
+    SELECT COUNT(*) INTO v_total_productos
+    FROM producto_colores;
+
+    -- RN-035: Productos unicolor vs multicolor
+    SELECT COUNT(*) INTO v_productos_unicolor
+    FROM producto_colores
+    WHERE tipo_color = 'Unicolor';
+
+    SELECT COUNT(*) INTO v_productos_multicolor
+    FROM producto_colores
+    WHERE tipo_color IN ('Bicolor', 'Tricolor', 'Multicolor');
+
+    -- Calcular porcentajes
+    IF v_total_productos > 0 THEN
+        v_porcentaje_unicolor := ROUND((v_productos_unicolor::DECIMAL / v_total_productos * 100), 2);
+        v_porcentaje_multicolor := ROUND((v_productos_multicolor::DECIMAL / v_total_productos * 100), 2);
+    ELSE
+        v_porcentaje_unicolor := 0;
+        v_porcentaje_multicolor := 0;
+    END IF;
+
+    -- RN-035: Cantidad de productos por color base
+    SELECT json_agg(
+        json_build_object(
+            'color', c.nombre,
+            'codigo_hex', c.codigo_hex,
+            'cantidad_productos', COALESCE((
+                SELECT COUNT(*)
+                FROM producto_colores pc
+                WHERE c.nombre = ANY(pc.colores)
+            ), 0)
+        ) ORDER BY COALESCE((
+            SELECT COUNT(*)
+            FROM producto_colores pc
+            WHERE c.nombre = ANY(pc.colores)
+        ), 0) DESC
+    ) INTO v_productos_por_color
+    FROM colores c
+    WHERE c.activo = true;
+
+    -- RN-035: Top 5 combinaciones más usadas
+    SELECT json_agg(
+        json_build_object(
+            'colores', pc.colores,
+            'tipo_color', pc.tipo_color,
+            'cantidad_productos', count
+        ) ORDER BY count DESC
+    ) INTO v_top_combinaciones
+    FROM (
+        SELECT colores, tipo_color, COUNT(*) as count
+        FROM producto_colores
+        GROUP BY colores, tipo_color
+        ORDER BY COUNT(*) DESC
+        LIMIT 5
+    ) pc;
+
+    -- RN-035: Colores con menor uso (candidatos a descontinuar)
+    SELECT json_agg(
+        json_build_object(
+            'color', c.nombre,
+            'codigo_hex', c.codigo_hex,
+            'cantidad_productos', COALESCE((
+                SELECT COUNT(*)
+                FROM producto_colores pc
+                WHERE c.nombre = ANY(pc.colores)
+            ), 0)
+        ) ORDER BY COALESCE((
+            SELECT COUNT(*)
+            FROM producto_colores pc
+            WHERE c.nombre = ANY(pc.colores)
+        ), 0) ASC
+    ) INTO v_colores_menos_usados
+    FROM colores c
+    WHERE c.activo = true
+    LIMIT 5;
+
+    -- CA-011: Construir respuesta completa
+    v_result := json_build_object(
+        'total_productos', v_total_productos,
+        'productos_unicolor', v_productos_unicolor,
+        'productos_multicolor', v_productos_multicolor,
+        'porcentaje_unicolor', v_porcentaje_unicolor,
+        'porcentaje_multicolor', v_porcentaje_multicolor,
+        'productos_por_color', COALESCE(v_productos_por_color, '[]'::json),
+        'top_combinaciones', COALESCE(v_top_combinaciones, '[]'::json),
+        'colores_menos_usados', COALESCE(v_colores_menos_usados, '[]'::json)
+    );
+
+    RETURN json_build_object(
+        'success', true,
+        'data', v_result,
+        'message', 'Estadísticas de colores generadas exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION estadisticas_colores IS 'E002-HU-005: Estadísticas de uso de colores (CA-011, RN-035)';
+
 COMMIT;
 
 -- ============================================
@@ -3362,4 +3969,10 @@ COMMIT;
 -- TIPOS (E002-HU-003):
 --   - get_tipos, create_tipo, update_tipo, toggle_tipo_activo
 --   - get_tipo_detalle, get_tipos_activos
+-- SISTEMAS TALLA (E002-HU-004):
+--   - listar_sistemas_talla, crear_sistema_talla, actualizar_sistema_talla
+--   - toggle_sistema_talla_activo
+-- COLORES (E002-HU-005):
+--   - listar_colores, crear_color, editar_color, eliminar_color
+--   - obtener_productos_por_color, estadisticas_colores
 -- ============================================

@@ -443,6 +443,60 @@ test('test user model', () { ... });
 test('validate email', () { ... });
 ```
 
+### 6.4 Patrón Integración Bloc (CONSISTENCIA OBLIGATORIA)
+
+**CRÍTICO**: Todas las páginas DEBEN seguir el MISMO patrón Bloc para mantener consistencia arquitectónica.
+
+**Patrón Estándar**:
+```dart
+// ✅ CORRECTO - Estructura en TODAS las páginas
+class MyPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => sl<MyBloc>(),
+      child: Scaffold(
+        appBar: AppBar(title: Text('Título')),
+        body: BlocConsumer<MyBloc, MyState>(
+          listener: (context, state) {
+            // Manejo errores/navegación (side effects)
+            if (state is MyError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+            if (state is MySuccess && state.navigateTo != null) {
+              Navigator.pushNamed(context, state.navigateTo);
+            }
+          },
+          builder: (context, state) {
+            // Renderizado UI según estado
+            if (state is MyLoading) return Center(child: CircularProgressIndicator());
+            if (state is MySuccess) return _buildContent(state.data);
+            return _buildInitial();
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// ❌ INCORRECTO - Patrones inconsistentes
+StreamBuilder(...) // NO usar StreamBuilder con Bloc
+setState(() {}) // NO usar StatefulWidget para estados Bloc
+BlocBuilder + BlocListener separados // Usar BlocConsumer
+```
+
+**Reglas Consistencia**:
+- ✅ `BlocProvider` → `BlocConsumer` → `Scaffold`
+- ✅ `listener`: errores (SnackBar), navegación (Navigator)
+- ✅ `builder`: Loading (CircularProgressIndicator), Success (contenido), Error (mensaje)
+- ✅ Estados estándar: Initial, Loading, Success, Error
+- ❌ NO mezclar patrones entre páginas
+- ❌ NO crear variaciones custom sin justificación
+
+**Antes de implementar nueva página**: Leer páginas existentes (`lib/features/*/presentation/pages/`) y replicar patrón.
+
 ---
 
 ## 📝 9. DOCUMENTATION STANDARDS
@@ -777,7 +831,8 @@ Antes de marcar HU como completada, validar:
 
 ---
 
-**Versión**: 1.1
-**Última revisión**: 2025-10-07
-**Próxima revisión**: Después de HU-005
+**Versión**: 1.2
+**Última revisión**: 2025-10-09
+**Cambios v1.2**: Agregada sección 6.4 Patrón Bloc consistente
+**Próxima revisión**: Después de HU-010
 **Mantenido por**: @web-architect-expert

@@ -36,15 +36,25 @@ rules:
 
 ## 📋 FLUJO (8 Pasos)
 
-### 1. Leer Documentación
+### 1. Leer HU y Extraer CA/RN
 
 ```bash
-# Lee automáticamente:
-- docs/historias-usuario/E00X-HU-XXX.md (CA, RN)
-- docs/technical/00-CONVENTIONS.md (secciones 1.2, 3.2, 7: Naming, Exceptions, Código Limpio)
-- docs/technical/implemented/HU-XXX_IMPLEMENTATION.md (Backend: RPC, JSON; UI: Páginas, widgets, rutas)
-- docs/technical/workflows/AGENT_RULES.md (tu sección)
+Read(docs/historias-usuario/E00X-HU-XXX.md)
+# EXTRAE y lista TODOS los CA-XXX y RN-XXX
+# Tu integración Backend+UI DEBE cumplir cada uno
+
+Read(docs/technical/00-CONVENTIONS.md) # secciones 1.2, 3.2, 6, 7
+Read(docs/technical/implemented/HU-XXX_IMPLEMENTATION.md) # Backend + UI
+
+# CRÍTICO: Lee páginas existentes para seguir patrón
+Glob(lib/features/*/presentation/pages/*.dart)
+# Identifica patrón Bloc usado (BlocConsumer, estructura)
+# REPLICA ese patrón en tu implementación
 ```
+
+**CRÍTICO**:
+1. Integra TODOS los CA y RN de la HU
+2. Sigue MISMO patrón Bloc de páginas existentes
 
 ### 2. Implementar Models
 
@@ -204,13 +214,25 @@ Agrega tu sección (usa formato de `TEMPLATE_HU-XXX.md`):
 UI → Bloc → Repository → DataSource → RPC → Response → UI
 ```
 
+### Criterios Aceptación Integrados
+
+- **CA-001**: [Título] → Integrado en: [bloc/repository/datasource]
+- **CA-002**: [Título] → Integrado en: [bloc/repository/datasource]
+
+### Reglas Negocio Validadas
+
+- **RN-001**: [Título] → Validado en: [datasource/repository]
+
 ### Verificación
-- [x] Models con mapping explícito snake_case ↔ camelCase
+
+- [x] TODOS los CA de HU integrados
+- [x] TODAS las RN de HU validadas
+- [x] Models mapping explícito
 - [x] DataSource llama RPC correctas
-- [x] Repository con Either pattern
-- [x] Bloc con estados correctos
+- [x] Repository Either pattern
+- [x] Bloc estados correctos
 - [x] flutter analyze: 0 errores
-- [x] Integración con UI OK
+- [x] Integración UI OK
 ```
 
 ### 8. Reportar
@@ -254,26 +276,69 @@ lib/features/[modulo]/
 └── presentation/bloc/    ⭐ Bloc aquí
 ```
 
-### 2. Prohibiciones
+**Patrón Integración Bloc OBLIGATORIO** (00-CONVENTIONS.md sección 6):
+```dart
+// ✅ CORRECTO - Patrón estándar en TODAS las páginas
+class MyPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => sl<MyBloc>(),
+      child: Scaffold(
+        body: BlocConsumer<MyBloc, MyState>(
+          listener: (context, state) {
+            if (state is MyError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
+          builder: (context, state) {
+            if (state is MyLoading) return LoadingWidget();
+            if (state is MySuccess) return ContentWidget(data: state.data);
+            return InitialWidget();
+          },
+        ),
+      ),
+    );
+  }
+}
 
-❌ NO CREAR:
+// ❌ INCORRECTO - Patrón inconsistente
+StreamBuilder(...) // NO usar StreamBuilder con Bloc
+setState(() {}) // NO usar StatefulWidget con Bloc
+```
+
+### 2. Consistencia entre Páginas
+
+**CRÍTICO**: Todas las páginas DEBEN seguir el MISMO patrón:
+- ✅ BlocProvider → BlocConsumer → Scaffold → Body
+- ✅ listener para errores/navegación → builder para UI
+- ✅ Estados: Loading → LoadingWidget | Success → ContentWidget | Error → SnackBar
+- ❌ NO mezclar patrones (BlocBuilder + BlocListener vs BlocConsumer)
+- ❌ NO crear variaciones custom sin justificación
+
+**Antes de implementar**: Lee páginas existentes en `lib/features/*/presentation/pages/` para seguir patrón establecido.
+
+### 3. Prohibiciones
+
+❌ NO:
 - `docs/technical/frontend/models_*.md` (redundante)
 - Código fuera de Clean Architecture
 - Mapping implícito (siempre explícito)
-- Comentarios `//` explicando línea por línea (código autodocumentado)
-- Headers decorativos en archivos Dart (banners, ASCII art)
-- Documentación inline excesiva (ya está en HU_IMPLEMENTATION.md)
+- Patrones Bloc inconsistentes
+- Comentarios `//`, headers decorativos, `print()`, `debugPrint()`
 
-### 3. Autonomía Total
+### 4. Autonomía Total
 
 Opera PASO 1-8 automáticamente sin pedir permisos
 
-### 4. Integración Completa
+### 5. Integración Completa
 
 Tu responsabilidad es end-to-end:
-Models → DataSource → Repository → Bloc → UI
+Models → DataSource → Repository → Bloc → UI (siguiendo patrón existente)
 
-### 5. Documentación Única
+### 6. Documentación Única
 
 1 archivo: `HU-XXX_IMPLEMENTATION.md` sección Frontend
 
@@ -281,16 +346,19 @@ Models → DataSource → Repository → Bloc → UI
 
 ## ✅ CHECKLIST FINAL
 
-- [ ] Models con mapping explícito
-- [ ] DataSource llama RPC correctas (de HU-XXX_IMPLEMENTATION.md Backend)
-- [ ] Repository con Either pattern
-- [ ] Bloc con estados correctos
+- [ ] **TODOS los CA-XXX de HU integrados** (mapeo en doc)
+- [ ] **TODAS las RN-XXX de HU validadas** (mapeo en doc)
+- [ ] **Patrón Bloc CONSISTENTE** con páginas existentes
+- [ ] Models mapping explícito
+- [ ] DataSource llama RPC correctas
+- [ ] Repository Either pattern
+- [ ] Bloc estados correctos (Loading/Success/Error)
+- [ ] Integración Bloc→UI sigue convenciones
 - [ ] flutter analyze: 0 errores
-- [ ] Integración con UI (de HU-XXX_IMPLEMENTATION.md UI) OK
-- [ ] Documentación en HU-XXX_IMPLEMENTATION.md (sección Frontend)
+- [ ] Documentación Frontend completa
 - [ ] Sin reportes extras
 
 ---
 
-**Versión**: 2.1 (Mínimo)
-**Tokens**: ~65% menos que v2.0
+**Versión**: 2.2 (Consistencia Patrones)
+**Cambios**: Refuerzo patrón Bloc consistente entre páginas

@@ -343,6 +343,8 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
         return Icons.receipt_long;
       case 'assessment':
         return Icons.assessment;
+      case 'palette':
+        return Icons.palette;
       default:
         return Icons.circle;
     }

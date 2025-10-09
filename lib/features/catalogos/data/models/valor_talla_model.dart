@@ -40,13 +40,17 @@ class ValorTallaModel extends Equatable {
   factory ValorTallaModel.fromJson(Map<String, dynamic> json) {
     return ValorTallaModel(
       id: json['id'] as String,
-      sistemaTallaId: json['sistema_talla_id'] as String,          // ⭐ snake_case → camelCase
+      sistemaTallaId: json['sistema_talla_id'] as String? ?? '',   // ⭐ snake_case → camelCase
       valor: json['valor'] as String,
       orden: json['orden'] as int,
-      activo: json['activo'] as bool,
+      activo: json['activo'] as bool? ?? true,
       productosCount: json['productos_count'] as int? ?? 0,        // ⭐ snake_case → camelCase
-      createdAt: DateTime.parse(json['created_at'] as String),     // ⭐ snake_case → camelCase
-      updatedAt: DateTime.parse(json['updated_at'] as String),     // ⭐ snake_case → camelCase
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),                                         // ⭐ snake_case → camelCase
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),                                         // ⭐ snake_case → camelCase
     );
   }
 

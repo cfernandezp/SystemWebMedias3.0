@@ -144,3 +144,16 @@ class SistemaNotFoundException extends AppException {
 class ValorNotFoundException extends AppException {
   ValorNotFoundException([super.message = 'El valor de talla no existe', super.statusCode = 404]);
 }
+
+/// E002-HU-005: Gestionar Catálogo de Colores exceptions
+class InvalidHexFormatException extends AppException {
+  InvalidHexFormatException([super.message = 'Formato hexadecimal inválido', super.statusCode = 400]);
+}
+
+class ColorNotFoundException extends AppException {
+  ColorNotFoundException([super.message = 'El color no existe', super.statusCode = 404]);
+}
+
+class ColorInUseException extends AppException {
+  ColorInUseException([super.message = 'Color en uso, solo se puede desactivar', super.statusCode = 400]);
+}

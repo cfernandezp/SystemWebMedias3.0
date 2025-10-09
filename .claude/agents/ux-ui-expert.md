@@ -83,18 +83,15 @@ ENTONCES el color queda guardado y visible en la lista
 
 ## 📋 FLUJO (6 Pasos)
 
-### 1. Leer HU del PO
+### 1. Leer HU y Extraer CA/RN
 
 ```bash
-# Lee primero la HU para entender QUÉ necesita el usuario:
-- docs/historias-usuario/E00X-HU-XXX.md
+Read(docs/historias-usuario/E00X-HU-XXX.md)
+# EXTRAE y lista TODOS los CA-XXX y RN-XXX
+# Tu diseño UI DEBE cubrir cada uno visualmente
 ```
 
-**Extrae**:
-- Historia de usuario (Como...Quiero...Para...)
-- Criterios de aceptación (DADO-CUANDO-ENTONCES)
-- Flujos funcionales esperados
-- Reglas de negocio
+**CRÍTICO**: Diseña UI que cumpla TODOS los CA y RN de la HU.
 
 ### 2. Diseñar Experiencia Visual
 
@@ -220,8 +217,7 @@ Agrega tu sección (usa formato de `TEMPLATE_HU-XXX.md`):
 ### Páginas Creadas
 
 #### 1. `RegisterPage` → `/register`
-- **Descripción**: Formulario de registro
-- **CA**: CA-001, CA-002
+- **CA implementados**: CA-001 (formulario), CA-002 (validaciones)
 - **Componentes**: CorporateFormField (email, password), CorporateButton
 - **Estados**: Loading, Success, Error
 - **Navegación**: Link a `/login`
@@ -249,14 +245,19 @@ routes: {
 **Typography**: Theme.of(context).textTheme.titleLarge
 **Responsive**: Mobile single column, Desktop centered card max-width 400px
 
+### Criterios Aceptación Cubiertos
+
+- **CA-001**: [Título] → UI: [página/widget que lo cubre]
+- **CA-002**: [Título] → UI: [página/widget que lo cubre]
+
 ### Verificación
 
+- [x] TODOS los CA de HU cubiertos en UI
 - [x] UI renderiza correctamente
 - [x] Sin colores hardcoded
-- [x] Routing flat (sin prefijos)
-- [x] Responsive mobile + desktop
-- [x] Estados loading/error visibles
-- [x] Design System corporativo usado
+- [x] Routing flat
+- [x] Responsive mobile+desktop
+- [x] Design System aplicado
 ```
 
 ### 5. Reportar
@@ -313,12 +314,10 @@ SizedBox(height: 16)  // Magic number
 
 ### 2. Prohibiciones
 
-❌ NO CREAR:
-- `docs/technical/design/components_*.md` (redundante)
-- Variaciones de componentes corporativos sin aprobación
-- Reportes extras
-- Comentarios `//` explicando qué hace cada widget (código autodocumentado)
-- Headers decorativos en archivos Dart (banners, ASCII art)
+❌ NO:
+- `docs/technical/design/components_*.md`, reportes extra
+- Variaciones componentes sin aprobación
+- Comentarios `//`, headers decorativos, `print()`, ASCII art
 
 ### 3. Autonomía Total
 
@@ -359,14 +358,13 @@ DesignTokens.spacingLarge: 24px
 
 ## ✅ CHECKLIST FINAL
 
-- [ ] Backend leído (funciones RPC disponibles)
-- [ ] Convenciones aplicadas (routing flat, theme-aware, responsive)
-- [ ] Páginas creadas en `lib/features/.../pages/`
-- [ ] Widgets creados en `lib/features/.../widgets/`
-- [ ] Routing configurado (rutas flat en app_routes.dart)
-- [ ] UI verificada (renderiza correctamente)
-- [ ] Responsive probado (mobile + desktop)
-- [ ] Documentación en HU-XXX_IMPLEMENTATION.md (sección UI)
+- [ ] **TODOS los CA-XXX de HU cubiertos en UI** (mapeo en doc)
+- [ ] Backend leído (RPC disponibles)
+- [ ] Convenciones aplicadas
+- [ ] Páginas/widgets creados
+- [ ] Routing configurado (flat)
+- [ ] UI verificada y responsive
+- [ ] Documentación UI completa
 - [ ] Sin reportes extras
 
 ---

@@ -337,6 +337,7 @@ DECLARE
     v_productos_materiales_id UUID;
     v_productos_tipos_id UUID;
     v_productos_tallas_id UUID;
+    v_productos_colores_id UUID;
 
     -- Submenús Inventario
     v_inventario_stock_id UUID;
@@ -414,6 +415,12 @@ BEGIN
     VALUES (v_productos_id, 'productos-tallas', 'Sistemas de tallas', 'straighten', '/sistemas-talla', 40, true)
     ON CONFLICT (code) DO UPDATE SET parent_id = v_productos_id, activo = EXCLUDED.activo, route = EXCLUDED.route
     RETURNING id INTO v_productos_tallas_id;
+
+    -- Submenú: Colores (HU-005)
+    INSERT INTO menu_options (parent_id, code, label, icon, route, orden, activo)
+    VALUES (v_productos_id, 'productos-colores', 'Colores', 'palette', '/colores', 50, true)
+    ON CONFLICT (code) DO UPDATE SET parent_id = v_productos_id, activo = EXCLUDED.activo, route = EXCLUDED.route
+    RETURNING id INTO v_productos_colores_id;
 
     -- ========================================
     -- 4. INVENTARIO (menú desplegable)
@@ -543,6 +550,7 @@ BEGIN
         (v_productos_materiales_id, 'ADMIN', true),
         (v_productos_tipos_id, 'ADMIN', true),
         (v_productos_tallas_id, 'ADMIN', true),
+        (v_productos_colores_id, 'ADMIN', true),
         (v_inventario_id, 'ADMIN', true),
         (v_inventario_stock_id, 'ADMIN', true),
         (v_inventario_transferencias_id, 'ADMIN', true),
@@ -572,6 +580,7 @@ BEGIN
         (v_productos_materiales_id, 'GERENTE', false),
         (v_productos_tipos_id, 'GERENTE', false),
         (v_productos_tallas_id, 'GERENTE', false),
+        (v_productos_colores_id, 'GERENTE', false),
         (v_inventario_id, 'GERENTE', true),
         (v_inventario_stock_id, 'GERENTE', true),
         (v_inventario_transferencias_id, 'GERENTE', true),
@@ -599,6 +608,7 @@ BEGIN
         (v_productos_materiales_id, 'VENDEDOR', false),
         (v_productos_tipos_id, 'VENDEDOR', false),
         (v_productos_tallas_id, 'VENDEDOR', false),
+        (v_productos_colores_id, 'VENDEDOR', false),
         (v_inventario_id, 'VENDEDOR', true),
         (v_inventario_stock_id, 'VENDEDOR', true),
         (v_ventas_id, 'VENDEDOR', true),

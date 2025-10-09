@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/injection/injection_container.dart' as di;
-import '../../../../shared/design_system/atoms/corporate_button.dart';
 import '../bloc/materiales_bloc.dart';
 import '../bloc/materiales_event.dart';
 import '../bloc/materiales_state.dart';
@@ -76,7 +75,11 @@ class _MaterialesListView extends StatelessWidget {
                   ),
 
                 if (state is MaterialesLoaded)
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+
+                // Counter
+                _buildCounter(context, state),
+                const SizedBox(height: 24),
 
                 // Lista de materiales
                 Expanded(
@@ -87,6 +90,16 @@ class _MaterialesListView extends StatelessWidget {
           );
         },
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          final bloc = context.read<MaterialesBloc>();
+          context.push('/materiales-form', extra: {'bloc': bloc});
+        },
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Agregar Material'),
+      ),
     );
   }
 
@@ -96,14 +109,6 @@ class _MaterialesListView extends StatelessWidget {
     bool isDesktop,
     MaterialesState state,
   ) {
-    int activosCount = 0;
-    int inactivosCount = 0;
-
-    if (state is MaterialesLoaded) {
-      activosCount = state.materiales.where((m) => m.activo).length;
-      inactivosCount = state.materiales.where((m) => !m.activo).length;
-    }
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -119,26 +124,70 @@ class _MaterialesListView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              state is MaterialesLoaded
-                  ? '$activosCount activos / $inactivosCount inactivos'
-                  : 'Cargando...',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF6B7280),
-              ),
-            ),
+            _buildBreadcrumbs(context),
           ],
         ),
-        CorporateButton(
-          text: 'Agregar Nuevo Material',
-          icon: Icons.add,
-          onPressed: () {
-            final bloc = context.read<MaterialesBloc>();
-            context.push('/materiales-form', extra: {'bloc': bloc});
-          },
+      ],
+    );
+  }
+
+  Widget _buildBreadcrumbs(BuildContext context) {
+    return Row(
+      children: [
+        InkWell(
+          onTap: () => context.go('/dashboard'),
+          child: Text(
+            'Dashboard',
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.primary,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Text('>', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+        ),
+        const Text(
+          'Catálogos',
+          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Text('>', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+        ),
+        const Text(
+          'Materiales',
+          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
         ),
       ],
+    );
+  }
+
+  Widget _buildCounter(BuildContext context, MaterialesState state) {
+    int activos = 0;
+    int inactivos = 0;
+
+    if (state is MaterialesLoaded) {
+      activos = state.materiales.where((m) => m.activo).length;
+      inactivos = state.materiales.where((m) => !m.activo).length;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '$activos materiales activos / $inactivos inactivos',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
     );
   }
 

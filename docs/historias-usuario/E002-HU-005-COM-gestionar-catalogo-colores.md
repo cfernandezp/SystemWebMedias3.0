@@ -5,7 +5,7 @@
 - **Épica**: E002 - Gestión de Catálogo de Productos
 - **Título**: Gestionar Catálogo de Colores
 - **Story Points**: 8 pts
-- **Estado**: 🟡 Borrador
+- **Estado**: ✅ Completada
 - **Fecha Creación**: 2025-10-07
 
 ## 🎯 HISTORIA DE USUARIO
@@ -127,42 +127,122 @@ PRODUCTO_COLORES (Combinaciones):
   - [ ] Combinaciones de colores más usadas
   - [ ] Ventas por color/combinación
 
-## 📊 REGLAS DE NEGOCIO ESPECÍFICAS
+## 📐 REGLAS DE NEGOCIO (RN)
 
-### RN-005-001: Colores Únicos en Catálogo Base
-```
-- No pueden existir dos colores con el mismo nombre
-- Nombre en formato Title Case (Primera letra mayúscula)
-- Código hexadecimal válido (#RRGGBB)
-```
+### RN-025: Unicidad de Colores en Catálogo
+**Contexto**: Al agregar o editar un color en el catálogo base
+**Restricción**: No pueden existir dos colores con el mismo nombre exacto
+**Validación**:
+- Comparación sin distinción de mayúsculas/minúsculas (case-insensitive)
+- "Rojo", "ROJO", "rojo" son considerados duplicados
+- Nombre debe tener mínimo 3 caracteres, máximo 30 caracteres
+- Solo permite letras, espacios y guiones (no caracteres especiales)
+**Caso especial**: Colores similares permitidos: "Rojo Oscuro" vs "Rojo Claro"
 
-### RN-005-002: Orden de Colores en Multicolor
-```
-- El orden de los colores es importante
+### RN-026: Formato y Validación de Código Hexadecimal
+**Contexto**: Al definir o modificar el código de color
+**Restricción**: Solo códigos hexadecimales válidos en formato estándar
+**Validación**:
+- Formato obligatorio: # seguido de 6 caracteres hexadecimales (0-9, A-F)
+- Ejemplos válidos: #FF0000, #000000, #A1B2C3
+- Ejemplos inválidos: FF0000 (falta #), #FFF (solo 3 dígitos), #GGHHII (caracteres inválidos)
+**Caso especial**: Dos colores pueden compartir el mismo código hexadecimal si tienen nombres diferentes (ej: "Negro" y "Negro Mate" ambos #000000)
+
+### RN-027: Límite de Colores por Artículo
+**Contexto**: Al asignar colores a un artículo de medias
+**Restricción**: Límites según tipo de coloración
+**Validación**:
+- Unicolor: Exactamente 1 color (no más, no menos)
+- Bicolor: Exactamente 2 colores
+- Tricolor: Exactamente 3 colores
+- Multicolor: Mínimo 4 colores, máximo 5 colores
+**Caso especial**: No se permite crear artículo sin al menos 1 color asignado
+
+### RN-028: Orden de Colores es Significativo
+**Contexto**: Al definir combinaciones multicolor en artículos
+**Restricción**: El orden determina la apariencia del producto
+**Validación**:
 - [Rojo, Negro] es diferente de [Negro, Rojo]
-- El primer color es el predominante
-```
+- El primer color es el predominante o base
+- El último color generalmente representa detalles o bordes
+- Cambiar el orden crea una combinación diferente
+**Caso especial**: En unicolor el orden no aplica (solo 1 color)
 
-### RN-005-003: Límite de Colores por Producto
-```
-- Unicolor: Exactamente 1 color
-- Multicolor: Mínimo 2, máximo 5 colores
-```
+### RN-029: Restricción para Desactivar Colores en Uso
+**Contexto**: Al intentar desactivar un color del catálogo base
+**Restricción**: Color en uso en artículos no puede eliminarse
+**Validación**:
+- Si existe al menos 1 artículo usando el color: solo permitir desactivar (no eliminar)
+- Color desactivado no aparece en selector de nuevos artículos
+- Artículos existentes mantienen el color desactivado visible
+**Caso especial**: Color sin uso en ningún artículo puede eliminarse permanentemente
 
-### RN-005-004: Nomenclatura Automática
-```
-- 1 color: "Unicolor"
-- 2 colores: "Bicolor"
-- 3 colores: "Tricolor"
-- 4+ colores: "Multicolor"
-```
+### RN-030: Impacto de Edición de Color en Artículos
+**Contexto**: Al editar nombre o código hexadecimal de un color
+**Restricción**: Cambio afecta inmediatamente a todos los artículos relacionados
+**Validación**:
+- Sistema debe mostrar cantidad exacta de artículos afectados antes de confirmar
+- Requiere confirmación explícita del admin
+- Cambio es retroactivo y automático en todos los artículos
+**Caso especial**: Si artículos están en ventas activas, mostrar advertencia adicional
 
-### RN-005-005: Impacto de Cambios en Colores
-```
-- Editar nombre/hex: Afecta a todos los productos existentes
-- Desactivar: Solo afecta a futuros productos
-- Eliminar: Solo si no está en uso
-```
+### RN-031: Clasificación Automática por Cantidad de Colores
+**Contexto**: Al guardar un artículo con combinación de colores
+**Restricción**: Sistema asigna clasificación automática no editable
+**Validación**:
+- 1 color → Clasificación "Unicolor"
+- 2 colores → Clasificación "Bicolor"
+- 3 colores → Clasificación "Tricolor"
+- 4 o más colores → Clasificación "Multicolor"
+**Caso especial**: Clasificación se actualiza automáticamente si se modifica cantidad de colores
+
+### RN-032: Colores Activos en Selección de Artículos
+**Contexto**: Al crear o editar un artículo
+**Restricción**: Solo colores activos disponibles en selector
+**Validación**:
+- Dropdown/selector muestra únicamente colores con estado activo=true
+- Colores inactivos no aparecen en opciones
+- Al desactivar color, artículos existentes lo conservan pero nuevos artículos no pueden usarlo
+**Caso especial**: Admin puede reactivar color desactivado para volver a usarlo en nuevos artículos
+
+### RN-033: Búsqueda de Artículos por Color
+**Contexto**: Al buscar artículos por combinación de colores
+**Restricción**: Distinguir entre búsqueda inclusiva y exacta
+**Validación**:
+- Búsqueda "Contiene Rojo": muestra todos los artículos que incluyan rojo (unicolor o multicolor)
+- Búsqueda "Exacta [Rojo, Negro]": muestra solo artículos con esos 2 colores en ese orden
+- Búsqueda por color desactivado: incluye artículos antiguos con ese color
+**Caso especial**: Búsqueda multicriterio permite combinar color + marca + tipo
+
+### RN-034: Descripción Visual Opcional para Multicolor
+**Contexto**: Al crear artículo multicolor
+**Restricción**: Descripción visual ayuda a identificar el patrón
+**Validación**:
+- Campo opcional solo para artículos con 2 o más colores
+- Máximo 100 caracteres
+- Ejemplos: "Rayas horizontales rojas y negras", "Base blanca con puntos azules"
+- No se valida contenido, solo longitud
+**Caso especial**: Unicolor no muestra este campo (bloqueado/oculto)
+
+### RN-035: Reportes y Estadísticas de Colores
+**Contexto**: Al generar reportes de ventas o inventario
+**Restricción**: Métricas deben reflejar preferencias de mercado
+**Validación**:
+- Cantidad de artículos por color base (incluir multicolor)
+- Porcentaje unicolor vs multicolor vendidos
+- Top 5 combinaciones multicolor más vendidas
+- Colores con menor rotación (candidatos a descontinuar)
+**Caso especial**: Colores desactivados no aparecen en reportes futuros, solo históricos
+
+### RN-036: Generación de SKU Incluye Códigos de Color
+**Contexto**: Al crear artículo y generar SKU automático
+**Restricción**: SKU debe incluir códigos abreviados de colores en orden
+**Validación**:
+- Unicolor: Agregar 1 código de color al final del SKU
+- Multicolor: Agregar códigos en el orden definido separados por guion
+- Ejemplo: ADS-FUT-ALG-3738-ROJ (unicolor rojo)
+- Ejemplo: NIK-INV-MIC-UNI-BLA-GRI (bicolor blanco-gris)
+**Caso especial**: SKU debe ser único incluso con misma combinación pero diferente orden
 
 ## 🗄️ MODELO DE DATOS
 
