@@ -18,7 +18,7 @@ class ColorFormPage extends StatefulWidget {
 class _ColorFormPageState extends State<ColorFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
-  final _codigoHexController = TextEditingController();
+  List<String> _selectedColors = [];
 
   bool _isEditMode = false;
   String? _colorId;
@@ -34,16 +34,20 @@ class _ColorFormPageState extends State<ColorFormPage> {
       final colorData = widget.arguments!['color'] as Map<String, dynamic>;
       _colorId = colorData['id'] as String;
       _nombreController.text = colorData['nombre'] as String;
-      _codigoHexController.text = colorData['codigoHex'] as String;
+      final codigosHex = colorData['codigosHex'];
+      if (codigosHex is List) {
+        _selectedColors = List<String>.from(codigosHex);
+      } else if (codigosHex is String) {
+        _selectedColors = [codigosHex];
+      }
     } else {
-      _codigoHexController.text = '#4ECDC4';
+      _selectedColors = ['#4ECDC4'];
     }
   }
 
   @override
   void dispose() {
     _nombreController.dispose();
-    _codigoHexController.dispose();
     super.dispose();
   }
 
@@ -70,47 +74,56 @@ class _ColorFormPageState extends State<ColorFormPage> {
 
           return Scaffold(
             backgroundColor: const Color(0xFFF9FAFB),
-            body: SingleChildScrollView(
-              padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(context, theme, isDesktop),
-                  const SizedBox(height: 24),
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: isDesktop ? 600 : double.infinity,
-                      ),
-                      child: Card(
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: Color(0xFFE5E7EB)),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildNombreField(),
-                                const SizedBox(height: 24),
-                                _buildColorPickerField(),
-                                const SizedBox(height: 32),
-                                _buildWarningMessage(state),
-                                const SizedBox(height: 24),
-                                _buildActionButtons(context, isLoading),
-                              ],
+            body: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - (isDesktop ? 48.0 : 32.0),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(context, theme, isDesktop),
+                        const SizedBox(height: 24),
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: isDesktop ? 600 : double.infinity,
+                            ),
+                            child: Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Form(
+                                  key: _formKey,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildNombreField(),
+                                      const SizedBox(height: 24),
+                                      _buildColorPickerField(),
+                                      const SizedBox(height: 32),
+                                      _buildWarningMessage(state),
+                                      const SizedBox(height: 24),
+                                      _buildActionButtons(context, isLoading),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
           );
         },
@@ -252,17 +265,22 @@ class _ColorFormPageState extends State<ColorFormPage> {
   }
 
   Widget _buildColorPickerField() {
+    final controller = TextEditingController(
+      text: _selectedColors.isNotEmpty ? _selectedColors.first : '#4ECDC4',
+    );
+
     return ColorPickerField(
-      label: 'Código de Color',
-      controller: _codigoHexController,
+      label: 'Código de Color Hexadecimal',
+      controller: controller,
       validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'El código hexadecimal es requerido';
+        if (value == null || value.isEmpty) {
+          return 'El código de color es requerido';
         }
-        final regex = RegExp(r'^#[0-9A-Fa-f]{6}$');
-        if (!regex.hasMatch(value)) {
-          return 'Formato inválido. Debe ser #RRGGBB (Ej: #FF0000)';
+        final hexPattern = RegExp(r'^#?([0-9A-Fa-f]{6})$');
+        if (!hexPattern.hasMatch(value)) {
+          return 'Formato inválido. Use #RRGGBB';
         }
+        _selectedColors = [value.startsWith('#') ? value : '#$value'];
         return null;
       },
     );
@@ -346,21 +364,20 @@ class _ColorFormPageState extends State<ColorFormPage> {
     }
 
     final nombre = _nombreController.text.trim();
-    final codigoHex = _codigoHexController.text.trim().toUpperCase();
 
     if (_isEditMode && _colorId != null) {
       context.read<ColoresBloc>().add(
             UpdateColorEvent(
               id: _colorId!,
               nombre: nombre,
-              codigoHex: codigoHex,
+              codigosHex: _selectedColors,
             ),
           );
     } else {
       context.read<ColoresBloc>().add(
             CreateColorEvent(
               nombre: nombre,
-              codigoHex: codigoHex,
+              codigosHex: _selectedColors,
             ),
           );
     }

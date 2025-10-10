@@ -45,6 +45,7 @@ import 'package:system_web_medias/features/catalogos/domain/usecases/create_colo
 import 'package:system_web_medias/features/catalogos/domain/usecases/update_color.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/delete_color.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/get_productos_by_color.dart';
+import 'package:system_web_medias/features/catalogos/domain/usecases/filter_productos_by_combinacion.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/get_colores_estadisticas.dart';
 import 'package:system_web_medias/features/catalogos/presentation/bloc/colores_bloc.dart';
 
@@ -255,6 +256,7 @@ Future<void> init() async {
       updateColor: sl(),
       deleteColor: sl(),
       getProductosByColor: sl(),
+      filterProductosByCombinacion: sl(),
       getColoresEstadisticas: sl(),
     ),
   );
@@ -265,6 +267,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateColor(sl()));
   sl.registerLazySingleton(() => DeleteColor(sl()));
   sl.registerLazySingleton(() => GetProductosByColor(sl()));
+  sl.registerLazySingleton(() => FilterProductosByCombinacion(sl()));
   sl.registerLazySingleton(() => GetColoresEstadisticas(sl()));
 
   // Repository - Colores

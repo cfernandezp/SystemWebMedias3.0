@@ -13,30 +13,30 @@ class LoadColores extends ColoresEvent {
 
 class CreateColorEvent extends ColoresEvent {
   final String nombre;
-  final String codigoHex;
+  final List<String> codigosHex;
 
   const CreateColorEvent({
     required this.nombre,
-    required this.codigoHex,
+    required this.codigosHex,
   });
 
   @override
-  List<Object?> get props => [nombre, codigoHex];
+  List<Object?> get props => [nombre, codigosHex];
 }
 
 class UpdateColorEvent extends ColoresEvent {
   final String id;
   final String nombre;
-  final String codigoHex;
+  final List<String> codigosHex;
 
   const UpdateColorEvent({
     required this.id,
     required this.nombre,
-    required this.codigoHex,
+    required this.codigosHex,
   });
 
   @override
-  List<Object?> get props => [id, nombre, codigoHex];
+  List<Object?> get props => [id, nombre, codigosHex];
 }
 
 class DeleteColorEvent extends ColoresEvent {
@@ -72,4 +72,15 @@ class LoadProductosByColor extends ColoresEvent {
 
   @override
   List<Object?> get props => [colorNombre, exacto];
+}
+
+class FilterProductosByCombinacionEvent extends ColoresEvent {
+  final List<String> colores;
+
+  const FilterProductosByCombinacionEvent({
+    required this.colores,
+  });
+
+  @override
+  List<Object?> get props => [colores];
 }

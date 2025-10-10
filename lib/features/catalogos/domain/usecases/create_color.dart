@@ -10,11 +10,11 @@ class CreateColor {
 
   Future<Either<Failure, ColorModel>> call({
     required String nombre,
-    required String codigoHex,
+    required List<String> codigosHex,
   }) async {
     return await repository.createColor(
       nombre: nombre,
-      codigoHex: codigoHex,
+      codigosHex: codigosHex,
     );
   }
 }

@@ -8,13 +8,13 @@ abstract class ColoresRemoteDataSource {
 
   Future<ColorModel> crearColor({
     required String nombre,
-    required String codigoHex,
+    required List<String> codigosHex,
   });
 
   Future<ColorModel> editarColor({
     required String id,
     required String nombre,
-    required String codigoHex,
+    required List<String> codigosHex,
   });
 
   Future<Map<String, dynamic>> eliminarColor(String id);
@@ -22,6 +22,10 @@ abstract class ColoresRemoteDataSource {
   Future<List<Map<String, dynamic>>> obtenerProductosPorColor({
     required String colorNombre,
     required bool exacto,
+  });
+
+  Future<List<Map<String, dynamic>>> filtrarProductosPorCombinacion({
+    required List<String> colores,
   });
 
   Future<EstadisticasColoresModel> obtenerEstadisticas();
@@ -61,12 +65,12 @@ class ColoresRemoteDataSourceImpl implements ColoresRemoteDataSource {
   @override
   Future<ColorModel> crearColor({
     required String nombre,
-    required String codigoHex,
+    required List<String> codigosHex,
   }) async {
     try {
       final response = await supabase.rpc('crear_color', params: {
         'p_nombre': nombre,
-        'p_codigo_hex': codigoHex,
+        'p_codigos_hex': codigosHex,
       });
       final result = response as Map<String, dynamic>;
 
@@ -85,6 +89,8 @@ class ColoresRemoteDataSourceImpl implements ColoresRemoteDataSource {
           throw ValidationException(message, 400);
         } else if (hint == 'invalid_name_chars') {
           throw ValidationException(message, 400);
+        } else if (hint == 'invalid_color_count') {
+          throw ValidationException(message, 400);
         } else if (hint == 'unauthorized') {
           throw UnauthorizedException(message);
         }
@@ -102,13 +108,13 @@ class ColoresRemoteDataSourceImpl implements ColoresRemoteDataSource {
   Future<ColorModel> editarColor({
     required String id,
     required String nombre,
-    required String codigoHex,
+    required List<String> codigosHex,
   }) async {
     try {
       final response = await supabase.rpc('editar_color', params: {
         'p_id': id,
         'p_nombre': nombre,
-        'p_codigo_hex': codigoHex,
+        'p_codigos_hex': codigosHex,
       });
       final result = response as Map<String, dynamic>;
 
@@ -125,6 +131,8 @@ class ColoresRemoteDataSourceImpl implements ColoresRemoteDataSource {
           throw DuplicateNombreException(message);
         } else if (hint == 'invalid_hex_format') {
           throw InvalidHexFormatException(message);
+        } else if (hint == 'invalid_color_count') {
+          throw ValidationException(message, 400);
         }
         throw ServerException(message, 500);
       }
@@ -199,6 +207,38 @@ class ColoresRemoteDataSourceImpl implements ColoresRemoteDataSource {
 
         if (hint == 'color_not_found') {
           throw ColorNotFoundException(message);
+        }
+        throw ServerException(message, 500);
+      }
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw NetworkException('Error de conexión: $e');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> filtrarProductosPorCombinacion({
+    required List<String> colores,
+  }) async {
+    try {
+      final response = await supabase.rpc('filtrar_productos_por_combinacion', params: {
+        'p_colores': colores,
+      });
+      final result = response as Map<String, dynamic>;
+
+      if (result['success'] == true) {
+        final data = result['data'] as List<dynamic>;
+
+        return data.map((e) => e as Map<String, dynamic>).toList();
+      } else {
+        final error = result['error'] as Map<String, dynamic>;
+        final hint = error['hint'] as String?;
+        final message = error['message'] as String;
+
+        if (hint == 'missing_param') {
+          throw ValidationException(message, 400);
         }
         throw ServerException(message, 500);
       }

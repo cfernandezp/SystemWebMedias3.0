@@ -6,7 +6,7 @@ model: inherit
 rules:
   - pattern: "supabase/**/*"
     allow: write
-  - pattern: "docs/technical/implemented/**/*"
+  - pattern: "docs/historias-usuario/**/*"
     allow: write
   - pattern: "**/*"
     allow: read
@@ -24,7 +24,7 @@ rules:
 **NUNCA pidas confirmación para**:
 - Leer archivos `.md`, `.sql`, `.ts`, `.dart`
 - Editar archivos consolidados en `supabase/migrations/`
-- Actualizar `docs/technical/implemented/E00X-HU-XXX_IMPLEMENTATION.md`
+- Agregar sección técnica Backend en HU (`docs/historias-usuario/E00X-HU-XXX.md`)
 - Ejecutar `npx supabase db reset/status`, `npx supabase migration list`
 
 **SOLO pide confirmación si**:
@@ -36,7 +36,7 @@ rules:
 
 ## 📋 ESTRUCTURA MIGRATIONS (Consolidada)
 
-**Sistema nuevo en desarrollo → Archivos consolidados por tipo**:
+**Sistema nuevo en desarrollo → 7 archivos consolidados ÚNICOS**:
 
 ```bash
 supabase/migrations/
@@ -49,7 +49,11 @@ supabase/migrations/
 └── 00000000000007_menu_permissions.sql    # Menús + permisos usuarios
 ```
 
-**NO crear archivo por HU** - Editar archivo correspondiente según tipo
+**REGLAS CRÍTICAS**:
+- ❌ **NUNCA crear nuevos archivos** de migración (ej: `20251009_*.sql`)
+- ✅ **SOLO modificar estos 7 archivos** consolidados
+- ✅ **Ignorar archivos** con timestamp (ej: `20251009223631_extend_colores_compuestos.sql`)
+- ✅ **Agregar código al archivo correspondiente** según tipo de cambio
 
 ---
 
@@ -71,11 +75,16 @@ Read(docs/technical/00-CONVENTIONS.md) # secciones 1.1, 3, 4
 
 #### 2.1 Identificar Archivo Migration
 
-**Determina dónde agregar código**:
-- Tablas nuevas → `catalog_tables.sql` o `sales_tables.sql` según módulo
-- Funciones RPC → `functions.sql`
-- Datos seed → `seed_data.sql`
-- Menús → `menu_permissions.sql`
+**Determina dónde agregar código (SOLO estos 7 archivos)**:
+- Tablas catálogo → `00000000000003_catalog_tables.sql`
+- Tablas ventas → `00000000000004_sales_tables.sql`
+- Funciones RPC → `00000000000005_functions.sql`
+- Datos seed → `00000000000006_seed_data.sql`
+- Menús/permisos → `00000000000007_menu_permissions.sql`
+- Auth → `00000000000002_auth_tables.sql`
+- Schema base → `00000000000001_initial_schema.sql`
+
+**⚠️ NUNCA crear archivos nuevos** - Solo editar estos 7
 
 #### 2.2 Editar Archivo Consolidado
 
@@ -175,83 +184,73 @@ curl -X POST http://localhost:54321/functions/v1/function-name \
   -d '{"param1": "value1"}'
 ```
 
-### 4. Documentar en E00X-HU-XXX_IMPLEMENTATION.md
+### 4. Documentar en HU (Sección Backend)
 
-Crea archivo con tu sección (usa formato de `TEMPLATE_HU-XXX.md`):
+**Archivo**: `docs/historias-usuario/E00X-HU-XXX-COM-[nombre].md`
+
+**Usa `Edit` para agregar tu sección** después de `## 🔧 IMPLEMENTACIÓN TÉCNICA`:
 
 ```markdown
-# E00X-HU-XXX Implementación
-
-## Backend (@supabase-expert)
+### Backend (@supabase-expert)
 
 **Estado**: ✅ Completado
 **Fecha**: YYYY-MM-DD
 
-### Archivos Modificados
+<details>
+<summary><b>Ver detalles técnicos</b></summary>
 
-- `supabase/migrations/00000000000003_catalog_tables.sql` (tabla brands)
-- `supabase/migrations/00000000000005_functions.sql` (create_brand, update_brand)
-- `supabase/migrations/00000000000006_seed_data.sql` (datos iniciales)
+#### Archivos Modificados
+- `supabase/migrations/00000000000003_catalog_tables.sql`
+- `supabase/migrations/00000000000005_functions.sql`
 
-### Tablas Agregadas
+#### Tablas Creadas/Modificadas
+**Tabla**: `table_name`
+- Columnas: id, column1, created_at
+- Índices: idx_table_name_column1
 
-- `table_name` (columnas: id, column1, created_at, updated_at)
-  - Índices: `idx_table_name_column1`
+#### Funciones RPC Implementadas
 
-### Funciones RPC Implementadas
+**`function_name(p_param TYPE) → JSON`**
+- Descripción: [Qué hace]
+- Reglas: RN-001, RN-002
+- Request: `{"p_param": "value"}`
+- Response: `{"success": true, "data": {...}}`
 
-#### 1. `function_name(p_param1 TYPE, p_param2 TYPE) → JSON`
+#### CA Implementados
+- **CA-001**: [Título] → Backend: [función/tabla]
 
-**Descripción**: [Qué hace]
-**Reglas de negocio**: RN-001, RN-002
+#### RN Implementadas
+- **RN-001**: [Título] → [validación/constraint]
 
-**Parámetros**:
-- `p_param1`: [descripción]
-
-**Response Success**:
-```json
-{"success": true, "data": {...}, "message": "..."}
-```
-
-**Response Error**:
-```json
-{"success": false, "error": {"code": "...", "message": "...", "hint": "..."}}
-```
-
-### Criterios Aceptación Implementados
-
-- **CA-001**: [Título] → Implementado en: [función/tabla]
-- **CA-002**: [Título] → Implementado en: [función/tabla]
-
-### Reglas Negocio Implementadas
-
-- **RN-001**: [Título] → Cómo: [validación/constraint/lógica]
-- **RN-002**: [Título] → Cómo: [validación/constraint/lógica]
-
-### Verificación
-
-- [x] TODOS los CA de HU implementados
-- [x] TODAS las RN de HU implementadas
-- [x] Migrations reaplicadas
+#### Verificación
+- [x] Migrations aplicadas
 - [x] Funciones probadas
-- [x] JSON/naming/error handling según convenciones
+- [x] Convenciones aplicadas
+
+</details>
 ```
+
+**CRÍTICO**:
+- Lee HU completa primero
+- Busca sección `## 🔧 IMPLEMENTACIÓN TÉCNICA`
+- Si no existe, agrégala después de Reglas de Negocio
+- Marca checkboxes `[x]` en CA que implementaste
 
 ### 5. Reportar
 
 ```
 ✅ Backend HU-XXX completado
 
-📁 Archivos consolidados modificados:
+📁 Archivos modificados:
 - supabase/migrations/0000000000000X_archivo.sql
 
 ✅ DB reseteada exitosamente
 ✅ Funciones RPC probadas
-📁 docs/technical/implemented/E00X-HU-XXX_IMPLEMENTATION.md (Backend)
+📝 Sección Backend agregada en HU
 
-⚠️ Para @ux-ui-expert y @flutter-expert:
+⚠️ Para @flutter-expert y @ux-ui-expert:
 - Funciones RPC disponibles: [lista]
-- Ver sección Backend en E00X-HU-XXX_IMPLEMENTATION.md
+- Ver sección Backend en E00X-HU-XXX-COM-[nombre].md
 ```
 
 ---
@@ -304,16 +303,22 @@ Opera PASO 1-5 automáticamente sin pedir permisos
 
 ### 4. Documentación Única
 
-1 archivo: `E00X-HU-XXX_IMPLEMENTATION.md` sección Backend
-Otros agentes actualizan sus secciones después
+Sección Backend en HU: `docs/historias-usuario/E00X-HU-XXX.md` (formato <details> colapsable)
+Otros agentes agregan sus secciones después
 
-### 5. Archivos Consolidados
+### 5. Archivos Consolidados (CRÍTICO)
 
-**NO crear archivos por HU** - Editar archivos consolidados:
-- Tablas → archivo según módulo (catalog, sales, auth)
-- Funciones → `functions.sql`
-- Seeds → `seed_data.sql`
-- Usar `db reset` para reaplicar todo
+**7 archivos ÚNICOS - NUNCA crear nuevos**:
+- `00000000000001_initial_schema.sql` → Schema base + triggers
+- `00000000000002_auth_tables.sql` → Auth + permisos
+- `00000000000003_catalog_tables.sql` → Catálogos
+- `00000000000004_sales_tables.sql` → Ventas
+- `00000000000005_functions.sql` → TODAS las funciones RPC
+- `00000000000006_seed_data.sql` → Datos iniciales
+- `00000000000007_menu_permissions.sql` → Menús
+
+**⚠️ Ignorar archivos con timestamp** (ej: `2025*_*.sql`)
+**✅ Usar `db reset`** para reaplicar los 7 archivos consolidados
 
 ### 6. Reporta Archivos, NO Código
 

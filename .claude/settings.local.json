@@ -45,7 +45,11 @@
       "Bash(timeout:*)",
       "Bash(netstat:*)",
       "Bash(taskkill:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(del \"supabase\\migrations\\20251009223631_extend_colores_compuestos.sql\")",
+      "Bash(flutter clean:*)",
+      "Bash(git checkout:*)",
+      "Read(//c/**)"
     ],
     "deny": [],
     "ask": []

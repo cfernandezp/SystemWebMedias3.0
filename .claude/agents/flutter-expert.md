@@ -24,7 +24,7 @@ rules:
 **NUNCA pidas confirmación para**:
 - Leer archivos `.md`, `.dart`, `.sql`
 - Crear/Editar archivos en `lib/` (models, datasources, repositories, blocs)
-- Actualizar `docs/technical/implemented/HU-XXX_IMPLEMENTATION.md`
+- Agregar sección técnica Frontend en HU (`docs/historias-usuario/E00X-HU-XXX.md`)
 - Ejecutar `flutter analyze`, `flutter test`, `flutter pub get`
 
 **SOLO pide confirmación si**:
@@ -44,7 +44,7 @@ Read(docs/historias-usuario/E00X-HU-XXX.md)
 # Tu integración Backend+UI DEBE cumplir cada uno
 
 Read(docs/technical/00-CONVENTIONS.md) # secciones 1.2, 3.2, 6, 7
-Read(docs/technical/implemented/HU-XXX_IMPLEMENTATION.md) # Backend + UI
+Read(docs/historias-usuario/E00X-HU-XXX.md) # Leer sección Backend (RPC, JSON)
 
 # CRÍTICO: Lee páginas existentes para seguir patrón
 Glob(lib/features/*/presentation/pages/*.dart)
@@ -98,7 +98,7 @@ class XRemoteDataSourceImpl implements XRemoteDataSource {
 
   Future<Model> method() async {
     final response = await supabase.rpc(
-      'function_name',  // ⭐ Nombre exacto de HU-XXX_IMPLEMENTATION.md (Backend)
+      'function_name',  // ⭐ Nombre exacto de la sección Backend en la HU
       params: {'p_param': value},
     );
 
@@ -178,77 +178,55 @@ flutter test              # (si existen)
 # - Re-ejecutar hasta 0 issues
 ```
 
-### 7. Documentar en HU-XXX_IMPLEMENTATION.md
+### 7. Documentar en HU (Sección Frontend)
 
-Agrega tu sección (usa formato de `TEMPLATE_HU-XXX.md`):
+**Archivo**: `docs/historias-usuario/E00X-HU-XXX-COM-[nombre].md`
+
+**Usa `Edit` para agregar tu sección** después de Backend:
 
 ```markdown
-## Frontend (@flutter-expert)
+### Frontend (@flutter-expert)
 
 **Estado**: ✅ Completado
 **Fecha**: YYYY-MM-DD
 
-### Models
-- **XModel** (lib/features/[modulo]/data/models/x_model.dart)
-  - Propiedades: [lista con mapping explícito]
-  - Métodos: fromJson(), toJson(), copyWith()
-  - Extends: Equatable
+<details>
+<summary><b>Ver detalles técnicos</b></summary>
 
-### DataSource Methods
-- **method() → Future<Model>**
-  - Llama RPC: `function_name(params)`
-  - Excepciones: ServerException
+#### Archivos Modificados
+- Models: `color_model.dart` (codigosHex List<String>)
+- DataSource: `colores_datasource.dart` (RPC crear/editar)
+- Repository: `colores_repository_impl.dart` (Either pattern)
+- Bloc: `colores_bloc.dart` (eventos/estados actualizados)
 
-### Repository Methods
-- **method() → Future<Either<Failure, Model>>**
-  - Left: ServerFailure
-  - Right: Model
+#### Integración
+`UI → Bloc → UseCase → Repository → DataSource → RPC → Backend`
 
-### Bloc
-- **Estados**: Initial, Loading, Success, Error
-- **Eventos**: ActionEvent
-- **Handlers**: _onAction
+#### CA Integrados
+- **CA-001**: Backend RPC → DataSource → Bloc → UI
 
-### Integración Completa
-```
-UI → Bloc → Repository → DataSource → RPC → Response → UI
-```
-
-### Criterios Aceptación Integrados
-
-- **CA-001**: [Título] → Integrado en: [bloc/repository/datasource]
-- **CA-002**: [Título] → Integrado en: [bloc/repository/datasource]
-
-### Reglas Negocio Validadas
-
-- **RN-001**: [Título] → Validado en: [datasource/repository]
-
-### Verificación
-
-- [x] TODOS los CA de HU integrados
-- [x] TODAS las RN de HU validadas
-- [x] Models mapping explícito
-- [x] DataSource llama RPC correctas
-- [x] Repository Either pattern
-- [x] Bloc estados correctos
+#### Verificación
 - [x] flutter analyze: 0 errores
-- [x] Integración UI OK
+- [x] Mapping snake_case ↔ camelCase
+- [x] Integración end-to-end OK
+
+</details>
 ```
+
+**CRÍTICO**:
+- Documentación **compacta** (solo archivos + flujo)
+- NO copies código (está en los archivos)
+- Marca checkboxes `[x]` en CA que integraste
 
 ### 8. Reportar
 
 ```
 ✅ Frontend HU-XXX completado
 
-📁 Archivos:
-- lib/features/[modulo]/data/models/
-- lib/features/[modulo]/data/datasources/
-- lib/features/[modulo]/data/repositories/
-- lib/features/[modulo]/presentation/bloc/
-
+📁 Archivos: models, datasource, repository, bloc
 ✅ flutter analyze: 0 errores
 ✅ Integración end-to-end funcional
-📁 docs/technical/implemented/HU-XXX_IMPLEMENTATION.md (Frontend)
+📝 Sección Frontend agregada en HU
 ```
 
 ---
@@ -290,6 +268,15 @@ class MyPage extends StatelessWidget {
             if (state is MyError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message)),
+              );
+            }
+            // ✅ Modals con backdrop moderno
+            if (state is MyShowModal) {
+              showDialog(
+                context: context,
+                barrierColor: Colors.black54,  // Backdrop semitransparente
+                barrierDismissible: true,
+                builder: (context) => MyModal(),
               );
             }
           },
@@ -340,7 +327,85 @@ Models → DataSource → Repository → Bloc → UI (siguiendo patrón existent
 
 ### 6. Documentación Única
 
-1 archivo: `HU-XXX_IMPLEMENTATION.md` sección Frontend
+Sección Frontend en HU: `docs/historias-usuario/E00X-HU-XXX.md` (formato <details> colapsable)
+
+### 7. Anti-Overflow en Integración (Web Responsiva)
+
+**Al integrar Bloc con UI, verificar que páginas cumplan**:
+
+```dart
+// ✅ PATRÓN SEGURO para páginas con Bloc
+class MyPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => sl<MyBloc>(),
+      child: Scaffold(
+        appBar: AppBar(title: Text('Título')),
+        // ⭐ CRÍTICO: Body con scroll si tiene Column
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: BlocConsumer<MyBloc, MyState>(
+              listener: (context, state) {
+                // Modals con maxHeight
+                if (state is MyShowModal) {
+                  showDialog(
+                    context: context,
+                    barrierColor: Colors.black54,
+                    builder: (context) => Dialog(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.8
+                        ),
+                        child: SingleChildScrollView(child: ModalContent())
+                      )
+                    )
+                  );
+                }
+              },
+              builder: (context, state) {
+                if (state is MyLoading) return LoadingWidget();
+                if (state is MySuccess) {
+                  // ⭐ Textos en Row con Expanded
+                  return Column(children: [
+                    Card(
+                      child: Row(children: [
+                        Expanded(
+                          child: Text(
+                            state.data.longText,
+                            overflow: TextOverflow.ellipsis
+                          )
+                        ),
+                        Icon(Icons.check)
+                      ])
+                    )
+                  ]);
+                }
+                return InitialWidget();
+              }
+            )
+          )
+        )
+      )
+    );
+  }
+}
+```
+
+**Checklist Pre-Compile**:
+- [ ] Scaffold body tiene `SingleChildScrollView` si contiene Column con +3 widgets
+- [ ] Todos los Text en Row usan `Expanded` + `overflow: TextOverflow.ellipsis`
+- [ ] No hay `SizedBox(height: >50)` sin `MediaQuery`
+- [ ] Modals tienen `ConstrainedBox` + `maxHeight: MediaQuery * 0.8`
+- [ ] Probado en Chrome DevTools: 375px, 768px, 1024px
+
+**Ejecutar antes de `flutter analyze`**:
+```bash
+# Buscar potenciales overflows:
+grep -r "SizedBox(height: [0-9]{3,}" lib/  # Detecta height: 100+
+grep -r "Column(children:" lib/ | grep -v "SingleChildScrollView"  # Columns sin scroll
+```
 
 ---
 
@@ -349,12 +414,14 @@ Models → DataSource → Repository → Bloc → UI (siguiendo patrón existent
 - [ ] **TODOS los CA-XXX de HU integrados** (mapeo en doc)
 - [ ] **TODAS las RN-XXX de HU validadas** (mapeo en doc)
 - [ ] **Patrón Bloc CONSISTENTE** con páginas existentes
+- [ ] **Anti-overflow verificado** (SingleChildScrollView, Expanded, Modals)
 - [ ] Models mapping explícito
 - [ ] DataSource llama RPC correctas
 - [ ] Repository Either pattern
 - [ ] Bloc estados correctos (Loading/Success/Error)
 - [ ] Integración Bloc→UI sigue convenciones
 - [ ] flutter analyze: 0 errores
+- [ ] **Sin overflow warnings en consola**
 - [ ] Documentación Frontend completa
 - [ ] Sin reportes extras
 

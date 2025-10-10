@@ -283,13 +283,14 @@ COMMENT ON COLUMN valores_talla.orden IS 'Orden de visualización (ascendente) -
 COMMENT ON COLUMN valores_talla.activo IS 'Estado del valor (soft delete) - RN-004-08, RN-004-13';
 
 -- ============================================
--- PASO 10: Tabla colores (E002-HU-005)
+-- PASO 10: Tabla colores (E002-HU-005 + E002-HU-005-EXT)
 -- ============================================
 
 CREATE TABLE colores (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nombre VARCHAR(50) NOT NULL,
-    codigo_hex VARCHAR(7) NOT NULL,
+    codigos_hex TEXT[] NOT NULL,
+    tipo_color VARCHAR(10) DEFAULT 'unico' NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -298,7 +299,12 @@ CREATE TABLE colores (
     CONSTRAINT colores_nombre_unique UNIQUE (nombre),
     CONSTRAINT colores_nombre_length CHECK (LENGTH(nombre) >= 3 AND LENGTH(nombre) <= 30),
     CONSTRAINT colores_nombre_no_special_chars CHECK (nombre ~ '^[A-Za-zÀ-ÿ\s\-]+$'),
-    CONSTRAINT colores_hex_format CHECK (codigo_hex ~ '^#[0-9A-Fa-f]{6}$')
+    CONSTRAINT colores_codigos_hex_length CHECK (array_length(codigos_hex, 1) BETWEEN 1 AND 3),
+    CONSTRAINT colores_tipo_valid CHECK (tipo_color IN ('unico', 'compuesto')),
+    CONSTRAINT colores_tipo_consistency CHECK (
+        (tipo_color = 'unico' AND array_length(codigos_hex, 1) = 1) OR
+        (tipo_color = 'compuesto' AND array_length(codigos_hex, 1) BETWEEN 2 AND 3)
+    )
 );
 
 CREATE INDEX idx_colores_nombre ON colores(LOWER(nombre));
@@ -310,10 +316,33 @@ CREATE TRIGGER update_colores_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-COMMENT ON TABLE colores IS 'E002-HU-005: Catálogo de colores base con código hexadecimal';
+-- Trigger para validar formato hex en cada elemento
+CREATE OR REPLACE FUNCTION validate_codigos_hex_format()
+RETURNS TRIGGER AS $$
+DECLARE
+  codigo TEXT;
+BEGIN
+  FOREACH codigo IN ARRAY NEW.codigos_hex
+  LOOP
+    IF codigo !~ '^#[0-9A-Fa-f]{6}$' THEN
+      RAISE EXCEPTION 'Código hexadecimal inválido: %. Formato esperado: #RRGGBB', codigo;
+    END IF;
+  END LOOP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER validate_colores_hex_format
+  BEFORE INSERT OR UPDATE ON colores
+  FOR EACH ROW
+  EXECUTE FUNCTION validate_codigos_hex_format();
+
+COMMENT ON TABLE colores IS 'E002-HU-005-EXT: Catálogo de colores únicos (1 hex) o compuestos (2-3 hex)';
 COMMENT ON COLUMN colores.nombre IS 'Nombre del color (único case-insensitive, 3-30 caracteres, solo letras/espacios/guiones) - RN-025';
-COMMENT ON COLUMN colores.codigo_hex IS 'Código hexadecimal formato #RRGGBB - RN-026';
+COMMENT ON COLUMN colores.codigos_hex IS 'Array de códigos hexadecimales (1-3 códigos formato #RRGGBB) - RN-026';
+COMMENT ON COLUMN colores.tipo_color IS 'Tipo: unico (1 color) o compuesto (2-3 colores)';
 COMMENT ON COLUMN colores.activo IS 'Estado del color (soft delete) - RN-029, RN-032';
+COMMENT ON FUNCTION validate_codigos_hex_format IS 'E002-HU-005-EXT: Valida formato #RRGGBB en cada elemento del array codigos_hex';
 
 -- ============================================
 -- PASO 11: Tabla producto_colores (E002-HU-005)

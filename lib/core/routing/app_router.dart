@@ -24,6 +24,8 @@ import 'package:system_web_medias/features/catalogos/presentation/pages/sistema_
 import 'package:system_web_medias/features/catalogos/presentation/pages/colores_list_page.dart';
 import 'package:system_web_medias/features/catalogos/presentation/pages/color_form_page.dart';
 import 'package:system_web_medias/features/catalogos/presentation/pages/colores_estadisticas_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/filtrar_por_combinacion_page.dart';
+import 'package:system_web_medias/features/catalogos/presentation/pages/productos_por_color_page.dart';
 import 'package:system_web_medias/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_bloc.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_event.dart';
@@ -259,6 +261,16 @@ class AppRouter {
             path: '/colores-estadisticas',
             name: 'colores-estadisticas',
             builder: (context, state) => const ColoresEstadisticasPage(),
+          ),
+          GoRoute(
+            path: '/filtrar-combinacion',
+            name: 'filtrar-combinacion',
+            builder: (context, state) => const FiltrarPorCombinacionPage(),
+          ),
+          GoRoute(
+            path: '/productos-por-color',
+            name: 'productos-por-color',
+            builder: (context, state) => const ProductosPorColorPage(),
           ),
         ],
       ),

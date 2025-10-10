@@ -53,3 +53,10 @@ npx supabase db reset
 localStorage.clear();
 sessionStorage.clear();
 location.reload();
+
+
+Limpia y reinicia:
+flutter clean
+flutter pub get
+
+flutter run -d chrome --web-port=9090

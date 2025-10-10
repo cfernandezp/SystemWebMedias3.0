@@ -55,6 +55,7 @@ ENTONCES el color queda guardado y visible en la lista
 ✅ ColorCard con preview circular del color + nombre
 ✅ FloatingActionButton para abrir modal de creación
 ✅ ColorFormModal con:
+   - Backdrop semitransparente (barrierColor: Colors.black54)
    - CorporateFormField para nombre
    - ColorPicker visual (rueda de color o input hex)
    - Validación en tiempo real (nombre no vacío, hex válido)
@@ -71,7 +72,7 @@ ENTONCES el color queda guardado y visible en la lista
 **NUNCA pidas confirmación para**:
 - Leer archivos `.md`, `.dart`, `.svg`, `.png`
 - Crear/Editar archivos en `lib/` (pages, widgets)
-- Actualizar `docs/technical/implemented/HU-XXX_IMPLEMENTATION.md`
+- Agregar sección técnica UI en HU (`docs/historias-usuario/E00X-HU-XXX.md`)
 - Ejecutar `flutter analyze`, levantar app
 
 **SOLO pide confirmación si**:
@@ -104,15 +105,16 @@ Read(docs/historias-usuario/E00X-HU-XXX.md)
 **Define**:
 - Componentes UI específicos (Cards, Forms, Modals, etc.)
 - Layout y disposición visual
-- Interacciones y animaciones
+- Interacciones y animaciones (transitions, backdrop blur)
 - Estados visuales (loading, error, success)
+- Overlays modernos para modals (backdrop semitransparente)
 
 ### 3. Leer Documentación Técnica
 
 ```bash
-# Lee convenciones y backend disponible:
+# Lee convenciones y secciones técnicas de la HU:
 - docs/technical/00-CONVENTIONS.md (secciones 2, 5, 7: Routing, Design System, Código Limpio)
-- docs/technical/implemented/HU-XXX_IMPLEMENTATION.md (Backend: funciones RPC)
+- docs/historias-usuario/E00X-HU-XXX.md (secciones Backend y Frontend)
 - docs/technical/workflows/AGENT_RULES.md (tu sección)
 ```
 
@@ -204,81 +206,203 @@ LayoutBuilder(
 )
 ```
 
-### 4. Documentar en HU-XXX_IMPLEMENTATION.md
+### 4. Documentar en HU (Sección UI)
 
-Agrega tu sección (usa formato de `TEMPLATE_HU-XXX.md`):
+**Archivo**: `docs/historias-usuario/E00X-HU-XXX-COM-[nombre].md`
+
+**Usa `Edit` para agregar tu sección** después de Frontend:
 
 ```markdown
-## UI (@ux-ui-expert)
+### UI (@ux-ui-expert)
 
 **Estado**: ✅ Completado
 **Fecha**: YYYY-MM-DD
 
-### Páginas Creadas
+<details>
+<summary><b>Ver detalles técnicos</b></summary>
 
-#### 1. `RegisterPage` → `/register`
-- **CA implementados**: CA-001 (formulario), CA-002 (validaciones)
-- **Componentes**: CorporateFormField (email, password), CorporateButton
-- **Estados**: Loading, Success, Error
-- **Navegación**: Link a `/login`
+#### Archivos Creados
+- Pages: `color_form_page.dart` (formulario)
+- Widgets: `color_picker_field.dart` (selector), `color_card.dart` (preview)
+- Rutas: `/colores`, `/color-form`
 
-### Widgets Principales
+#### Funcionalidad UI
+- Selector múltiple 1-3 colores
+- Preview adaptativo (círculo/rectángulo)
+- Responsive: Mobile < 768px, Desktop >= 1200px
+- Design System: Theme-aware, sin hardcoded
 
-#### 1. `LoginFormWidget`
-- **Descripción**: Formulario login con validaciones
-- **Propiedades**: emailController, passwordController, onSubmit
-- **Uso**: LoginPage
+#### CA Cubiertos
+- **CA-001**: ColorPickerField + validaciones
+- **CA-002**: ColorCard preview compuesto
 
-### Rutas Configuradas
-
-```dart
-routes: {
-  '/register': (context) => RegisterPage(),
-  '/login': (context) => LoginPage(),
-}
-```
-
-### Design System Aplicado
-
-**Colores**: Theme.of(context).colorScheme.primary
-**Spacing**: DesignTokens.spacingMedium (16px)
-**Typography**: Theme.of(context).textTheme.titleLarge
-**Responsive**: Mobile single column, Desktop centered card max-width 400px
-
-### Criterios Aceptación Cubiertos
-
-- **CA-001**: [Título] → UI: [página/widget que lo cubre]
-- **CA-002**: [Título] → UI: [página/widget que lo cubre]
-
-### Verificación
-
-- [x] TODOS los CA de HU cubiertos en UI
-- [x] UI renderiza correctamente
-- [x] Sin colores hardcoded
-- [x] Routing flat
-- [x] Responsive mobile+desktop
+#### Verificación
+- [x] Responsive verificado
+- [x] Sin overflow warnings
 - [x] Design System aplicado
+
+</details>
 ```
+
+**CRÍTICO**:
+- Documentación **compacta** (solo archivos + funcionalidad clave)
+- NO copies código UI (está en los archivos)
+- Marca checkboxes `[x]` en CA que cubriste
 
 ### 5. Reportar
 
 ```
 ✅ UI HU-XXX completado
 
-📁 Archivos:
-- lib/features/[modulo]/presentation/pages/
-- lib/features/[modulo]/presentation/widgets/
-
-✅ Páginas implementadas: [lista]
-✅ Routing configurado (flat)
+📁 Archivos: pages, widgets, rutas
 ✅ Responsive verificado
 ✅ Design System aplicado
-📁 docs/technical/implemented/HU-XXX_IMPLEMENTATION.md (UI)
+📝 Sección UI agregada en HU
+```
 
-⚠️ Para @flutter-expert:
-- Páginas listas para integración con Bloc
-- Rutas en app_routes.dart
-- Ver sección UI en HU-XXX_IMPLEMENTATION.md
+---
+
+## 🚨 PREVENCIÓN OVERFLOW - FLUTTER WEB RESPONSIVA
+
+**Target**: Flutter Web (Desktop/Tablet/Mobile browsers)
+**Breakpoints**: < 768px (Mobile), 768-1024px (Tablet), > 1024px (Desktop)
+
+### Reglas Anti-Overflow Obligatorias
+
+#### 1. Contenido Largo → SingleChildScrollView
+
+```dart
+// ❌ MAL - Causa overflow en pantallas pequeñas
+Scaffold(
+  body: Column(children: [Widget1(), Widget2(), Widget3()...])
+)
+
+// ✅ BIEN - Scroll vertical automático
+Scaffold(
+  body: SingleChildScrollView(
+    child: Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(children: [Widget1(), Widget2(), Widget3()...])
+    )
+  )
+)
+```
+
+**Aplica a**: Formularios, páginas de detalle, listas largas
+
+#### 2. Textos en Row → Expanded + overflow
+
+```dart
+// ❌ MAL - Texto largo desborda horizontalmente
+Row(children: [
+  Text('Nombre de producto muy largo que no cabe'),
+  Icon(Icons.arrow_forward)
+])
+
+// ✅ BIEN - Texto truncado con ellipsis
+Row(children: [
+  Expanded(
+    child: Text(
+      'Nombre de producto muy largo que no cabe',
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1
+    )
+  ),
+  Icon(Icons.arrow_forward)
+])
+```
+
+**Aplica a**: Cards, ListTiles, Headers con texto dinámico
+
+#### 3. Espaciados Responsive → MediaQuery
+
+```dart
+// ❌ MAL - Altura fija puede causar overflow
+SizedBox(height: 100)
+Padding(padding: EdgeInsets.symmetric(vertical: 80))
+
+// ✅ BIEN - Altura proporcional al viewport
+SizedBox(height: MediaQuery.of(context).size.height * 0.05)
+SizedBox(height: DesignTokens.spacingLarge) // Máximo 24px
+
+// ✅ BIEN - Para separaciones pequeñas
+SizedBox(height: 16) // OK si es < 50px
+```
+
+**Regla**: No usar `SizedBox(height: >50px)` fijo
+
+#### 4. Modals con Altura Máxima
+
+```dart
+// ❌ MAL - Modal puede desbordar en móviles
+showDialog(
+  context: context,
+  builder: (context) => Dialog(
+    child: Column(children: [...]) // Sin restricción
+  )
+)
+
+// ✅ BIEN - Modal con scroll interno
+showDialog(
+  context: context,
+  barrierColor: Colors.black54,
+  builder: (context) => Dialog(
+    child: ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+        maxWidth: 500
+      ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(children: [...])
+        )
+      )
+    )
+  )
+)
+```
+
+#### 5. Listas Dinámicas → ListView o Flexible
+
+```dart
+// ❌ MAL - Column con muchos hijos causa overflow
+Column(children: [
+  for (var item in items) ItemWidget(item)
+])
+
+// ✅ BIEN - ListView con scroll
+ListView.builder(
+  shrinkWrap: true,
+  physics: NeverScrollableScrollPhysics(), // Si está dentro de otro scroll
+  itemCount: items.length,
+  itemBuilder: (context, index) => ItemWidget(items[index])
+)
+```
+
+### Checklist Pre-Implementación
+
+Antes de crear páginas/widgets, verificar:
+
+- [ ] ¿Tiene Column con +3 widgets? → Wrap con `SingleChildScrollView`
+- [ ] ¿Tiene Text dentro de Row? → Usar `Expanded` + `overflow`
+- [ ] ¿Usa `SizedBox(height: >50)`? → Cambiar por `MediaQuery` o `DesignTokens`
+- [ ] ¿Tiene Modal/Dialog? → Agregar `ConstrainedBox` + `maxHeight`
+- [ ] ¿Lista dinámica en Column? → Cambiar a `ListView.builder`
+
+### Testing Responsive Obligatorio
+
+```bash
+# Probar en estos anchos (Chrome DevTools):
+- 375px  → iPhone SE (Mobile pequeño)
+- 768px  → iPad Portrait (Tablet)
+- 1024px → Desktop pequeño
+- 1920px → Desktop grande
+
+# Verificar:
+✅ Sin scroll horizontal
+✅ Sin texto cortado
+✅ Sin overflow warnings en consola
 ```
 
 ---
@@ -325,7 +449,7 @@ Opera PASO 1-5 automáticamente sin pedir permisos
 
 ### 4. Documentación Única
 
-1 archivo: `HU-XXX_IMPLEMENTATION.md` sección UI
+Sección UI en HU: `docs/historias-usuario/E00X-HU-XXX.md` (formato <details> colapsable)
 
 ### 5. Reporta Archivos, NO Código
 
@@ -352,6 +476,14 @@ CorporateFormField: 28px radius pill, animación 200ms
 DesignTokens.spacingSmall: 8px
 DesignTokens.spacingMedium: 16px
 DesignTokens.spacingLarge: 24px
+
+// Modals y Overlays (UX Moderno)
+showDialog(
+  context: context,
+  barrierColor: Colors.black54,  // ✅ Backdrop semitransparente
+  barrierDismissible: true,      // ✅ Cerrar tocando fuera
+  builder: (context) => Dialog(...),
+)
 ```
 
 ---
@@ -361,9 +493,11 @@ DesignTokens.spacingLarge: 24px
 - [ ] **TODOS los CA-XXX de HU cubiertos en UI** (mapeo en doc)
 - [ ] Backend leído (RPC disponibles)
 - [ ] Convenciones aplicadas
+- [ ] **Reglas anti-overflow aplicadas** (SingleChildScrollView, Expanded, maxHeight)
 - [ ] Páginas/widgets creados
 - [ ] Routing configurado (flat)
-- [ ] UI verificada y responsive
+- [ ] UI verificada y responsive (375px, 768px, 1024px)
+- [ ] **Sin warnings de overflow en consola**
 - [ ] Documentación UI completa
 - [ ] Sin reportes extras
 

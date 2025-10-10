@@ -11,12 +11,12 @@ class UpdateColor {
   Future<Either<Failure, ColorModel>> call({
     required String id,
     required String nombre,
-    required String codigoHex,
+    required List<String> codigosHex,
   }) async {
     return await repository.updateColor(
       id: id,
       nombre: nombre,
-      codigoHex: codigoHex,
+      codigosHex: codigosHex,
     );
   }
 }

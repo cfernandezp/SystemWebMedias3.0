@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/create_color.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/delete_color.dart';
+import 'package:system_web_medias/features/catalogos/domain/usecases/filter_productos_by_combinacion.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/get_colores_estadisticas.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/get_colores_list.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/get_productos_by_color.dart';
@@ -14,6 +15,7 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
   final UpdateColor updateColor;
   final DeleteColor deleteColor;
   final GetProductosByColor getProductosByColor;
+  final FilterProductosByCombinacion filterProductosByCombinacion;
   final GetColoresEstadisticas getColoresEstadisticas;
 
   ColoresBloc({
@@ -22,6 +24,7 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
     required this.updateColor,
     required this.deleteColor,
     required this.getProductosByColor,
+    required this.filterProductosByCombinacion,
     required this.getColoresEstadisticas,
   }) : super(const ColoresInitial()) {
     on<LoadColores>(_onLoadColores);
@@ -31,6 +34,7 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
     on<SearchColores>(_onSearchColores);
     on<LoadEstadisticas>(_onLoadEstadisticas);
     on<LoadProductosByColor>(_onLoadProductosByColor);
+    on<FilterProductosByCombinacionEvent>(_onFilterProductosByCombinacion);
   }
 
   Future<void> _onLoadColores(
@@ -65,7 +69,7 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
 
     final result = await createColor(
       nombre: event.nombre,
-      codigoHex: event.codigoHex,
+      codigosHex: event.codigosHex,
     );
 
     result.fold(
@@ -94,7 +98,7 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
     final result = await updateColor(
       id: event.id,
       nombre: event.nombre,
-      codigoHex: event.codigoHex,
+      codigosHex: event.codigosHex,
     );
 
     result.fold(
@@ -173,8 +177,9 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
         ));
       } else {
         final filtered = currentState.colores.where((color) {
-          return color.nombre.toLowerCase().contains(query) ||
-              color.codigoHex.toLowerCase().contains(query);
+          final matchesName = color.nombre.toLowerCase().contains(query);
+          final matchesHex = color.codigosHex.any((hex) => hex.toLowerCase().contains(query));
+          return matchesName || matchesHex;
         }).toList();
 
         emit(currentState.copyWith(
@@ -216,6 +221,25 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
         productos: productos,
         colorNombre: event.colorNombre,
         exacto: event.exacto,
+      )),
+    );
+  }
+
+  Future<void> _onFilterProductosByCombinacion(
+    FilterProductosByCombinacionEvent event,
+    Emitter<ColoresState> emit,
+  ) async {
+    emit(const ColoresLoading());
+
+    final result = await filterProductosByCombinacion(
+      colores: event.colores,
+    );
+
+    result.fold(
+      (failure) => emit(ColoresError(message: failure.message)),
+      (productos) => emit(ProductosByCombinacionLoaded(
+        productos: productos,
+        colores: event.colores,
       )),
     );
   }

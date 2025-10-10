@@ -8,13 +8,13 @@ abstract class ColoresRepository {
 
   Future<Either<Failure, ColorModel>> createColor({
     required String nombre,
-    required String codigoHex,
+    required List<String> codigosHex,
   });
 
   Future<Either<Failure, ColorModel>> updateColor({
     required String id,
     required String nombre,
-    required String codigoHex,
+    required List<String> codigosHex,
   });
 
   Future<Either<Failure, Map<String, dynamic>>> deleteColor(String id);
@@ -22,6 +22,10 @@ abstract class ColoresRepository {
   Future<Either<Failure, List<Map<String, dynamic>>>> getProductosByColor({
     required String colorNombre,
     required bool exacto,
+  });
+
+  Future<Either<Failure, List<Map<String, dynamic>>>> filterProductosByCombinacion({
+    required List<String> colores,
   });
 
   Future<Either<Failure, EstadisticasColoresModel>> getEstadisticas();

@@ -147,27 +147,27 @@ END $$;
 -- PASO 2D: Colores de ejemplo (E002-HU-005)
 -- ============================================
 
-INSERT INTO colores (nombre, codigo_hex, activo) VALUES
-    ('Rojo', '#FF0000', true),
-    ('Negro', '#000000', true),
-    ('Blanco', '#FFFFFF', true),
-    ('Azul', '#0000FF', true),
-    ('Verde', '#008000', true),
-    ('Amarillo', '#FFFF00', true),
-    ('Naranja', '#FFA500', true),
-    ('Rosa', '#FFC0CB', true),
-    ('Gris', '#808080', true),
-    ('Morado', '#800080', true),
-    ('Café', '#8B4513', true),
-    ('Azul Marino', '#000080', true),
-    ('Verde Oscuro', '#006400', true),
-    ('Rojo Oscuro', '#8B0000', true),
-    ('Gris Oscuro', '#404040', true),
-    ('Beige', '#F5F5DC', true),
-    ('Turquesa', '#40E0D0', true),
-    ('Fucsia', '#FF00FF', true),
-    ('Verde Lima', '#00FF00', true),
-    ('Azul Cielo', '#87CEEB', true)
+INSERT INTO colores (nombre, codigos_hex, tipo_color, activo) VALUES
+    ('Rojo', ARRAY['#FF0000'], 'unico', true),
+    ('Negro', ARRAY['#000000'], 'unico', true),
+    ('Blanco', ARRAY['#FFFFFF'], 'unico', true),
+    ('Azul', ARRAY['#0000FF'], 'unico', true),
+    ('Verde', ARRAY['#008000'], 'unico', true),
+    ('Amarillo', ARRAY['#FFFF00'], 'unico', true),
+    ('Naranja', ARRAY['#FFA500'], 'unico', true),
+    ('Rosa', ARRAY['#FFC0CB'], 'unico', true),
+    ('Gris', ARRAY['#808080'], 'unico', true),
+    ('Morado', ARRAY['#800080'], 'unico', true),
+    ('Café', ARRAY['#8B4513'], 'unico', true),
+    ('Azul Marino', ARRAY['#000080'], 'unico', true),
+    ('Verde Oscuro', ARRAY['#006400'], 'unico', true),
+    ('Rojo Oscuro', ARRAY['#8B0000'], 'unico', true),
+    ('Gris Oscuro', ARRAY['#404040'], 'unico', true),
+    ('Beige', ARRAY['#F5F5DC'], 'unico', true),
+    ('Turquesa', ARRAY['#40E0D0'], 'unico', true),
+    ('Fucsia', ARRAY['#FF00FF'], 'unico', true),
+    ('Verde Lima', ARRAY['#00FF00'], 'unico', true),
+    ('Azul Cielo', ARRAY['#87CEEB'], 'unico', true)
 ON CONFLICT (nombre) DO NOTHING;
 
 -- ============================================

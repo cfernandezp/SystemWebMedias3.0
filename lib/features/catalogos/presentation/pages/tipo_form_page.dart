@@ -155,30 +155,37 @@ class _TipoFormViewState extends State<_TipoFormView> {
         builder: (context, state) {
           final isLoading = state is TiposLoading;
 
-          return Center(
-            child: SingleChildScrollView(
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: isDesktop ? 600 : double.infinity,
-                ),
-                margin: EdgeInsets.all(isDesktop ? 24 : 16),
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
+                  ),
+                  child: Center(
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: isDesktop ? 600 : double.infinity,
+                      ),
+                      margin: EdgeInsets.all(isDesktop ? 24 : 16),
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
                       // Título
                       Text(
                         _isEditMode ? 'Editar Tipo' : 'Nuevo Tipo',
@@ -363,11 +370,14 @@ class _TipoFormViewState extends State<_TipoFormView> {
                           child: CircularProgressIndicator(),
                         ),
                       ],
-                    ],
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),

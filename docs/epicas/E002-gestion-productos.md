@@ -4,16 +4,16 @@
 - **Código**: E002
 - **Nombre**: Gestión de Productos de Medias
 - **Descripción**: Sistema completo de catálogos maestros, productos y artículos especializados para retail de medias multi-tienda
-- **Story Points Totales**: 58 pts
-- **Estado**: ⚪ Pendiente
+- **Story Points Totales**: 63 pts
+- **Estado**: 🔵 En Progreso
 
 ## 📚 HISTORIAS DE USUARIO
 
 ### 🏷️ GESTIÓN DE CATÁLOGOS MAESTROS (Solo Admin)
 
 ### E002-HU-001: Gestionar Catálogo de Marcas
-- **Archivo**: `docs/historias-usuario/E002-HU-005-gestionar-marcas.md`
-- **Estado**: ⚪ Pendiente
+- **Archivo**: `docs/historias-usuario/E002-HU-001-COM-gestionar-marcas.md`
+- **Estado**: ✅ Completada
 - **Story Points**: 4 pts
 - **Prioridad**: Alta
 - **Descripción**: CRUD de marcas con códigos únicos para SKU
@@ -48,47 +48,47 @@
 
 ### 📦 GESTIÓN DE PRODUCTOS Y ARTÍCULOS
 
-### HU-010: Crear Producto Maestro
-- **Archivo**: `docs/historias-usuario/HU-010-crear-producto-maestro.md`
-- **Estado**: ⚪ Pendiente
+### E002-HU-006: Crear Producto Maestro
+- **Archivo**: `docs/historias-usuario/E002-HU-006-REF-crear-producto-maestro.md`
+- **Estado**: 🟢 Refinada
 - **Story Points**: 5 pts
 - **Prioridad**: Crítica
-- **Descripción**: Crear productos combinando catálogos maestros
+- **Descripción**: Crear productos maestros combinando catálogos base (marca, material, tipo, sistema tallas) sin colores ni stock
 
-### HU-011: Especializar Artículos con Colores
-- **Archivo**: `docs/historias-usuario/HU-011-especializar-articulos-colores.md`
+### E002-HU-007: Especializar Artículos con Colores
+- **Archivo**: `docs/historias-usuario/E002-HU-007-especializar-articulos-colores.md`
 - **Estado**: ⚪ Pendiente
 - **Story Points**: 6 pts
 - **Prioridad**: Crítica
-- **Descripción**: Crear artículos con combinaciones de colores y SKU único
+- **Descripción**: Crear artículos especializando productos maestros con combinaciones de colores y generación automática de SKU único
 
-### HU-012: Asignar Stock por Tienda
-- **Archivo**: `docs/historias-usuario/HU-012-asignar-stock-tienda.md`
+### E002-HU-008: Asignar Stock por Tienda
+- **Archivo**: `docs/historias-usuario/E002-HU-008-asignar-stock-tienda.md`
 - **Estado**: ⚪ Pendiente
 - **Story Points**: 5 pts
 - **Prioridad**: Crítica
-- **Descripción**: Gestionar inventario por artículo específico en cada tienda
+- **Descripción**: Gestionar inventario por artículo específico en cada tienda con niveles mínimo/máximo
 
-### HU-013: Transferencias Entre Tiendas
-- **Archivo**: `docs/historias-usuario/HU-013-transferencias-tiendas.md`
+### E002-HU-009: Transferencias Entre Tiendas
+- **Archivo**: `docs/historias-usuario/E002-HU-009-transferencias-tiendas.md`
 - **Estado**: ⚪ Pendiente
 - **Story Points**: 8 pts
 - **Prioridad**: Alta
-- **Descripción**: Solicitar y aprobar movimientos de artículos entre tiendas
+- **Descripción**: Solicitar y aprobar movimientos de artículos entre tiendas con tracking y aprobación
 
-### HU-014: Búsqueda Avanzada de Artículos
-- **Archivo**: `docs/historias-usuario/HU-014-busqueda-avanzada.md`
+### E002-HU-010: Búsqueda Avanzada de Artículos
+- **Archivo**: `docs/historias-usuario/E002-HU-010-busqueda-avanzada.md`
 - **Estado**: ⚪ Pendiente
 - **Story Points**: 5 pts
 - **Prioridad**: Media
-- **Descripción**: Filtros avanzados por todos los catálogos y disponibilidad
+- **Descripción**: Filtros avanzados por marca, material, tipo, tallas, colores y disponibilidad por tienda
 
-### HU-015: Alertas de Stock Crítico
-- **Archivo**: `docs/historias-usuario/HU-015-alertas-stock.md`
+### E002-HU-011: Alertas de Stock Crítico
+- **Archivo**: `docs/historias-usuario/E002-HU-011-alertas-stock.md`
 - **Estado**: ⚪ Pendiente
 - **Story Points**: 5 pts
 - **Prioridad**: Media
-- **Descripción**: Notificaciones automáticas de stock bajo por artículo-tienda
+- **Descripción**: Notificaciones automáticas de stock bajo por artículo-tienda según niveles configurados
 
 ## 🎯 CRITERIOS DE ACEPTACIÓN DE LA ÉPICA
 - [ ] Catálogos maestros gestionables solo por admin
@@ -104,6 +104,7 @@
 - Total HU: 11
 - ✅ Completadas: 4 (36%)
 - 🟢 Refinadas: 1 (9%)
+- 🟡 Borradores: 0 (0%)
 - 🔵 En Desarrollo: 0 (0%)
 - ⚪ Pendientes: 6 (55%)
 

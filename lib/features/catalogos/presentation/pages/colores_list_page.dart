@@ -107,16 +107,32 @@ class _ColoresListView extends StatelessWidget {
           ],
         ),
         if (isDesktop)
-          OutlinedButton.icon(
-            onPressed: () {
-              context.push('/colores-estadisticas');
-            },
-            icon: const Icon(Icons.analytics_outlined),
-            label: const Text('Ver Estadísticas'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: theme.colorScheme.primary,
-              side: BorderSide(color: theme.colorScheme.primary),
-            ),
+          Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: () {
+                  context.push('/filtrar-combinacion');
+                },
+                icon: const Icon(Icons.filter_alt_outlined),
+                label: const Text('Filtrar por Combinación'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                  side: BorderSide(color: theme.colorScheme.primary),
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  context.push('/colores-estadisticas');
+                },
+                icon: const Icon(Icons.analytics_outlined),
+                label: const Text('Ver Estadísticas'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                  side: BorderSide(color: theme.colorScheme.primary),
+                ),
+              ),
+            ],
           ),
       ],
     );
@@ -215,13 +231,13 @@ class _ColoresListView extends StatelessWidget {
             final color = colores[index];
             return ColorCard(
               nombre: color.nombre,
-              codigoHex: color.codigoHex,
+              codigoHex: color.codigoHexPrimario,
               activo: color.activo,
               productosCount: color.productosCount,
               onEdit: () => _handleEdit(context, color.id, {
                 'id': color.id,
                 'nombre': color.nombre,
-                'codigoHex': color.codigoHex,
+                'codigosHex': color.codigosHex,
                 'activo': color.activo,
               }),
               onDelete: () => _handleDelete(context, color.id, color.nombre, color.productosCount),
@@ -236,13 +252,13 @@ class _ColoresListView extends StatelessWidget {
             final color = colores[index];
             return ColorCard(
               nombre: color.nombre,
-              codigoHex: color.codigoHex,
+              codigoHex: color.codigoHexPrimario,
               activo: color.activo,
               productosCount: color.productosCount,
               onEdit: () => _handleEdit(context, color.id, {
                 'id': color.id,
                 'nombre': color.nombre,
-                'codigoHex': color.codigoHex,
+                'codigosHex': color.codigosHex,
                 'activo': color.activo,
               }),
               onDelete: () => _handleDelete(context, color.id, color.nombre, color.productosCount),

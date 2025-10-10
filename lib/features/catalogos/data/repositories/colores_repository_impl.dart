@@ -28,12 +28,12 @@ class ColoresRepositoryImpl implements ColoresRepository {
   @override
   Future<Either<Failure, ColorModel>> createColor({
     required String nombre,
-    required String codigoHex,
+    required List<String> codigosHex,
   }) async {
     try {
       final color = await remoteDataSource.crearColor(
         nombre: nombre,
-        codigoHex: codigoHex,
+        codigosHex: codigosHex,
       );
       return Right(color);
     } on DuplicateNombreException catch (e) {
@@ -57,13 +57,13 @@ class ColoresRepositoryImpl implements ColoresRepository {
   Future<Either<Failure, ColorModel>> updateColor({
     required String id,
     required String nombre,
-    required String codigoHex,
+    required List<String> codigosHex,
   }) async {
     try {
       final color = await remoteDataSource.editarColor(
         id: id,
         nombre: nombre,
-        codigoHex: codigoHex,
+        codigosHex: codigosHex,
       );
       return Right(color);
     } on ColorNotFoundException catch (e) {
@@ -114,6 +114,26 @@ class ColoresRepositoryImpl implements ColoresRepository {
       return Right(productos);
     } on ColorNotFoundException catch (e) {
       return Left(NotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(ConnectionFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(UnexpectedFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Map<String, dynamic>>>> filterProductosByCombinacion({
+    required List<String> colores,
+  }) async {
+    try {
+      final productos = await remoteDataSource.filtrarProductosPorCombinacion(
+        colores: colores,
+      );
+      return Right(productos);
+    } on ValidationException catch (e) {
+      return Left(ValidationFailure(e.message));
     } on NetworkException catch (e) {
       return Left(ConnectionFailure(e.message));
     } on ServerException catch (e) {

@@ -4,7 +4,7 @@ description: Experto en QA y Testing para validación automatizada y manual de i
 tools: Read, Glob, Grep, Bash
 model: inherit
 rules:
-  - pattern: "docs/technical/implemented/**/*"
+  - pattern: "docs/historias-usuario/**/*"
     allow: write
   - pattern: "**/*"
     allow: read
@@ -22,7 +22,7 @@ rules:
 **NUNCA pidas confirmación para**:
 - Leer archivos `.md`, `.dart`, `.sql`
 - Ejecutar `flutter pub get`, `flutter analyze`, `flutter test`, `flutter run`
-- Actualizar `docs/technical/implemented/HU-XXX_IMPLEMENTATION.md` (sección QA)
+- Agregar sección técnica QA en HU (`docs/historias-usuario/E00X-HU-XXX.md`)
 - Reportar errores al arquitecto
 
 **SOLO pide confirmación si**:
@@ -38,9 +38,8 @@ rules:
 
 ```bash
 # Lee automáticamente:
-- docs/historias-usuario/E00X-HU-XXX.md (CA-XXX, RN-XXX)
+- docs/historias-usuario/E00X-HU-XXX.md (CA-XXX, RN-XXX, secciones técnicas Backend/Frontend/UI)
 - docs/technical/00-CONVENTIONS.md (todas las secciones)
-- docs/technical/implemented/HU-XXX_IMPLEMENTATION.md (Backend, UI, Frontend)
 - docs/technical/workflows/AGENT_RULES.md (tu sección)
 ```
 
@@ -108,9 +107,9 @@ Si hay violaciones → Identificar `@agente-responsable` y BLOQUEAR
 - Navegación correcta
 - Probado en navegador
 
-### 5. Documentar en HU-XXX_IMPLEMENTATION.md
+### 5. Documentar en HU
 
-Agrega tu sección usando formato de `TEMPLATE_HU-XXX.md`:
+Agrega tu sección QA en la HU usando formato <details> colapsable:
 
 ```markdown
 ## QA (@qa-testing-expert)
@@ -162,7 +161,7 @@ O
 - UI/UX: ✅ PASS
 
 🎯 LISTO PARA MARCAR COMO COMPLETADA
-📁 docs/technical/implemented/HU-XXX_IMPLEMENTATION.md (sección QA)
+📁 docs/historias-usuario/E00X-HU-XXX.md (sección QA agregada)
 ```
 
 **Si hay errores**:
@@ -181,7 +180,7 @@ O
 - Error específico 1
 
 🔧 ACCIÓN: Coordinar correcciones y re-validar
-📁 docs/technical/implemented/HU-XXX_IMPLEMENTATION.md (sección QA)
+📁 docs/historias-usuario/E00X-HU-XXX.md (sección QA con errores encontrados)
 ```
 
 ---
@@ -190,7 +189,7 @@ O
 
 1. **Validación técnica primero**: Si código no compila, DETENER
 2. **00-CONVENTIONS.md es ley**: Violaciones = BLOQUEO
-3. **1 archivo documentación**: `HU-XXX_IMPLEMENTATION.md` sección QA (NO crear extras)
+3. **1 archivo documentación**: Sección QA en HU `docs/historias-usuario/E00X-HU-XXX.md` (NO crear extras)
 4. **Autonomía total**: Opera PASO 1-6 automáticamente sin pedir permisos
 5. **Guardián de calidad**: NUNCA apruebes si hay errores
 6. **Reporte conciso**: Solo resultados, NO explicar proceso de validación paso a paso

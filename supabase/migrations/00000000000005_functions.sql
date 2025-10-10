@@ -258,7 +258,7 @@ BEGIN
     END IF;
 
     -- Verificar contraseña con bcrypt
-    v_password_match := (v_user.encrypted_password = crypt(p_password, v_user.encrypted_password));
+    v_password_match := (crypt(p_password, v_user.encrypted_password) = v_user.encrypted_password);
 
     IF NOT v_password_match THEN
         INSERT INTO login_attempts (email, success) VALUES (v_user.email, false);
@@ -3343,64 +3343,53 @@ COMMENT ON FUNCTION toggle_sistema_talla_activo IS 'E002-HU-004: Activa/desactiv
 -- SECCIÓN 6: FUNCIONES DE COLORES (E002-HU-005)
 -- ============================================
 
--- HU-005: listar_colores - Lista todos los colores con contador de productos
+-- HU-005-EXT: listar_colores - Lista todos los colores con soporte para colores compuestos
 CREATE OR REPLACE FUNCTION listar_colores()
 RETURNS JSON AS $$
-DECLARE
-    v_result JSON;
-    v_error_hint TEXT;
 BEGIN
-    -- CA-001: Retornar todos los colores ordenados por nombre con contador de productos
-    SELECT json_agg(
-        json_build_object(
-            'id', c.id,
-            'nombre', c.nombre,
-            'codigo_hex', c.codigo_hex,
-            'activo', c.activo,
-            'productos_count', COALESCE((
-                SELECT COUNT(*)
-                FROM producto_colores pc
-                WHERE c.nombre = ANY(pc.colores)
-            ), 0),
-            'created_at', c.created_at,
-            'updated_at', c.updated_at
-        ) ORDER BY LOWER(c.nombre)
-    ) INTO v_result
-    FROM colores c;
-
     RETURN json_build_object(
         'success', true,
-        'data', COALESCE(v_result, '[]'::json),
+        'data', COALESCE(
+            (SELECT json_agg(
+                json_build_object(
+                    'id', c.id,
+                    'nombre', c.nombre,
+                    'codigos_hex', c.codigos_hex,
+                    'tipo_color', c.tipo_color,
+                    'activo', c.activo,
+                    'productos_count', COALESCE((
+                        SELECT COUNT(DISTINCT pc.producto_id)
+                        FROM producto_colores pc
+                        WHERE c.nombre = ANY(pc.colores)
+                    ), 0),
+                    'created_at', c.created_at,
+                    'updated_at', c.updated_at
+                ) ORDER BY c.nombre
+            )
+            FROM colores c
+            WHERE c.activo = true),
+            '[]'::json
+        ),
         'message', 'Colores listados exitosamente'
     );
-
-EXCEPTION
-    WHEN OTHERS THEN
-        RETURN json_build_object(
-            'success', false,
-            'error', json_build_object(
-                'code', SQLSTATE,
-                'message', SQLERRM,
-                'hint', COALESCE(v_error_hint, 'unknown')
-            )
-        );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-COMMENT ON FUNCTION listar_colores IS 'E002-HU-005: Lista todos los colores con contador de productos (CA-001)';
+COMMENT ON FUNCTION listar_colores() IS 'E002-HU-005-EXT: Lista colores con tipo y códigos hex (array)';
 
--- HU-005: crear_color - Crea nuevo color base
+-- HU-005-EXT: crear_color - Crea color único (1 hex) o compuesto (2-3 hex)
 CREATE OR REPLACE FUNCTION crear_color(
     p_nombre TEXT,
-    p_codigo_hex TEXT
+    p_codigos_hex TEXT[]
 )
 RETURNS JSON AS $$
 DECLARE
-    v_result JSON;
+    v_color_id UUID;
     v_error_hint TEXT;
     v_user_id UUID;
     v_user_rol TEXT;
-    v_color_id UUID;
+    v_tipo_color VARCHAR(10);
+    v_cantidad_codigos INTEGER;
 BEGIN
     -- Obtener usuario autenticado
     v_user_id := auth.uid();
@@ -3419,16 +3408,22 @@ BEGIN
         RAISE EXCEPTION 'Solo usuarios ADMIN o GERENTE pueden gestionar colores';
     END IF;
 
+    -- Determinar tipo según cantidad de códigos
+    v_cantidad_codigos := array_length(p_codigos_hex, 1);
+
+    IF v_cantidad_codigos = 1 THEN
+        v_tipo_color := 'unico';
+    ELSIF v_cantidad_codigos BETWEEN 2 AND 3 THEN
+        v_tipo_color := 'compuesto';
+    ELSE
+        v_error_hint := 'invalid_color_count';
+        RAISE EXCEPTION 'Debe proporcionar entre 1 y 3 códigos hexadecimales';
+    END IF;
+
     -- RN-025: Validar unicidad de nombre (case-insensitive)
     IF EXISTS (SELECT 1 FROM colores WHERE LOWER(nombre) = LOWER(TRIM(p_nombre))) THEN
         v_error_hint := 'duplicate_name';
-        RAISE EXCEPTION 'Este color ya existe en el catálogo';
-    END IF;
-
-    -- RN-026: Validar formato hexadecimal
-    IF p_codigo_hex !~ '^#[0-9A-Fa-f]{6}$' THEN
-        v_error_hint := 'invalid_hex_format';
-        RAISE EXCEPTION 'El código hexadecimal debe tener formato #RRGGBB (ej: #FF0000)';
+        RAISE EXCEPTION 'Ya existe un color con el nombre "%"', p_nombre;
     END IF;
 
     -- RN-025: Validar longitud del nombre (3-30 caracteres)
@@ -3443,39 +3438,24 @@ BEGIN
         RAISE EXCEPTION 'El nombre solo puede contener letras, espacios y guiones';
     END IF;
 
-    -- CA-002: Crear color
-    INSERT INTO colores (nombre, codigo_hex)
-    VALUES (TRIM(p_nombre), UPPER(p_codigo_hex))
+    -- Crear color (trigger validará formato hex de cada código)
+    INSERT INTO colores (nombre, codigos_hex, tipo_color)
+    VALUES (TRIM(p_nombre), p_codigos_hex, v_tipo_color)
     RETURNING id INTO v_color_id;
 
-    -- Registrar auditoría
-    INSERT INTO audit_logs (user_id, event_type, metadata)
-    VALUES (
-        v_user_id,
-        'color_created',
-        json_build_object(
-            'color_id', v_color_id,
-            'nombre', p_nombre,
-            'codigo_hex', p_codigo_hex
-        )::jsonb
-    );
-
-    -- Obtener color creado
-    SELECT json_build_object(
-        'id', id,
-        'nombre', nombre,
-        'codigo_hex', codigo_hex,
-        'activo', activo,
-        'productos_count', 0,
-        'created_at', created_at,
-        'updated_at', updated_at
-    ) INTO v_result
-    FROM colores
-    WHERE id = v_color_id;
-
+    -- Retornar éxito
     RETURN json_build_object(
         'success', true,
-        'data', v_result,
+        'data', json_build_object(
+            'id', v_color_id,
+            'nombre', TRIM(p_nombre),
+            'codigos_hex', p_codigos_hex,
+            'tipo_color', v_tipo_color,
+            'activo', true,
+            'productos_count', 0,
+            'created_at', NOW(),
+            'updated_at', NOW()
+        ),
         'message', 'Color creado exitosamente'
     );
 
@@ -3492,20 +3472,21 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-COMMENT ON FUNCTION crear_color IS 'E002-HU-005: Crea nuevo color base (CA-002, CA-003, RN-025, RN-026)';
+COMMENT ON FUNCTION crear_color(TEXT, TEXT[]) IS 'E002-HU-005-EXT: Crea color único (1 hex) o compuesto (2-3 hex)';
 
--- HU-005: editar_color - Edita color existente
+-- HU-005-EXT: editar_color - Edita color y retorna productos afectados
 CREATE OR REPLACE FUNCTION editar_color(
     p_id UUID,
     p_nombre TEXT,
-    p_codigo_hex TEXT
+    p_codigos_hex TEXT[]
 )
 RETURNS JSON AS $$
 DECLARE
-    v_result JSON;
     v_error_hint TEXT;
     v_user_id UUID;
     v_user_rol TEXT;
+    v_tipo_color VARCHAR(10);
+    v_cantidad_codigos INTEGER;
     v_productos_count INTEGER;
 BEGIN
     -- Obtener usuario autenticado
@@ -3525,87 +3506,67 @@ BEGIN
         RAISE EXCEPTION 'Solo usuarios ADMIN o GERENTE pueden gestionar colores';
     END IF;
 
-    -- Verificar que color existe
+    -- Verificar existencia
     IF NOT EXISTS (SELECT 1 FROM colores WHERE id = p_id) THEN
         v_error_hint := 'color_not_found';
-        RAISE EXCEPTION 'El color no existe';
+        RAISE EXCEPTION 'Color no encontrado';
     END IF;
 
-    -- RN-025: Validar unicidad de nombre (excepto mismo registro)
-    IF EXISTS (
-        SELECT 1 FROM colores
-        WHERE LOWER(nombre) = LOWER(TRIM(p_nombre))
-        AND id != p_id
-    ) THEN
+    -- Determinar tipo según cantidad de códigos
+    v_cantidad_codigos := array_length(p_codigos_hex, 1);
+
+    IF v_cantidad_codigos = 1 THEN
+        v_tipo_color := 'unico';
+    ELSIF v_cantidad_codigos BETWEEN 2 AND 3 THEN
+        v_tipo_color := 'compuesto';
+    ELSE
+        v_error_hint := 'invalid_color_count';
+        RAISE EXCEPTION 'Debe proporcionar entre 1 y 3 códigos hexadecimales';
+    END IF;
+
+    -- RN-025: Validar nombre único (excepto mismo color)
+    IF EXISTS (SELECT 1 FROM colores WHERE LOWER(nombre) = LOWER(TRIM(p_nombre)) AND id != p_id) THEN
         v_error_hint := 'duplicate_name';
-        RAISE EXCEPTION 'Ya existe otro color con este nombre';
+        RAISE EXCEPTION 'Ya existe otro color con el nombre "%"', p_nombre;
     END IF;
 
-    -- RN-026: Validar formato hexadecimal
-    IF p_codigo_hex !~ '^#[0-9A-Fa-f]{6}$' THEN
-        v_error_hint := 'invalid_hex_format';
-        RAISE EXCEPTION 'El código hexadecimal debe tener formato #RRGGBB (ej: #FF0000)';
-    END IF;
-
-    -- RN-025: Validar longitud del nombre (3-30 caracteres)
+    -- RN-025: Validar longitud nombre
     IF LENGTH(TRIM(p_nombre)) < 3 OR LENGTH(TRIM(p_nombre)) > 30 THEN
         v_error_hint := 'invalid_name_length';
         RAISE EXCEPTION 'El nombre debe tener entre 3 y 30 caracteres';
     END IF;
 
-    -- RN-025: Validar solo letras, espacios y guiones
+    -- RN-025: Validar caracteres permitidos
     IF TRIM(p_nombre) !~ '^[A-Za-zÀ-ÿ\s\-]+$' THEN
         v_error_hint := 'invalid_name_chars';
         RAISE EXCEPTION 'El nombre solo puede contener letras, espacios y guiones';
     END IF;
 
-    -- RN-030: Contar productos afectados
-    SELECT COUNT(*) INTO v_productos_count
+    -- Contar productos afectados
+    SELECT COUNT(DISTINCT pc.producto_id)
+    INTO v_productos_count
     FROM producto_colores pc
     WHERE (SELECT nombre FROM colores WHERE id = p_id) = ANY(pc.colores);
 
-    -- CA-006: Actualizar color
+    -- Actualizar color (trigger validará formato hex)
     UPDATE colores
     SET nombre = TRIM(p_nombre),
-        codigo_hex = UPPER(p_codigo_hex)
+        codigos_hex = p_codigos_hex,
+        tipo_color = v_tipo_color,
+        updated_at = NOW()
     WHERE id = p_id;
 
-    -- Registrar auditoría
-    INSERT INTO audit_logs (user_id, event_type, metadata)
-    VALUES (
-        v_user_id,
-        'color_updated',
-        json_build_object(
-            'color_id', p_id,
-            'nombre', p_nombre,
-            'codigo_hex', p_codigo_hex,
-            'productos_afectados', v_productos_count
-        )::jsonb
-    );
-
-    -- Obtener color actualizado
-    SELECT json_build_object(
-        'id', id,
-        'nombre', nombre,
-        'codigo_hex', codigo_hex,
-        'activo', activo,
-        'productos_count', v_productos_count,
-        'created_at', created_at,
-        'updated_at', updated_at
-    ) INTO v_result
-    FROM colores
-    WHERE id = p_id;
-
-    v_error_hint := 'products_affected';
+    -- Retornar éxito
     RETURN json_build_object(
         'success', true,
-        'data', v_result,
-        'message', CASE
-            WHEN v_productos_count > 0 THEN
-                'Color actualizado exitosamente. Este cambio afecta a ' || v_productos_count || ' producto(s)'
-            ELSE
-                'Color actualizado exitosamente'
-        END
+        'data', json_build_object(
+            'id', p_id,
+            'nombre', TRIM(p_nombre),
+            'codigos_hex', p_codigos_hex,
+            'tipo_color', v_tipo_color,
+            'productos_count', COALESCE(v_productos_count, 0)
+        ),
+        'message', 'Color actualizado exitosamente'
     );
 
 EXCEPTION
@@ -3621,7 +3582,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-COMMENT ON FUNCTION editar_color IS 'E002-HU-005: Edita color existente (CA-006, RN-025, RN-026, RN-030)';
+COMMENT ON FUNCTION editar_color(UUID, TEXT, TEXT[]) IS 'E002-HU-005-EXT: Edita color y retorna productos afectados';
 
 -- HU-005: eliminar_color - Elimina o desactiva color según uso
 CREATE OR REPLACE FUNCTION eliminar_color(
@@ -3862,7 +3823,8 @@ BEGIN
     SELECT json_agg(
         json_build_object(
             'color', c.nombre,
-            'codigo_hex', c.codigo_hex,
+            'codigos_hex', c.codigos_hex,
+            'tipo_color', c.tipo_color,
             'cantidad_productos', COALESCE((
                 SELECT COUNT(*)
                 FROM producto_colores pc
@@ -3897,7 +3859,8 @@ BEGIN
     SELECT json_agg(
         json_build_object(
             'color', c.nombre,
-            'codigo_hex', c.codigo_hex,
+            'codigos_hex', c.codigos_hex,
+            'tipo_color', c.tipo_color,
             'cantidad_productos', COALESCE((
                 SELECT COUNT(*)
                 FROM producto_colores pc
@@ -3945,6 +3908,71 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION estadisticas_colores IS 'E002-HU-005: Estadísticas de uso de colores (CA-011, RN-035)';
+
+-- HU-005: filtrar_productos_por_combinacion - Filtra productos por combinación exacta de colores
+CREATE OR REPLACE FUNCTION filtrar_productos_por_combinacion(
+    p_colores TEXT[]
+)
+RETURNS JSON AS $$
+DECLARE
+    v_result JSON;
+    v_error_hint TEXT;
+    v_color_nombre TEXT;
+BEGIN
+    -- Validar que array no esté vacío
+    IF p_colores IS NULL OR array_length(p_colores, 1) IS NULL THEN
+        v_error_hint := 'missing_colors';
+        RAISE EXCEPTION 'Debe proporcionar al menos un color';
+    END IF;
+
+    -- Validar que todos los colores existan en el catálogo
+    FOREACH v_color_nombre IN ARRAY p_colores
+    LOOP
+        IF NOT EXISTS (SELECT 1 FROM colores WHERE LOWER(nombre) = LOWER(TRIM(v_color_nombre))) THEN
+            v_error_hint := 'color_not_found';
+            RAISE EXCEPTION 'El color "%" no existe en el catálogo', v_color_nombre;
+        END IF;
+    END LOOP;
+
+    -- CA-009: Buscar productos con combinación EXACTA de colores (mismo orden)
+    SELECT json_agg(
+        json_build_object(
+            'id', p.id,
+            'nombre', p.nombre,
+            'descripcion', p.descripcion,
+            'precio', p.precio,
+            'stock_actual', p.stock_actual,
+            'colores', pc.colores,
+            'tipo_color', pc.tipo_color,
+            'cantidad_colores', pc.cantidad_colores,
+            'descripcion_visual', pc.descripcion_visual
+        )
+    ) INTO v_result
+    FROM productos p
+    INNER JOIN producto_colores pc ON p.id = pc.producto_id
+    WHERE pc.colores = p_colores
+      AND p.activo = true;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', COALESCE(v_result, '[]'::json),
+        'message', 'Productos con combinación exacta encontrados: ' || array_to_string(p_colores, ', ')
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION filtrar_productos_por_combinacion IS 'E002-HU-005: Filtra productos por combinación exacta de colores en orden - CA-009, RN-028';
 
 COMMIT;
 

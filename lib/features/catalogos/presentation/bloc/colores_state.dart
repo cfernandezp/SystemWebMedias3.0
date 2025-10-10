@@ -97,6 +97,19 @@ class ProductosByColorLoaded extends ColoresState {
   List<Object?> get props => [productos, colorNombre, exacto];
 }
 
+class ProductosByCombinacionLoaded extends ColoresState {
+  final List<Map<String, dynamic>> productos;
+  final List<String> colores;
+
+  const ProductosByCombinacionLoaded({
+    required this.productos,
+    required this.colores,
+  });
+
+  @override
+  List<Object?> get props => [productos, colores];
+}
+
 class ColoresError extends ColoresState {
   final String message;
 
