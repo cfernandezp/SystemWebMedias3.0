@@ -23,16 +23,22 @@ class ColorModel extends Equatable {
 
   factory ColorModel.fromJson(Map<String, dynamic> json) {
     return ColorModel(
-      id: json['id'] as String,
-      nombre: json['nombre'] as String,
-      codigosHex: (json['codigos_hex'] as List<dynamic>)
-          .map((e) => e.toString())
-          .toList(),
-      tipoColor: json['tipo_color'] as String,
-      activo: json['activo'] as bool,
-      productosCount: json['productos_count'] as int,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      id: json['id'] as String? ?? '',
+      nombre: json['nombre'] as String? ?? '',
+      codigosHex: json['codigos_hex'] != null
+          ? (json['codigos_hex'] as List<dynamic>)
+              .map((e) => e.toString())
+              .toList()
+          : ['#000000'],
+      tipoColor: json['tipo_color'] as String? ?? 'unico',
+      activo: json['activo'] as bool? ?? true,
+      productosCount: json['productos_count'] as int? ?? 0,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),
     );
   }
 

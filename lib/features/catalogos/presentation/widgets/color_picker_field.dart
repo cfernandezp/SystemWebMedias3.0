@@ -97,7 +97,7 @@ class _ColorPickerFieldState extends State<ColorPickerField> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           ColorPreviewCircle(
-            codigoHex: widget.controller.text,
+            codigosHex: [widget.controller.text],
             size: 48,
           ),
           const SizedBox(height: 8),

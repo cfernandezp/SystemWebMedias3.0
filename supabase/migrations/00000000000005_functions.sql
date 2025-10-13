@@ -3974,6 +3974,602 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION filtrar_productos_por_combinacion IS 'E002-HU-005: Filtra productos por combinación exacta de colores en orden - CA-009, RN-028';
 
+-- ============================================
+-- PASO 15: Funciones Productos Maestros (E002-HU-006)
+-- ============================================
+
+-- Función 1: validar_combinacion_comercial
+CREATE OR REPLACE FUNCTION validar_combinacion_comercial(
+    p_tipo_id UUID,
+    p_sistema_talla_id UUID
+) RETURNS JSON AS $$
+DECLARE
+    v_tipo_nombre TEXT;
+    v_sistema_tipo tipo_sistema_enum;
+    v_warnings TEXT[] := ARRAY[]::TEXT[];
+    v_error_hint TEXT;
+BEGIN
+    -- Validar tipo existe
+    SELECT nombre INTO v_tipo_nombre
+    FROM tipos
+    WHERE id = p_tipo_id;
+
+    IF v_tipo_nombre IS NULL THEN
+        v_error_hint := 'tipo_not_found';
+        RAISE EXCEPTION 'Tipo no encontrado';
+    END IF;
+
+    -- Validar sistema existe
+    SELECT tipo_sistema INTO v_sistema_tipo
+    FROM sistemas_talla
+    WHERE id = p_sistema_talla_id;
+
+    IF v_sistema_tipo IS NULL THEN
+        v_error_hint := 'sistema_not_found';
+        RAISE EXCEPTION 'Sistema de tallas no encontrado';
+    END IF;
+
+    -- Validaciones combinaciones comerciales (RN-040)
+    -- Normalizar tildes para comparación case-insensitive
+    IF translate(v_tipo_nombre, 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU') ILIKE '%futbol%' AND v_sistema_tipo = 'UNICA' THEN
+        v_warnings := array_append(v_warnings, 'Las medias de fútbol normalmente usan tallas numéricas (35-44)');
+    END IF;
+
+    IF translate(v_tipo_nombre, 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU') ILIKE '%futbol%' AND v_sistema_tipo = 'LETRA' THEN
+        v_warnings := array_append(v_warnings, 'Las medias de fútbol normalmente usan tallas numéricas, no S/M/L');
+    END IF;
+
+    IF translate(v_tipo_nombre, 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU') ILIKE '%invisible%' AND v_sistema_tipo = 'LETRA' THEN
+        v_warnings := array_append(v_warnings, 'Las medias invisibles suelen ser talla única o numérica');
+    END IF;
+
+    IF translate(v_tipo_nombre, 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU') ILIKE '%invisible%' AND v_sistema_tipo = 'NUMERO' THEN
+        v_warnings := array_append(v_warnings, 'Las medias invisibles suelen ser talla única');
+    END IF;
+
+    -- Respuesta con warnings
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'warnings', v_warnings,
+            'has_warnings', array_length(v_warnings, 1) > 0
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION validar_combinacion_comercial IS 'E002-HU-006: Valida combinaciones comerciales tipo + sistema tallas (advertencias no bloqueantes) - CA-005, RN-040';
+
+-- Función 2: crear_producto_maestro
+CREATE OR REPLACE FUNCTION crear_producto_maestro(
+    p_marca_id UUID,
+    p_material_id UUID,
+    p_tipo_id UUID,
+    p_sistema_talla_id UUID,
+    p_descripcion TEXT DEFAULT NULL
+) RETURNS JSON AS $$
+DECLARE
+    v_producto_id UUID;
+    v_marca_activo BOOLEAN;
+    v_material_activo BOOLEAN;
+    v_tipo_activo BOOLEAN;
+    v_sistema_activo BOOLEAN;
+    v_exists_activo BOOLEAN;
+    v_exists_inactivo UUID;
+    v_nombre_completo TEXT;
+    v_warnings TEXT[] := ARRAY[]::TEXT[];
+    v_error_hint TEXT;
+BEGIN
+    -- Validar descripción longitud (RN-039)
+    IF p_descripcion IS NOT NULL AND LENGTH(p_descripcion) > 200 THEN
+        v_error_hint := 'invalid_description_length';
+        RAISE EXCEPTION 'Descripción excede 200 caracteres';
+    END IF;
+
+    -- Validar catálogos activos (RN-038)
+    SELECT activo INTO v_marca_activo FROM marcas WHERE id = p_marca_id;
+    SELECT activo INTO v_material_activo FROM materiales WHERE id = p_material_id;
+    SELECT activo INTO v_tipo_activo FROM tipos WHERE id = p_tipo_id;
+    SELECT activo INTO v_sistema_activo FROM sistemas_talla WHERE id = p_sistema_talla_id;
+
+    IF v_marca_activo = false THEN
+        v_error_hint := 'inactive_catalog';
+        RAISE EXCEPTION 'La marca está inactiva. Reactívela primero';
+    END IF;
+
+    IF v_material_activo = false THEN
+        v_error_hint := 'inactive_catalog';
+        RAISE EXCEPTION 'El material está inactivo. Reactívelo primero';
+    END IF;
+
+    IF v_tipo_activo = false THEN
+        v_error_hint := 'inactive_catalog';
+        RAISE EXCEPTION 'El tipo está inactivo. Reactívelo primero';
+    END IF;
+
+    IF v_sistema_activo = false THEN
+        v_error_hint := 'inactive_catalog';
+        RAISE EXCEPTION 'El sistema de tallas está inactivo. Reactívelo primero';
+    END IF;
+
+    -- Validar combinación única (RN-037)
+    SELECT EXISTS(
+        SELECT 1 FROM productos_maestros
+        WHERE marca_id = p_marca_id
+        AND material_id = p_material_id
+        AND tipo_id = p_tipo_id
+        AND sistema_talla_id = p_sistema_talla_id
+        AND activo = true
+    ) INTO v_exists_activo;
+
+    IF v_exists_activo THEN
+        v_error_hint := 'duplicate_combination';
+        RAISE EXCEPTION 'Ya existe un producto activo con esta combinación';
+    END IF;
+
+    -- Verificar si existe inactivo (CA-016)
+    SELECT id INTO v_exists_inactivo
+    FROM productos_maestros
+    WHERE marca_id = p_marca_id
+    AND material_id = p_material_id
+    AND tipo_id = p_tipo_id
+    AND sistema_talla_id = p_sistema_talla_id
+    AND activo = false
+    LIMIT 1;
+
+    IF v_exists_inactivo IS NOT NULL THEN
+        -- Construir nombre completo para response
+        SELECT ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || st.nombre
+        INTO v_nombre_completo
+        FROM marcas ma, materiales mat, tipos t, sistemas_talla st
+        WHERE ma.id = p_marca_id
+        AND mat.id = p_material_id
+        AND t.id = p_tipo_id
+        AND st.id = p_sistema_talla_id;
+
+        v_error_hint := 'duplicate_combination_inactive';
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', '23505',
+                'message', 'Ya existe un producto inactivo con esta combinación. Puedes reactivarlo',
+                'hint', v_error_hint,
+                'producto_id', v_exists_inactivo,
+                'nombre_completo', v_nombre_completo
+            )
+        );
+    END IF;
+
+    -- Validar combinación comercial (RN-040) - solo warnings
+    DECLARE
+        v_validacion JSON;
+    BEGIN
+        SELECT validar_combinacion_comercial(p_tipo_id, p_sistema_talla_id) INTO v_validacion;
+        IF (v_validacion->'data'->>'has_warnings')::BOOLEAN THEN
+            SELECT ARRAY(SELECT json_array_elements_text(v_validacion->'data'->'warnings')) INTO v_warnings;
+        END IF;
+    END;
+
+    -- Crear producto maestro
+    INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+    VALUES (p_marca_id, p_material_id, p_tipo_id, p_sistema_talla_id, p_descripcion, true)
+    RETURNING id INTO v_producto_id;
+
+    -- Construir nombre completo
+    SELECT ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || st.nombre
+    INTO v_nombre_completo
+    FROM marcas ma, materiales mat, tipos t, sistemas_talla st
+    WHERE ma.id = p_marca_id
+    AND mat.id = p_material_id
+    AND t.id = p_tipo_id
+    AND st.id = p_sistema_talla_id;
+
+    -- Respuesta exitosa
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', v_producto_id,
+            'nombre_completo', v_nombre_completo,
+            'warnings', v_warnings
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION crear_producto_maestro IS 'E002-HU-006: Crea producto maestro con validaciones unicidad y catálogos activos - CA-006, CA-016, RN-037, RN-038, RN-039, RN-040';
+
+-- Función 3: listar_productos_maestros
+CREATE OR REPLACE FUNCTION listar_productos_maestros(
+    p_marca_id UUID DEFAULT NULL,
+    p_material_id UUID DEFAULT NULL,
+    p_tipo_id UUID DEFAULT NULL,
+    p_sistema_talla_id UUID DEFAULT NULL,
+    p_activo BOOLEAN DEFAULT NULL,
+    p_search_text TEXT DEFAULT NULL
+) RETURNS JSON AS $$
+DECLARE
+    v_productos JSON;
+    v_error_hint TEXT;
+BEGIN
+    SELECT json_agg(row_to_json(subq))
+    INTO v_productos
+    FROM (
+        SELECT
+            pm.id,
+            pm.marca_id,
+            ma.nombre as marca_nombre,
+            ma.codigo as marca_codigo,
+            pm.material_id,
+            mat.nombre as material_nombre,
+            mat.codigo as material_codigo,
+            pm.tipo_id,
+            t.nombre as tipo_nombre,
+            t.codigo as tipo_codigo,
+            pm.sistema_talla_id,
+            st.nombre as sistema_talla_nombre,
+            st.tipo_sistema as sistema_talla_tipo,
+            pm.descripcion,
+            pm.activo,
+            0 as articulos_activos,
+            0 as articulos_totales,
+            CASE WHEN (ma.activo = false OR mat.activo = false OR t.activo = false OR st.activo = false)
+                 THEN true ELSE false END as tiene_catalogos_inactivos,
+            ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || st.nombre as nombre_completo,
+            pm.created_at,
+            pm.updated_at
+        FROM productos_maestros pm
+        INNER JOIN marcas ma ON pm.marca_id = ma.id
+        INNER JOIN materiales mat ON pm.material_id = mat.id
+        INNER JOIN tipos t ON pm.tipo_id = t.id
+        INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+        WHERE (p_marca_id IS NULL OR pm.marca_id = p_marca_id)
+        AND (p_material_id IS NULL OR pm.material_id = p_material_id)
+        AND (p_tipo_id IS NULL OR pm.tipo_id = p_tipo_id)
+        AND (p_sistema_talla_id IS NULL OR pm.sistema_talla_id = p_sistema_talla_id)
+        AND (p_activo IS NULL OR pm.activo = p_activo)
+        AND (p_search_text IS NULL OR
+             LOWER(pm.descripcion) LIKE LOWER('%' || p_search_text || '%') OR
+             LOWER(ma.nombre) LIKE LOWER('%' || p_search_text || '%') OR
+             LOWER(mat.nombre) LIKE LOWER('%' || p_search_text || '%') OR
+             LOWER(t.nombre) LIKE LOWER('%' || p_search_text || '%') OR
+             LOWER(st.nombre) LIKE LOWER('%' || p_search_text || '%')
+        )
+        ORDER BY pm.created_at DESC
+    ) subq;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', COALESCE(v_productos, '[]'::json)
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION listar_productos_maestros IS 'E002-HU-006: Lista productos maestros con filtros y detección catálogos inactivos - CA-009, CA-010, RN-038, RN-043';
+
+-- Función 4: editar_producto_maestro
+CREATE OR REPLACE FUNCTION editar_producto_maestro(
+    p_producto_id UUID,
+    p_marca_id UUID DEFAULT NULL,
+    p_material_id UUID DEFAULT NULL,
+    p_tipo_id UUID DEFAULT NULL,
+    p_sistema_talla_id UUID DEFAULT NULL,
+    p_descripcion TEXT DEFAULT NULL
+) RETURNS JSON AS $$
+DECLARE
+    v_articulos_totales INTEGER := 0;
+    v_error_hint TEXT;
+    v_nombre_completo TEXT;
+BEGIN
+    -- Validar producto existe
+    IF NOT EXISTS(SELECT 1 FROM productos_maestros WHERE id = p_producto_id) THEN
+        v_error_hint := 'producto_not_found';
+        RAISE EXCEPTION 'Producto maestro no encontrado';
+    END IF;
+
+    -- Contar artículos derivados (preparado para HU-007)
+    -- En el futuro: SELECT COUNT(*) INTO v_articulos_totales FROM articulos WHERE producto_maestro_id = p_producto_id;
+
+    -- Validación RN-044: Restricciones según artículos
+    IF v_articulos_totales > 0 THEN
+        -- Solo permitir editar descripción
+        IF p_marca_id IS NOT NULL OR p_material_id IS NOT NULL OR p_tipo_id IS NOT NULL OR p_sistema_talla_id IS NOT NULL THEN
+            v_error_hint := 'has_derived_articles';
+            RAISE EXCEPTION 'Este producto tiene % artículos derivados. Solo se puede editar la descripción', v_articulos_totales;
+        END IF;
+
+        -- Actualizar solo descripción
+        UPDATE productos_maestros
+        SET descripcion = COALESCE(p_descripcion, descripcion),
+            updated_at = NOW()
+        WHERE id = p_producto_id;
+    ELSE
+        -- Sin artículos: permitir editar todos los campos
+        IF p_descripcion IS NOT NULL AND LENGTH(p_descripcion) > 200 THEN
+            v_error_hint := 'invalid_description_length';
+            RAISE EXCEPTION 'Descripción excede 200 caracteres';
+        END IF;
+
+        -- Validar catálogos activos si se están cambiando (RN-038)
+        IF p_marca_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM marcas WHERE id = p_marca_id AND activo = true) THEN
+            v_error_hint := 'inactive_catalog';
+            RAISE EXCEPTION 'La marca seleccionada está inactiva';
+        END IF;
+
+        IF p_material_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM materiales WHERE id = p_material_id AND activo = true) THEN
+            v_error_hint := 'inactive_catalog';
+            RAISE EXCEPTION 'El material seleccionado está inactivo';
+        END IF;
+
+        IF p_tipo_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM tipos WHERE id = p_tipo_id AND activo = true) THEN
+            v_error_hint := 'inactive_catalog';
+            RAISE EXCEPTION 'El tipo seleccionado está inactivo';
+        END IF;
+
+        IF p_sistema_talla_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM sistemas_talla WHERE id = p_sistema_talla_id AND activo = true) THEN
+            v_error_hint := 'inactive_catalog';
+            RAISE EXCEPTION 'El sistema de tallas seleccionado está inactivo';
+        END IF;
+
+        -- Actualizar todos los campos
+        UPDATE productos_maestros
+        SET marca_id = COALESCE(p_marca_id, marca_id),
+            material_id = COALESCE(p_material_id, material_id),
+            tipo_id = COALESCE(p_tipo_id, tipo_id),
+            sistema_talla_id = COALESCE(p_sistema_talla_id, sistema_talla_id),
+            descripcion = COALESCE(p_descripcion, descripcion),
+            updated_at = NOW()
+        WHERE id = p_producto_id;
+    END IF;
+
+    -- Construir nombre completo actualizado
+    SELECT ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || st.nombre
+    INTO v_nombre_completo
+    FROM productos_maestros pm
+    INNER JOIN marcas ma ON pm.marca_id = ma.id
+    INNER JOIN materiales mat ON pm.material_id = mat.id
+    INNER JOIN tipos t ON pm.tipo_id = t.id
+    INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+    WHERE pm.id = p_producto_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_producto_id,
+            'nombre_completo', v_nombre_completo
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION editar_producto_maestro IS 'E002-HU-006: Edita producto maestro con restricciones según artículos derivados - CA-013, RN-044';
+
+-- Función 5: eliminar_producto_maestro
+CREATE OR REPLACE FUNCTION eliminar_producto_maestro(
+    p_producto_id UUID
+) RETURNS JSON AS $$
+DECLARE
+    v_articulos_totales INTEGER := 0;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar producto existe
+    IF NOT EXISTS(SELECT 1 FROM productos_maestros WHERE id = p_producto_id) THEN
+        v_error_hint := 'producto_not_found';
+        RAISE EXCEPTION 'Producto maestro no encontrado';
+    END IF;
+
+    -- Contar artículos derivados (preparado para HU-007)
+    -- En el futuro: SELECT COUNT(*) INTO v_articulos_totales FROM articulos WHERE producto_maestro_id = p_producto_id;
+
+    -- Validación RN-043: Solo eliminar si no tiene artículos
+    IF v_articulos_totales > 0 THEN
+        v_error_hint := 'has_derived_articles';
+        RAISE EXCEPTION 'No se puede eliminar. Este producto tiene % artículo% derivado%. Solo puede desactivarlo',
+            v_articulos_totales,
+            CASE WHEN v_articulos_totales = 1 THEN '' ELSE 's' END,
+            CASE WHEN v_articulos_totales = 1 THEN '' ELSE 's' END;
+    END IF;
+
+    -- Eliminar permanentemente
+    DELETE FROM productos_maestros WHERE id = p_producto_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_producto_id
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION eliminar_producto_maestro IS 'E002-HU-006: Elimina permanentemente producto maestro solo si no tiene artículos - CA-014, RN-043';
+
+-- Función 6: desactivar_producto_maestro
+CREATE OR REPLACE FUNCTION desactivar_producto_maestro(
+    p_producto_id UUID,
+    p_desactivar_articulos BOOLEAN DEFAULT false
+) RETURNS JSON AS $$
+DECLARE
+    v_articulos_activos_afectados INTEGER := 0;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar producto existe
+    IF NOT EXISTS(SELECT 1 FROM productos_maestros WHERE id = p_producto_id) THEN
+        v_error_hint := 'producto_not_found';
+        RAISE EXCEPTION 'Producto maestro no encontrado';
+    END IF;
+
+    -- Desactivar producto maestro
+    UPDATE productos_maestros
+    SET activo = false,
+        updated_at = NOW()
+    WHERE id = p_producto_id;
+
+    -- Si se solicita desactivar artículos en cascada (RN-042)
+    IF p_desactivar_articulos THEN
+        -- En el futuro: UPDATE articulos SET activo = false WHERE producto_maestro_id = p_producto_id AND activo = true;
+        -- En el futuro: GET DIAGNOSTICS v_articulos_activos_afectados = ROW_COUNT;
+        v_articulos_activos_afectados := 0;
+    END IF;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_producto_id,
+            'articulos_activos_afectados', v_articulos_activos_afectados
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION desactivar_producto_maestro IS 'E002-HU-006: Desactiva producto maestro y opcionalmente artículos derivados - CA-014, RN-042';
+
+-- Función 7: reactivar_producto_maestro
+CREATE OR REPLACE FUNCTION reactivar_producto_maestro(
+    p_producto_id UUID
+) RETURNS JSON AS $$
+DECLARE
+    v_marca_activo BOOLEAN;
+    v_material_activo BOOLEAN;
+    v_tipo_activo BOOLEAN;
+    v_sistema_activo BOOLEAN;
+    v_marca_nombre TEXT;
+    v_material_nombre TEXT;
+    v_tipo_nombre TEXT;
+    v_sistema_nombre TEXT;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar producto existe
+    IF NOT EXISTS(SELECT 1 FROM productos_maestros WHERE id = p_producto_id) THEN
+        v_error_hint := 'producto_not_found';
+        RAISE EXCEPTION 'Producto maestro no encontrado';
+    END IF;
+
+    -- Validar que todos los catálogos estén activos (RN-038)
+    SELECT ma.activo, ma.nombre, mat.activo, mat.nombre, t.activo, t.nombre, st.activo, st.nombre
+    INTO v_marca_activo, v_marca_nombre, v_material_activo, v_material_nombre,
+         v_tipo_activo, v_tipo_nombre, v_sistema_activo, v_sistema_nombre
+    FROM productos_maestros pm
+    INNER JOIN marcas ma ON pm.marca_id = ma.id
+    INNER JOIN materiales mat ON pm.material_id = mat.id
+    INNER JOIN tipos t ON pm.tipo_id = t.id
+    INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+    WHERE pm.id = p_producto_id;
+
+    IF v_marca_activo = false THEN
+        v_error_hint := 'inactive_catalog';
+        RAISE EXCEPTION 'La marca "%" está inactiva. Reactívela primero', v_marca_nombre;
+    END IF;
+
+    IF v_material_activo = false THEN
+        v_error_hint := 'inactive_catalog';
+        RAISE EXCEPTION 'El material "%" está inactivo. Reactívelo primero', v_material_nombre;
+    END IF;
+
+    IF v_tipo_activo = false THEN
+        v_error_hint := 'inactive_catalog';
+        RAISE EXCEPTION 'El tipo "%" está inactivo. Reactívelo primero', v_tipo_nombre;
+    END IF;
+
+    IF v_sistema_activo = false THEN
+        v_error_hint := 'inactive_catalog';
+        RAISE EXCEPTION 'El sistema de tallas "%" está inactivo. Reactívelo primero', v_sistema_nombre;
+    END IF;
+
+    -- Reactivar producto maestro
+    UPDATE productos_maestros
+    SET activo = true,
+        updated_at = NOW()
+    WHERE id = p_producto_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_producto_id
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION reactivar_producto_maestro IS 'E002-HU-006: Reactiva producto maestro solo si todos los catálogos están activos - CA-016, RN-038';
+
+
 COMMIT;
 
 -- ============================================

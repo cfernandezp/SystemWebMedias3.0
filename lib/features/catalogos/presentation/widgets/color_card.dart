@@ -4,7 +4,7 @@ import 'package:system_web_medias/features/catalogos/presentation/widgets/status
 
 class ColorCard extends StatelessWidget {
   final String nombre;
-  final String codigoHex;
+  final List<String> codigosHex;
   final bool activo;
   final int productosCount;
   final VoidCallback onEdit;
@@ -13,7 +13,7 @@ class ColorCard extends StatelessWidget {
   const ColorCard({
     Key? key,
     required this.nombre,
-    required this.codigoHex,
+    required this.codigosHex,
     required this.activo,
     required this.productosCount,
     required this.onEdit,
@@ -48,7 +48,7 @@ class ColorCard extends StatelessWidget {
     return Row(
       children: [
         ColorPreviewCircle(
-          codigoHex: codigoHex,
+          codigosHex: codigosHex,
           size: 48,
         ),
         const SizedBox(width: 16),
@@ -68,7 +68,7 @@ class ColorCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                codigoHex,
+                codigosHex.join(', '),
                 style: const TextStyle(
                   fontSize: 13,
                   fontFamily: 'monospace',
@@ -94,7 +94,7 @@ class ColorCard extends StatelessWidget {
         Row(
           children: [
             ColorPreviewCircle(
-              codigoHex: codigoHex,
+              codigosHex: codigosHex,
               size: 48,
             ),
             const SizedBox(width: 16),
@@ -113,7 +113,7 @@ class ColorCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    codigoHex,
+                    codigosHex.join(', '),
                     style: const TextStyle(
                       fontSize: 13,
                       fontFamily: 'monospace',

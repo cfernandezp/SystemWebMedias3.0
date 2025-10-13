@@ -181,6 +181,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       if (result['success'] == true) {
         print('✅ Login RPC exitoso');
+
+        print('🔵 Creando sesión de Supabase Auth para validar auth.uid()...');
+        try {
+          await supabase.auth.signInWithPassword(
+            email: request.email,
+            password: request.password,
+          );
+          print('✅ Sesión de Supabase Auth creada exitosamente');
+          print('🔵 auth.uid() ahora disponible para funciones del backend');
+        } catch (authError) {
+          print('⚠️ Warning: Error al crear sesión de Supabase Auth: $authError');
+          print('⚠️ El usuario podrá acceder pero auth.uid() retornará NULL en backend');
+        }
+
         return LoginResponseModel.fromJson(result['data']);
       } else {
         final error = result['error'] as Map<String, dynamic>;

@@ -9,7 +9,7 @@ import 'package:system_web_medias/features/catalogos/presentation/widgets/color_
 import 'package:system_web_medias/features/catalogos/presentation/widgets/color_search_bar.dart';
 
 class ColoresListPage extends StatelessWidget {
-  const ColoresListPage({Key? key}) : super(key: key);
+  const ColoresListPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +231,7 @@ class _ColoresListView extends StatelessWidget {
             final color = colores[index];
             return ColorCard(
               nombre: color.nombre,
-              codigoHex: color.codigoHexPrimario,
+              codigosHex: color.codigosHex,
               activo: color.activo,
               productosCount: color.productosCount,
               onEdit: () => _handleEdit(context, color.id, {
@@ -252,7 +252,7 @@ class _ColoresListView extends StatelessWidget {
             final color = colores[index];
             return ColorCard(
               nombre: color.nombre,
-              codigoHex: color.codigoHexPrimario,
+              codigosHex: color.codigosHex,
               activo: color.activo,
               productosCount: color.productosCount,
               onEdit: () => _handleEdit(context, color.id, {

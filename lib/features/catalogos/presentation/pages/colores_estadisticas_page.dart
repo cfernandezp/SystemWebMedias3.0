@@ -251,7 +251,7 @@ class _ColoresEstadisticasView extends StatelessWidget {
               child: Row(
                 children: [
                   ColorPreviewCircle(
-                    codigoHex: item.codigoHex,
+                    codigosHex: [item.codigoHex],
                     size: 32,
                   ),
                   const SizedBox(width: 12),
@@ -424,7 +424,7 @@ class _ColoresEstadisticasView extends StatelessWidget {
                 child: Row(
                   children: [
                     ColorPreviewCircle(
-                      codigoHex: item.codigoHex,
+                      codigosHex: [item.codigoHex],
                       size: 28,
                     ),
                     const SizedBox(width: 12),

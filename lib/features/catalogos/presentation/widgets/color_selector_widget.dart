@@ -191,7 +191,7 @@ class _ColorSelectorWidgetState extends State<ColorSelectorWidget> {
               child: Row(
                 children: [
                   ColorPreviewCircle(
-                    codigoHex: color.codigoHexPrimario,
+                    codigosHex: color.codigosHex,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
@@ -288,7 +288,7 @@ class _ColorSelectorWidgetState extends State<ColorSelectorWidget> {
                             const Icon(Icons.drag_handle, color: Color(0xFF9CA3AF)),
                             const SizedBox(width: 8),
                             ColorPreviewCircle(
-                              codigoHex: color.codigoHexPrimario,
+                              codigosHex: color.codigosHex,
                               size: 32,
                             ),
                           ],
@@ -338,7 +338,7 @@ class _ColorSelectorWidgetState extends State<ColorSelectorWidget> {
                       child: Row(
                         children: [
                           ColorPreviewCircle(
-                            codigoHex: color.codigoHexPrimario,
+                            codigosHex: color.codigosHex,
                             size: 24,
                           ),
                           const SizedBox(width: 12),
@@ -399,7 +399,7 @@ class _ColorSelectorWidgetState extends State<ColorSelectorWidget> {
               ...colores.map((color) => Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: ColorPreviewCircle(
-                  codigoHex: color.codigoHexPrimario,
+                  codigosHex: color.codigosHex,
                   size: 32,
                 ),
               )),

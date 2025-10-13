@@ -72,17 +72,21 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
       codigosHex: event.codigosHex,
     );
 
-    result.fold(
-      (failure) => emit(ColoresError(message: failure.message)),
+    await result.fold(
+      (failure) async => emit(ColoresError(message: failure.message)),
       (newColor) async {
+        if (emit.isDone) return;
         final coloresResult = await getColoresList();
+        if (emit.isDone) return;
         coloresResult.fold(
           (failure) => emit(ColoresError(message: failure.message)),
           (colores) {
-            emit(ColorOperationSuccess(
-              message: 'Color creado exitosamente',
-              colores: colores,
-            ));
+            if (!emit.isDone) {
+              emit(ColorOperationSuccess(
+                message: 'Color creado exitosamente',
+                colores: colores,
+              ));
+            }
           },
         );
       },
@@ -101,21 +105,25 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
       codigosHex: event.codigosHex,
     );
 
-    result.fold(
-      (failure) => emit(ColoresError(message: failure.message)),
+    await result.fold(
+      (failure) async => emit(ColoresError(message: failure.message)),
       (updatedColor) async {
+        if (emit.isDone) return;
         final coloresResult = await getColoresList();
+        if (emit.isDone) return;
         coloresResult.fold(
           (failure) => emit(ColoresError(message: failure.message)),
           (colores) {
-            final message = updatedColor.productosCount > 0
-                ? 'Color actualizado exitosamente. Este cambio afecta a ${updatedColor.productosCount} producto(s)'
-                : 'Color actualizado exitosamente';
+            if (!emit.isDone) {
+              final message = updatedColor.productosCount > 0
+                  ? 'Color actualizado exitosamente. Este cambio afecta a ${updatedColor.productosCount} producto(s)'
+                  : 'Color actualizado exitosamente';
 
-            emit(ColorOperationSuccess(
-              message: message,
-              colores: colores,
-            ));
+              emit(ColorOperationSuccess(
+                message: message,
+                colores: colores,
+              ));
+            }
           },
         );
       },
@@ -130,32 +138,36 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
 
     final result = await deleteColor(event.id);
 
-    result.fold(
-      (failure) => emit(ColoresError(message: failure.message)),
+    await result.fold(
+      (failure) async => emit(ColoresError(message: failure.message)),
       (deleteResult) async {
+        if (emit.isDone) return;
         final coloresResult = await getColoresList();
+        if (emit.isDone) return;
         coloresResult.fold(
           (failure) => emit(ColoresError(message: failure.message)),
           (colores) {
-            final deleted = deleteResult['deleted'] as bool;
-            final deactivated = deleteResult['deactivated'] as bool;
-            final productosCount = deleteResult['productos_count'] as int;
+            if (!emit.isDone) {
+              final deleted = deleteResult['deleted'] as bool;
+              final deactivated = deleteResult['deactivated'] as bool;
+              final productosCount = deleteResult['productos_count'] as int;
 
-            String message;
-            if (deleted) {
-              message = 'Color eliminado permanentemente';
-            } else if (deactivated) {
-              message =
-                  'El color está en uso en $productosCount producto(s). Se ha desactivado en lugar de eliminarse';
-            } else {
-              message = 'Operación completada';
+              String message;
+              if (deleted) {
+                message = 'Color eliminado permanentemente';
+              } else if (deactivated) {
+                message =
+                    'El color está en uso en $productosCount producto(s). Se ha desactivado en lugar de eliminarse';
+              } else {
+                message = 'Operación completada';
+              }
+
+              emit(ColorOperationSuccess(
+                message: message,
+                colores: colores,
+                deleteResult: deleteResult,
+              ));
             }
-
-            emit(ColorOperationSuccess(
-              message: message,
-              colores: colores,
-              deleteResult: deleteResult,
-            ));
           },
         );
       },

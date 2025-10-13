@@ -181,3 +181,46 @@ class SistemaNotFoundFailure extends Failure {
 class ValorNotFoundFailure extends Failure {
   const ValorNotFoundFailure([super.message = 'El valor de talla no existe']);
 }
+
+/// E002-HU-006: Crear Producto Maestro failures
+/// Combinación duplicada (409)
+class DuplicateCombinationFailure extends Failure {
+  const DuplicateCombinationFailure([super.message = 'Ya existe un producto con esta combinación']);
+}
+
+/// Combinación duplicada inactiva (409)
+class DuplicateCombinationInactiveFailure extends Failure {
+  final String? productoId;
+
+  const DuplicateCombinationInactiveFailure(
+    String message, {
+    this.productoId,
+  }) : super(message);
+
+  @override
+  List<Object> get props => productoId != null ? [message, productoId!] : [message];
+}
+
+/// Catálogo inactivo (400)
+class InactiveCatalogFailure extends Failure {
+  const InactiveCatalogFailure([super.message = 'Uno o más catálogos están inactivos']);
+}
+
+/// Tiene artículos derivados (400)
+class HasDerivedArticlesFailure extends Failure {
+  final int? totalArticles;
+
+  const HasDerivedArticlesFailure(
+    String message, {
+    this.totalArticles,
+  }) : super(message);
+
+  @override
+  List<Object> get props => totalArticles != null ? [message, totalArticles!] : [message];
+}
+
+/// Producto maestro no encontrado (404)
+class ProductoMaestroNotFoundFailure extends Failure {
+  const ProductoMaestroNotFoundFailure([super.message = 'Producto maestro no encontrado']);
+}
+

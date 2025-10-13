@@ -26,6 +26,9 @@ import 'package:system_web_medias/features/catalogos/presentation/pages/color_fo
 import 'package:system_web_medias/features/catalogos/presentation/pages/colores_estadisticas_page.dart';
 import 'package:system_web_medias/features/catalogos/presentation/pages/filtrar_por_combinacion_page.dart';
 import 'package:system_web_medias/features/catalogos/presentation/pages/productos_por_color_page.dart';
+import 'package:system_web_medias/features/productos_maestros/presentation/pages/productos_maestros_list_page.dart';
+import 'package:system_web_medias/features/productos_maestros/presentation/pages/producto_maestro_form_page.dart';
+import 'package:system_web_medias/features/productos_maestros/presentation/pages/producto_maestro_detail_page.dart';
 import 'package:system_web_medias/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_bloc.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_event.dart';
@@ -272,6 +275,28 @@ class AppRouter {
             name: 'productos-por-color',
             builder: (context, state) => const ProductosPorColorPage(),
           ),
+          // HU-006: Gestionar Productos Maestros
+          GoRoute(
+            path: '/productos-maestros',
+            name: 'productos-maestros',
+            builder: (context, state) => const ProductosMaestrosListPage(),
+          ),
+          GoRoute(
+            path: '/producto-maestro-form',
+            name: 'producto-maestro-form',
+            builder: (context, state) {
+              final arguments = state.extra as Map<String, dynamic>?;
+              return ProductoMaestroFormPage(arguments: arguments);
+            },
+          ),
+          GoRoute(
+            path: '/producto-maestro-detail',
+            name: 'producto-maestro-detail',
+            builder: (context, state) {
+              final productoId = state.extra as String;
+              return ProductoMaestroDetailPage(productoId: productoId);
+            },
+          ),
         ],
       ),
     ],
@@ -396,6 +421,9 @@ class _MainLayoutWrapper extends StatelessWidget {
       '/colores': ('Catálogo de Colores', '/colores'),
       '/color-form': ('Formulario de Color', null),
       '/colores-estadisticas': ('Estadísticas de Colores', null),
+      '/productos-maestros': ('Productos Maestros', '/productos-maestros'),
+      '/producto-maestro-form': ('Formulario Producto Maestro', null),
+      '/producto-maestro-detail': ('Detalle Producto Maestro', null),
     };
 
     final current = routeMap[route];

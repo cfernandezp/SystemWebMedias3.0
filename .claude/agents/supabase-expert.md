@@ -184,57 +184,119 @@ curl -X POST http://localhost:54321/functions/v1/function-name \
   -d '{"param1": "value1"}'
 ```
 
-### 4. Documentar en HU (Sección Backend)
+### 4. Documentar en HU (PROTOCOLO CENTRALIZADO - CRÍTICO)
+
+**⚠️ REGLA ABSOLUTA: UN SOLO DOCUMENTO (LA HU)**
+
+❌ **NO HACER**:
+- NO crear `docs/technical/backend/E00X-HU-XXX-backend-spec.md` (documentos separados)
+- NO crear reportes en otros archivos
+- NO duplicar documentación
+
+✅ **HACER**:
+- SOLO agregar sección AL FINAL de la HU existente
+- Usar `Edit` tool para agregar tu sección
 
 **Archivo**: `docs/historias-usuario/E00X-HU-XXX-COM-[nombre].md`
 
-**Usa `Edit` para agregar tu sección** después de `## 🔧 IMPLEMENTACIÓN TÉCNICA`:
+**Usa `Edit` para AGREGAR al final (después de "## Criterios de Aceptación")**:
 
 ```markdown
-### Backend (@supabase-expert)
-
-**Estado**: ✅ Completado
+---
+## 🗄️ FASE 2: Diseño Backend
+**Responsable**: supabase-expert
+**Status**: ✅ Completado
 **Fecha**: YYYY-MM-DD
 
-<details>
-<summary><b>Ver detalles técnicos</b></summary>
-
-#### Archivos Modificados
-- `supabase/migrations/00000000000003_catalog_tables.sql`
-- `supabase/migrations/00000000000005_functions.sql`
+### Esquema de Base de Datos
 
 #### Tablas Creadas/Modificadas
-**Tabla**: `table_name`
-- Columnas: id, column1, created_at
-- Índices: idx_table_name_column1
+**`table_name`**:
+- Columnas: id (UUID PK), nombre (TEXT NOT NULL), activo (BOOLEAN), created_at, updated_at
+- Índices: idx_table_name_nombre, idx_table_name_activo
+- RLS: Habilitado con policies por rol
 
-#### Funciones RPC Implementadas
+### Funciones RPC Implementadas
 
 **`function_name(p_param TYPE) → JSON`**
-- Descripción: [Qué hace]
-- Reglas: RN-001, RN-002
-- Request: `{"p_param": "value"}`
-- Response: `{"success": true, "data": {...}}`
+- **Descripción**: [Qué hace brevemente]
+- **Reglas de Negocio**: RN-001, RN-002
+- **Request**: `{"p_param": "value"}`
+- **Response Success**: `{"success": true, "data": {...}, "message": "..."}`
+- **Response Error**: `{"success": false, "error": {"code": "...", "message": "...", "hint": "..."}}`
 
-#### CA Implementados
-- **CA-001**: [Título] → Backend: [función/tabla]
+**`otra_funcion(params) → JSON`**
+- [Misma estructura]
 
-#### RN Implementadas
-- **RN-001**: [Título] → [validación/constraint]
+### Archivos Modificados
+- `supabase/migrations/00000000000003_catalog_tables.sql` (tablas catálogo)
+- `supabase/migrations/00000000000005_functions.sql` (funciones RPC)
 
-#### Verificación
-- [x] Migrations aplicadas
-- [x] Funciones probadas
-- [x] Convenciones aplicadas
+### Criterios de Aceptación Backend
+- [✅] **CA-001**: Implementado en función `function_name`
+- [✅] **CA-002**: Validado en RLS policy `policy_name`
+- [⏳] **CA-003**: Pendiente para flutter-expert
 
-</details>
+### Reglas de Negocio Implementadas
+- **RN-XXX**: [Descripción] → Implementado como [constraint/validación/policy]
+
+### Verificación
+- [x] Migrations aplicadas con `db reset`
+- [x] Funciones testeadas con SQL/curl
+- [x] Convenciones 00-CONVENTIONS.md aplicadas
+- [x] JSON response format estándar
+- [x] RLS policies configurados
+
+---
 ```
 
+**LUEGO, para Implementación (cuando workflow-architect lo indique)**:
+
+```markdown
+---
+## 🔧 FASE 3: Implementación Backend
+**Responsable**: supabase-expert
+**Status**: ✅ Completado
+**Fecha**: YYYY-MM-DD
+
+### Migraciones Aplicadas
+- ✅ Tabla `table_name` creada con índices
+- ✅ RLS policies `policy_name` aplicados
+- ✅ Funciones RPC `function_name`, `otra_funcion` desplegadas
+
+### Endpoints Disponibles
+```bash
+# Crear [entidad]
+curl -X POST "http://127.0.0.1:54321/rest/v1/rpc/function_name" \
+  -H "apikey: xxx" \
+  -H "Authorization: Bearer xxx" \
+  -d '{"p_param": "value"}'
+
+# Respuesta:
+{"success": true, "data": {"id": "uuid", "nombre": "..."}, "message": "..."}
+```
+
+### Testing Backend Realizado
+- [x] Test 1: Crear registro válido → Success
+- [x] Test 2: Validación RN-001 → Error correcto
+- [x] Test 3: RLS policy → Acceso denegado si no ADMIN
+
+### Issues Encontrados y Resueltos
+- Issue 1: [Descripción] → Solución: [...]
+
+---
+```
+
+**LONGITUD MÁXIMA**:
+- Tu sección de DISEÑO: **máximo 80-100 líneas**
+- Tu sección de IMPLEMENTACIÓN: **máximo 80-100 líneas**
+- Es un RESUMEN ejecutivo, NO código SQL completo
+- El código está en `supabase/migrations/`, no en la HU
+
 **CRÍTICO**:
-- Lee HU completa primero
-- Busca sección `## 🔧 IMPLEMENTACIÓN TÉCNICA`
-- Si no existe, agrégala después de Reglas de Negocio
-- Marca checkboxes `[x]` en CA que implementaste
+- ❌ NO crear archivos separados en `docs/technical/backend/`
+- ✅ SOLO actualizar LA HU con secciones resumidas
+- ✅ La HU es el "source of truth" único
 
 ### 5. Reportar
 

@@ -519,6 +519,58 @@ CREATE POLICY authenticated_view_producto_colores ON producto_colores
 -- Políticas de INSERT/UPDATE/DELETE NO son necesarias porque las funciones
 -- SECURITY DEFINER manejan la autorización internamente
 
+-- ============================================
+-- PASO 14: Tabla productos_maestros (E002-HU-006)
+-- ============================================
+
+CREATE TABLE productos_maestros (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    marca_id UUID NOT NULL REFERENCES marcas(id),
+    material_id UUID NOT NULL REFERENCES materiales(id),
+    tipo_id UUID NOT NULL REFERENCES tipos(id),
+    sistema_talla_id UUID NOT NULL REFERENCES sistemas_talla(id),
+    descripcion TEXT,
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Constraints (RN-037, RN-039)
+    CONSTRAINT productos_maestros_unique_combination UNIQUE(marca_id, material_id, tipo_id, sistema_talla_id),
+    CONSTRAINT productos_maestros_descripcion_length CHECK (descripcion IS NULL OR LENGTH(descripcion) <= 200)
+);
+
+-- Índices optimización
+CREATE INDEX idx_productos_maestros_marca ON productos_maestros(marca_id);
+CREATE INDEX idx_productos_maestros_material ON productos_maestros(material_id);
+CREATE INDEX idx_productos_maestros_tipo ON productos_maestros(tipo_id);
+CREATE INDEX idx_productos_maestros_sistema_talla ON productos_maestros(sistema_talla_id);
+CREATE INDEX idx_productos_maestros_activo ON productos_maestros(activo);
+CREATE INDEX idx_productos_maestros_created_at ON productos_maestros(created_at DESC);
+
+-- Trigger updated_at
+CREATE TRIGGER update_productos_maestros_updated_at
+    BEFORE UPDATE ON productos_maestros
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Comentarios
+COMMENT ON TABLE productos_maestros IS 'E002-HU-006: Productos maestros (definición base sin colores ni stock)';
+COMMENT ON COLUMN productos_maestros.marca_id IS 'Referencia a marca activa (inmutable si tiene artículos) - RN-037, RN-038';
+COMMENT ON COLUMN productos_maestros.material_id IS 'Referencia a material activo (inmutable si tiene artículos) - RN-037, RN-038';
+COMMENT ON COLUMN productos_maestros.tipo_id IS 'Referencia a tipo activo (inmutable si tiene artículos) - RN-037, RN-038';
+COMMENT ON COLUMN productos_maestros.sistema_talla_id IS 'Referencia a sistema de tallas activo (inmutable si tiene artículos) - RN-037, RN-038';
+COMMENT ON COLUMN productos_maestros.descripcion IS 'Descripción opcional (max 200 caracteres) - RN-039, RN-044';
+COMMENT ON COLUMN productos_maestros.activo IS 'Estado del producto maestro (soft delete) - RN-042';
+
+-- RLS Policy
+ALTER TABLE productos_maestros ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY authenticated_view_productos_maestros ON productos_maestros
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
+
 COMMIT;
 
 -- ============================================

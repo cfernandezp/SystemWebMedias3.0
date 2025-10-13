@@ -60,7 +60,8 @@ CREATE TABLE audit_logs (
         'material_management', 'marca_management',
         'tipo_created', 'tipo_updated', 'tipo_activated', 'tipo_deactivated',
         'sistema_talla_created', 'sistema_talla_updated', 'sistema_talla_activated', 'sistema_talla_deactivated',
-        'valor_talla_added', 'valor_talla_updated', 'valor_talla_deleted'
+        'valor_talla_added', 'valor_talla_updated', 'valor_talla_deleted',
+        'color_created', 'color_updated', 'color_deactivated', 'color_deleted'
     )),
     event_subtype TEXT,
     ip_address INET,

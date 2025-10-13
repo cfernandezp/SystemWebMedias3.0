@@ -157,3 +157,37 @@ class ColorNotFoundException extends AppException {
 class ColorInUseException extends AppException {
   ColorInUseException([super.message = 'Color en uso, solo se puede desactivar', super.statusCode = 400]);
 }
+
+/// E002-HU-006: Crear Producto Maestro exceptions
+class DuplicateCombinationException extends AppException {
+  DuplicateCombinationException([super.message = 'Ya existe un producto con esta combinación', super.statusCode = 409]);
+}
+
+class DuplicateCombinationInactiveException extends AppException {
+  final String? productoId;
+
+  DuplicateCombinationInactiveException(
+    String message,
+    int statusCode, {
+    this.productoId,
+  }) : super(message, statusCode);
+}
+
+class InactiveCatalogException extends AppException {
+  InactiveCatalogException([super.message = 'Uno o más catálogos están inactivos', super.statusCode = 400]);
+}
+
+class HasDerivedArticlesException extends AppException {
+  final int? totalArticles;
+
+  HasDerivedArticlesException(
+    String message,
+    int statusCode, {
+    this.totalArticles,
+  }) : super(message, statusCode);
+}
+
+class ProductoMaestroNotFoundException extends AppException {
+  ProductoMaestroNotFoundException([super.message = 'Producto maestro no encontrado', super.statusCode = 404]);
+}
+

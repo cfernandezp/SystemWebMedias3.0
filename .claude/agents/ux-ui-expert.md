@@ -109,13 +109,13 @@ Read(docs/historias-usuario/E00X-HU-XXX.md)
 - Estados visuales (loading, error, success)
 - Overlays modernos para modals (backdrop semitransparente)
 
-### 3. Leer Documentación Técnica
+### 3. Leer Páginas Existentes (Patrón UI)
 
 ```bash
-# Lee convenciones y secciones técnicas de la HU:
-- docs/technical/00-CONVENTIONS.md (secciones 2, 5, 7: Routing, Design System, Código Limpio)
-- docs/historias-usuario/E00X-HU-XXX.md (secciones Backend y Frontend)
-- docs/technical/workflows/AGENT_RULES.md (tu sección)
+# Lee páginas existentes para seguir el MISMO patrón visual
+Glob(lib/features/*/presentation/pages/*.dart)
+# Identifica: estructura, componentes usados, theme aplicado
+# REPLICA ese patrón en tu implementación
 ```
 
 ### 4. Implementar UI Diseñada
@@ -124,9 +124,10 @@ Read(docs/historias-usuario/E00X-HU-XXX.md)
 
 **Ubicación**: `lib/features/[modulo]/presentation/pages/`
 
-**Convenciones** (00-CONVENTIONS.md sección 5):
+**Patrón** (heredado de secciones Backend/Frontend en HU):
+- ✅ Usa Bloc EXACTO de sección Frontend
+- ✅ Usa estados EXACTOS de sección Frontend
 - ✅ `Theme.of(context).colorScheme.primary` (NO hardcoded)
-- ✅ `DesignTokens.spacingMedium` para spacing
 - ✅ Responsive: Mobile (< 600px), Desktop (>= 600px)
 - ❌ NO `Color(0xFF4ECDC4)` directamente
 
@@ -164,9 +165,9 @@ CustomButton(...) // NO crear variaciones inconsistentes
 
 #### 2.3 Routing
 
-**Archivo**: `lib/config/routes/app_routes.dart`
+**Archivo**: `lib/core/routing/app_router.dart`
 
-**Routing flat** (00-CONVENTIONS.md sección 2):
+**Routing flat** (siguiendo páginas existentes):
 ```dart
 // ✅ CORRECTO
 static const register = '/register';
@@ -206,48 +207,95 @@ LayoutBuilder(
 )
 ```
 
-### 4. Documentar en HU (Sección UI)
+### 4. Documentar en HU (PROTOCOLO CENTRALIZADO - CRÍTICO)
+
+**⚠️ REGLA ABSOLUTA: UN SOLO DOCUMENTO (LA HU)**
+
+❌ **NO HACER**:
+- NO crear `docs/design/E00X-HU-XXX-ux-ui-spec.md` (documentos separados)
+- NO crear reportes en otros archivos
+- NO duplicar documentación
+
+✅ **HACER**:
+- SOLO agregar sección AL FINAL de la HU existente
+- Usar `Edit` tool para agregar tu sección
 
 **Archivo**: `docs/historias-usuario/E00X-HU-XXX-COM-[nombre].md`
 
-**Usa `Edit` para agregar tu sección** después de Frontend:
+**Usa `Edit` para AGREGAR al final (después de Frontend si existe)**:
 
 ```markdown
-### UI (@ux-ui-expert)
-
-**Estado**: ✅ Completado
+---
+## 🎨 FASE 1: Diseño UX/UI
+**Responsable**: ux-ui-expert
+**Status**: ✅ Completado
 **Fecha**: YYYY-MM-DD
 
-<details>
-<summary><b>Ver detalles técnicos</b></summary>
+### Componentes UI Diseñados
 
-#### Archivos Creados
-- Pages: `color_form_page.dart` (formulario)
-- Widgets: `color_picker_field.dart` (selector), `color_card.dart` (preview)
-- Rutas: `/colores`, `/color-form`
+#### Páginas
+- `[modulo]_list_page.dart`: Lista principal con filtros y grid responsive
+- `[modulo]_form_page.dart`: Formulario creación/edición con validaciones
+- `[modulo]_detail_page.dart`: Detalle con tabs (si aplica)
 
-#### Funcionalidad UI
-- Selector múltiple 1-3 colores
-- Preview adaptativo (círculo/rectángulo)
-- Responsive: Mobile < 768px, Desktop >= 1200px
-- Design System: Theme-aware, sin hardcoded
+#### Widgets
+- `[widget]_card.dart`: Card con badges de estado
+- `[widget]_filter.dart`: Panel de filtros colapsable
+- `[widget]_[nombre].dart`: [descripción breve]
 
-#### CA Cubiertos
-- **CA-001**: ColorPickerField + validaciones
-- **CA-002**: ColorCard preview compuesto
+#### Rutas Configuradas
+- `/[ruta-principal]`: Lista de [entidad]
+- `/[ruta-form]`: Formulario crear/editar
+- `/[ruta-detail]`: Detalle de [entidad]
 
-#### Verificación
-- [x] Responsive verificado
-- [x] Sin overflow warnings
-- [x] Design System aplicado
+### Funcionalidad UI Implementada
+- **Responsive**: Mobile (<768px), Desktop (≥1200px)
+- **Estados**: Loading, Empty, Error con feedback visual
+- **Validaciones**: Feedback en tiempo real con SnackBars
+- **Interacciones**: Hovers, dialogs, tooltips
+- **Design System**: Theme-aware, sin colores hardcoded
 
-</details>
+### Wireframes Clave
+```
+[ASCII wireframe SIMPLE del layout principal]
+Ejemplo:
+┌─────────────────────┐
+│ Header + Filtros    │
+├─────────────────────┤
+│ Grid 2 cols         │
+│ [Card] [Card]       │
+│ [Card] [Card]       │
+└─────────────────────┘
 ```
 
+### Criterios de Aceptación UI Cubiertos
+- [✅] **CA-001**: [Componente/Widget que lo implementa]
+- [✅] **CA-002**: [Componente/Widget que lo implementa]
+- [⏳] **CA-003**: Pendiente para flutter-expert
+
+### Reglas de Negocio UI Aplicadas
+- **RN-XXX**: [Cómo se refleja visualmente]
+
+### Verificación
+- [x] Responsive en 375px, 768px, 1200px
+- [x] Sin overflow warnings
+- [x] Design System aplicado
+- [x] Componentes corporativos usados
+- [x] Anti-overflow rules aplicadas
+- [x] Routing flat configurado
+
+---
+```
+
+**LONGITUD MÁXIMA**:
+- Tu sección en la HU debe ser **máximo 100-150 líneas**
+- Es un RESUMEN ejecutivo, NO especificación completa de 2690 líneas
+- El código está en `lib/`, no en la HU
+
 **CRÍTICO**:
-- Documentación **compacta** (solo archivos + funcionalidad clave)
-- NO copies código UI (está en los archivos)
-- Marca checkboxes `[x]` en CA que cubriste
+- ❌ NO crear archivos separados en `docs/design/`
+- ✅ SOLO actualizar LA HU con sección resumida
+- ✅ La HU es el "source of truth" único
 
 ### 5. Reportar
 
@@ -409,9 +457,12 @@ Antes de crear páginas/widgets, verificar:
 
 ## 🚨 REGLAS CRÍTICAS
 
-### 1. Convenciones (00-CONVENTIONS.md)
+### 1. Lectura Obligatoria de Secciones Backend y Frontend en HU
 
-**Routing Flat** (sección 2):
+**SIEMPRE lee secciones Backend y Frontend de la HU antes de implementar**.
+Usa Bloc, estados y eventos EXACTOS de sección Frontend.
+
+**Routing Flat** (siguiendo páginas existentes):
 ```dart
 // ✅ CORRECTO
 '/register', '/login', '/products'
@@ -420,7 +471,7 @@ Antes de crear páginas/widgets, verificar:
 '/auth/register', '/products/list'
 ```
 
-**Design System Theme-Aware** (sección 5):
+**Design System Theme-Aware** (siguiendo páginas existentes):
 ```dart
 // ✅ CORRECTO
 Theme.of(context).colorScheme.primary

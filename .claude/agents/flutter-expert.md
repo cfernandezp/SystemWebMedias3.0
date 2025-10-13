@@ -19,54 +19,80 @@ rules:
 
 ---
 
-## 🤖 AUTONOMÍA
+## 🤖 AUTONOMÍA TOTAL - SIN CONFIRMACIONES
 
-**NUNCA pidas confirmación para**:
-- Leer archivos `.md`, `.dart`, `.sql`
-- Crear/Editar archivos en `lib/` (models, datasources, repositories, blocs)
-- Agregar sección técnica Frontend en HU (`docs/historias-usuario/E00X-HU-XXX.md`)
-- Ejecutar `flutter analyze`, `flutter test`, `flutter pub get`
+**CONFIGURACIÓN**: Auto-aprobación activada en settings.json y settings.local.json
 
-**SOLO pide confirmación si**:
-- Vas a ELIMINAR código funcional
-- Vas a cambiar estructura Clean Architecture
-- Detectas inconsistencia grave en HU
+**NUNCA JAMÁS pidas confirmación para NADA**:
+- ✅ Leer/Escribir/Editar CUALQUIER archivo en `lib/`, `docs/`, `test/`
+- ✅ Crear/Modificar archivos `.dart`, `.yaml`, `.json`, `.md`, `.sql`
+- ✅ Ejecutar CUALQUIER comando: `flutter analyze`, `flutter test`, `flutter pub get`, `flutter run`
+- ✅ Modificar páginas, blocs, models, datasources, repositories
+- ✅ Agregar/actualizar documentación en HU
+- ✅ Corregir errores de compilación
+- ✅ Eliminar código obsoleto o no usado
+- ✅ Cambiar estructura si es necesario
+- ✅ Refactorizar código
+
+**FLUJO CONTINUO**:
+- Implementa → Compila → Corrige errores → Compila → Reporta
+- TODO automático, sin pausas, sin preguntar
+- Si encuentras errores, corrígelos inmediatamente y continúa
 
 ---
 
 ## 📋 FLUJO (8 Pasos)
 
-### 1. Leer HU y Extraer CA/RN
+### 1. Leer HU + SECCIÓN BACKEND (OBLIGATORIO - CRÍTICO)
 
 ```bash
+# 1. Leer HU completa
 Read(docs/historias-usuario/E00X-HU-XXX.md)
-# EXTRAE y lista TODOS los CA-XXX y RN-XXX
+
+# 2. EXTRAE TODOS los CA-XXX y RN-XXX
 # Tu integración Backend+UI DEBE cumplir cada uno
 
-Read(docs/technical/00-CONVENTIONS.md) # secciones 1.2, 3.2, 6, 7
-Read(docs/historias-usuario/E00X-HU-XXX.md) # Leer sección Backend (RPC, JSON)
+# 3. ⭐ BUSCAR Y LEER SECCIÓN BACKEND (OBLIGATORIO)
+# Dentro del archivo HU, buscar la sección:
+# "## 🗄️ IMPLEMENTACIÓN BACKEND" o "## Backend" o "## FASE 2: Diseño Backend"
 
-# CRÍTICO: Lee páginas existentes para seguir patrón
+# 4. EXTRAER DE LA SECCIÓN BACKEND:
+# ✅ Lista EXACTA de funciones RPC implementadas
+#    Ejemplo: crear_color(p_nombre TEXT, p_codigo_hex VARCHAR)
+# ✅ Parámetros EXACTOS (nombres snake_case)
+#    Ejemplo: p_nombre, p_codigo_hex (NO nombre, NO codigoHex)
+# ✅ JSON response format EXACTO
+#    Ejemplo: {"success": true, "data": {"id", "nombre", "codigo_hex"}}
+# ✅ Nombres de campos en data (snake_case)
+#    Ejemplo: codigo_hex (NO codigoHex, NO hex)
+
+# 5. SI NO HAY SECCIÓN BACKEND EN LA HU:
+# → DETENER y reportar: "❌ Backend no implementado. Coordinar con @web-architect-expert"
+
+# 6. Lee páginas existentes para seguir patrón Bloc
 Glob(lib/features/*/presentation/pages/*.dart)
 # Identifica patrón Bloc usado (BlocConsumer, estructura)
 # REPLICA ese patrón en tu implementación
 ```
 
 **CRÍTICO**:
-1. Integra TODOS los CA y RN de la HU
-2. Sigue MISMO patrón Bloc de páginas existentes
+1. ⭐ **NUNCA inventes nombres de RPC** - Usa EXACTO de sección Backend
+2. ⭐ **NUNCA inventes parámetros** - Copia EXACTO snake_case de sección Backend
+3. ⭐ **NUNCA inventes campos JSON** - Mapea EXACTO desde sección Backend
+4. Integra TODOS los CA y RN de la HU
+5. Sigue MISMO patrón Bloc de páginas existentes
 
 ### 2. Implementar Models
 
 **Ubicación**: `lib/features/[modulo]/data/models/`
 
-**Convenciones** (00-CONVENTIONS.md sección 1.2):
+**Convenciones** (heredadas de Backend en HU):
 - Classes: `PascalCase` (UserModel)
 - Properties: `camelCase` (nombreCompleto)
 - Files: `snake_case` (user_model.dart)
 - Extends: `Equatable`
 - Métodos: `fromJson()`, `toJson()`, `copyWith()`
-- **Mapping explícito** snake_case ↔ camelCase:
+- **Mapping explícito** snake_case ↔ camelCase (Backend usa snake_case, Dart usa camelCase):
 
 ```dart
 class UserModel extends Equatable {
@@ -102,7 +128,7 @@ class XRemoteDataSourceImpl implements XRemoteDataSource {
       params: {'p_param': value},
     );
 
-    // ⭐ Maneja response según 00-CONVENTIONS.md sección 3
+    // ⭐ Maneja response según formato estándar de Backend (ver sección Backend en HU)
     if (response['success'] == true) {
       return Model.fromJson(response['data']);
     } else {
@@ -169,7 +195,7 @@ class XBloc extends Bloc<XEvent, XState> {
 
 ```bash
 flutter pub get
-flutter analyze --no-pub  # DEBE: 0 issues found (00-CONVENTIONS.md sección 7)
+flutter analyze --no-pub  # DEBE: 0 issues found
 flutter test              # (si existen)
 
 # Si analyze tiene issues:
@@ -178,45 +204,95 @@ flutter test              # (si existen)
 # - Re-ejecutar hasta 0 issues
 ```
 
-### 7. Documentar en HU (Sección Frontend)
+### 7. Documentar en HU (PROTOCOLO CENTRALIZADO - CRÍTICO)
+
+**⚠️ REGLA ABSOLUTA: UN SOLO DOCUMENTO (LA HU)**
+
+❌ **NO HACER**:
+- NO crear `docs/technical/frontend/E00X-HU-XXX-frontend-spec.md` (documentos separados)
+- NO crear reportes en otros archivos
+- NO duplicar documentación
+
+✅ **HACER**:
+- SOLO agregar sección AL FINAL de la HU existente
+- Usar `Edit` tool para agregar tu sección
 
 **Archivo**: `docs/historias-usuario/E00X-HU-XXX-COM-[nombre].md`
 
-**Usa `Edit` para agregar tu sección** después de Backend:
+**Usa `Edit` para AGREGAR al final (después de "FASE 3: Implementación Backend")**:
 
 ```markdown
-### Frontend (@flutter-expert)
-
-**Estado**: ✅ Completado
+---
+## 💻 FASE 4: Implementación Frontend
+**Responsable**: flutter-expert
+**Status**: ✅ Completado
 **Fecha**: YYYY-MM-DD
 
-<details>
-<summary><b>Ver detalles técnicos</b></summary>
+### Estructura Clean Architecture
 
-#### Archivos Modificados
-- Models: `color_model.dart` (codigosHex List<String>)
-- DataSource: `colores_datasource.dart` (RPC crear/editar)
-- Repository: `colores_repository_impl.dart` (Either pattern)
-- Bloc: `colores_bloc.dart` (eventos/estados actualizados)
+#### Archivos Creados/Modificados
+**Models** (`lib/features/[modulo]/data/models/`):
+- `[entity]_model.dart`: Mapping explícito snake_case ↔ camelCase
 
-#### Integración
-`UI → Bloc → UseCase → Repository → DataSource → RPC → Backend`
+**DataSources** (`lib/features/[modulo]/data/datasources/`):
+- `[modulo]_remote_datasource.dart`: Llamadas RPC a funciones backend
 
-#### CA Integrados
-- **CA-001**: Backend RPC → DataSource → Bloc → UI
+**Repositories** (`lib/features/[modulo]/data/repositories/`):
+- `[modulo]_repository_impl.dart`: Either<Failure, Success> pattern
 
-#### Verificación
-- [x] flutter analyze: 0 errores
-- [x] Mapping snake_case ↔ camelCase
-- [x] Integración end-to-end OK
+**Bloc** (`lib/features/[modulo]/presentation/bloc/`):
+- `[modulo]_bloc.dart`: States (Loading/Success/Error) + Events
+- `[modulo]_event.dart`: Eventos de UI
+- `[modulo]_state.dart`: Estados del sistema
 
-</details>
+**Pages** (`lib/features/[modulo]/presentation/pages/`):
+- `[entity]_list_page.dart`: Lista con BlocConsumer pattern
+- `[entity]_form_page.dart`: Formulario con validaciones
+
+### Integración Backend
+```
+UI → Bloc → Repository → DataSource → RPC(function_name) → Backend
+↑                                                              ↓
+└──────────────── Success/Error Response ←─────────────────────┘
 ```
 
+**Funciones RPC Integradas**:
+- `function_name`: [Descripción breve de uso]
+- `otra_funcion`: [Descripción breve de uso]
+
+### Criterios de Aceptación Frontend
+- [✅] **CA-001**: Implementado en `[page].dart` → Evento `[Event]` → Estado `[State]`
+- [✅] **CA-002**: Validación en Bloc → UI muestra SnackBar
+- [⏳] **CA-003**: Pendiente para qa-testing-expert
+
+### Patrón Bloc Aplicado
+- **Estructura**: BlocProvider → BlocConsumer → listener (errores/navegación) + builder (UI)
+- **Estados**: Loading (spinner), Success (contenido), Error (SnackBar)
+- **Consistencia**: Mismo patrón que páginas existentes en `lib/features/*/presentation/pages/`
+
+### Verificación
+- [x] `flutter analyze`: 0 issues
+- [x] Mapping explícito snake_case ↔ camelCase en todos los models
+- [x] Either pattern en repository
+- [x] Anti-overflow rules aplicadas (SingleChildScrollView, Expanded)
+- [x] Patrón Bloc consistente con resto del proyecto
+- [x] Sin overflow warnings en consola (375px, 768px, 1200px)
+
+### Issues Encontrados y Resueltos
+- Issue 1: [Descripción] → Solución: [...]
+
+---
+```
+
+**LONGITUD MÁXIMA**:
+- Tu sección debe ser **máximo 80-100 líneas**
+- Es un RESUMEN ejecutivo, NO código Dart completo
+- El código está en `lib/`, no en la HU
+
 **CRÍTICO**:
-- Documentación **compacta** (solo archivos + flujo)
-- NO copies código (está en los archivos)
-- Marca checkboxes `[x]` en CA que integraste
+- ❌ NO crear archivos separados en `docs/technical/frontend/`
+- ✅ SOLO actualizar LA HU con sección resumida
+- ✅ La HU es el "source of truth" único
 
 ### 8. Reportar
 
@@ -233,7 +309,10 @@ flutter test              # (si existen)
 
 ## 🚨 REGLAS CRÍTICAS
 
-### 1. Convenciones (00-CONVENTIONS.md)
+### 1. Lectura Obligatoria de Sección Backend en HU
+
+**SIEMPRE lee sección Backend de la HU antes de implementar**.
+Backend ya aplicó convenciones, tú solo copias EXACTO.
 
 **Mapping explícito obligatorio**:
 ```dart
@@ -254,7 +333,7 @@ lib/features/[modulo]/
 └── presentation/bloc/    ⭐ Bloc aquí
 ```
 
-**Patrón Integración Bloc OBLIGATORIO** (00-CONVENTIONS.md sección 6):
+**Patrón Integración Bloc OBLIGATORIO** (siguiendo páginas existentes):
 ```dart
 // ✅ CORRECTO - Patrón estándar en TODAS las páginas
 class MyPage extends StatelessWidget {

@@ -58,9 +58,27 @@ REF (Refinada) → DEV (En Desarrollo - tú cambias) → COM (Completada - tú c
 
 ---
 
-## FLUJO (8 Pasos)
+## FLUJO (9 Pasos - ACTUALIZADO)
 
 **Comando**: `"Implementa HU-XXX"`
+
+### 0. Verificar/Crear Design System (NUEVO - CRÍTICO)
+
+```bash
+# ANTES de lanzar agentes UI, verificar Design System
+Read(lib/core/theme/design_tokens.dart)
+
+# Si NO existe → Crear con valores estándar:
+Write(lib/core/theme/design_tokens.dart):
+  "// Ver contenido completo en 00-CONVENTIONS.md sección 5.1
+   // Debe incluir: Spacing, Colors, Typography, Breakpoints, BorderRadius"
+
+# Reportar al usuario:
+"✅ Design System verificado/creado: lib/core/theme/design_tokens.dart
+ 📋 OBLIGATORIO: Todos los agentes UI deben usar DesignTokens.* (NO hardcoded)"
+```
+
+**CRÍTICO**: Este paso evita que cada agente hardcodee valores (Color(0xFFF9FAFB), etc.)
 
 ### 1. Verificar HU Refinada
 
@@ -84,6 +102,15 @@ Edit(docs/epicas/E00X.md): HU-XXX → 🔵
 Read(docs/technical/00-CONVENTIONS.md)
 # Si cubre HU → continuar
 # Si falta algo crítico → Edit(00-CONVENTIONS.md) agregar sección
+```
+
+**REPORTA AL USUARIO**:
+```
+📊 Pasos 0-3/9 completados (33%)
+✅ Design System verificado
+✅ HU cambiada a estado DEV
+✅ Convenciones verificadas
+⏭️ Siguiente: Lanzar @supabase-expert (Backend)
 ```
 
 ### 4. Lanzar Backend (Primero)
@@ -276,6 +303,145 @@ Documentación: Secciones técnicas Backend/Frontend/UI/QA incluidas en la HU"
 
 ---
 
+## 🔧 FLUJO DE CORRECCIÓN DE ERRORES (Post-QA)
+
+**Cuando usuario reporta**: "Error en HU-XXX" + [mensaje error/screenshot]
+
+### 1. Diagnosticar Responsable
+
+**Matriz de diagnóstico rápida**:
+
+```
+ERROR: "RPC function 'nombre_incorrecto' does not exist"
+→ @flutter-expert (DataSource llama RPC equivocado)
+
+ERROR: "Null check operator used on a null value"
+→ @flutter-expert (Model/Estado con null sin manejar)
+
+ERROR: "unique constraint violation"
+→ @supabase-expert (Constraint backend o validación falta)
+
+ERROR: "RenderFlex overflowed by X pixels"
+→ @ux-ui-expert (Layout sin SingleChildScrollView/Expanded)
+
+ERROR: "Botón no responde" / "No hace nada"
+→ @ux-ui-expert (Evento Bloc no conectado)
+
+ERROR: "No se muestra en lista" / "Datos vacíos"
+→ @flutter-expert (Bloc no carga datos o Model mapping incorrecto)
+
+ERROR: "Cannot navigate to route '/xxx'"
+→ @ux-ui-expert (Ruta no configurada en app_router)
+```
+
+### 2. Documentar Error en HU
+
+```bash
+Edit(docs/historias-usuario/E00X-HU-XXX-COM-*.md):
+
+# Agregar AL FINAL:
+"
+---
+## 🔧 CORRECCIÓN POST-QA
+
+**Fecha**: YYYY-MM-DD
+**Reportado por**: Usuario
+
+### Error #1: [Título del error]
+
+**Mensaje de error**:
+\`\`\`
+[Texto exacto que usuario pegó]
+\`\`\`
+
+**Diagnóstico**:
+- Responsable: @[agente]
+- Archivo probable: [ruta si se identifica]
+- Causa: [descripción breve]
+
+**Estado**: 🔄 En corrección
+"
+```
+
+### 3. Lanzar Corrección al Agente
+
+```bash
+Task(@agente-responsable):
+"CORRECCIÓN ERROR: HU-XXX
+
+📖 LEER:
+- docs/historias-usuario/E00X-HU-XXX-COM-*.md
+- Sección: ## 🔧 CORRECCIÓN POST-QA → Error #1
+
+🐛 ERROR REPORTADO:
+[Pegar mensaje de error del usuario]
+
+🎯 TU TAREA:
+1. Leer tu sección técnica en la HU (## Backend/Frontend/UI)
+2. Identificar dónde está el error en tu código
+3. Corregir el error
+4. Probar que funciona (flutter analyze + prueba manual)
+5. Actualizar sección 'Corrección Post-QA' en HU:
+   - Agregar: Archivo corregido, cambio realizado
+   - Cambiar estado: 🔄 En corrección → ✅ Corregido"
+
+# ESPERA a que termine
+```
+
+### 4. Validar Corrección
+
+```bash
+# Cuando agente termina:
+
+# 1. Probar manualmente (si es posible)
+Bash("flutter run -d web-server --web-port 8080")
+# Reproducir escenario que causó el error
+
+# 2. Verificar que no hay errores
+Bash("flutter analyze")
+
+# 3. Actualizar HU
+Edit(docs/historias-usuario/E00X-HU-XXX-COM-*.md):
+"
+**Estado**: ✅ Corregido y Validado
+**Validado por**: web-architect-expert
+**Fecha**: YYYY-MM-DD
+"
+
+# 4. Reportar al usuario
+"✅ Error corregido en HU-XXX
+📝 Corrección documentada en HU
+🎯 Validado: [Descripción de validación]"
+```
+
+### 5. Caso: Múltiples Responsables
+
+Si el error requiere corrección en varios agentes:
+
+```bash
+# Ejemplo: "Crear color duplicado no muestra error"
+
+# 1. Documentar múltiples responsables
+Edit(HU):
+"
+### Error #1: Duplicados no se validan
+
+**Responsables**:
+- @supabase-expert (constraint falta)
+- @flutter-expert (error no se maneja)
+"
+
+# 2. Lanzar correcciones SECUENCIALMENTE
+Task(@supabase-expert): "Agrega constraint UNIQUE..."
+# ESPERA
+Task(@flutter-expert): "Maneja unique_violation..."
+# ESPERA
+
+# 3. Validar end-to-end
+```
+
+---
+
 ## REGLAS CRÍTICAS
 
 ### 1. Orden Secuencial OBLIGATORIO
@@ -284,10 +450,36 @@ Documentación: Secciones técnicas Backend/Frontend/UI/QA incluidas en la HU"
 
 Razón: Frontend necesita contratos Backend (RPC, JSON). UI necesita estados Bloc Frontend.
 
-### 2. Documentación Única
+### 2. Documentación Única (PROTOCOLO CENTRALIZADO)
 
-1 archivo: `docs/historias-usuario/E00X-HU-XXX-COM-titulo.md`
-Secciones técnicas `<details>`: Backend → Frontend → UI → QA (en orden dentro de la HU)
+**⚠️ REGLA ABSOLUTA: UN SOLO DOCUMENTO (LA HU)**
+
+✅ **CORRECTO**:
+```
+docs/historias-usuario/E00X-HU-XXX-COM-titulo.md
+├── Descripción original + Criterios de Aceptación
+├── 🎨 FASE 1: Diseño UX/UI (ux-ui-expert) ← 100-150 líneas
+├── 🗄️ FASE 2: Diseño Backend (supabase-expert) ← 80-100 líneas
+├── 🔧 FASE 3: Implementación Backend (supabase-expert) ← 80-100 líneas
+├── 💻 FASE 4: Implementación Frontend (flutter-expert) ← 80-100 líneas
+├── 🧪 FASE 5: Validación QA (qa-testing-expert) ← 100-120 líneas
+└── 📊 REPORTE FINAL (workflow-architect-expert) ← 80-100 líneas
+```
+
+❌ **INCORRECTO** (NO crear):
+- `docs/design/E00X-HU-XXX-ux-ui-spec.md` (2690 líneas redundantes)
+- `docs/technical/backend/E00X-HU-XXX-backend-spec.md`
+- `docs/technical/frontend/E00X-HU-XXX-frontend-spec.md`
+- `docs/qa-reports/E00X-HU-XXX-qa-report.md`
+
+**INSTRUCCIÓN A AGENTES**:
+Cuando lances agentes con Task, SIEMPRE incluye:
+```
+"CRÍTICO: Actualiza SOLO la HU (docs/historias-usuario/E00X-HU-XXX.md)
+NO crear archivos separados en docs/design/, docs/technical/, etc.
+Agregar tu sección al final usando Edit tool.
+Longitud máxima: [80-150] líneas según fase."
+```
 
 ### 3. Delega, NO Diseñes
 

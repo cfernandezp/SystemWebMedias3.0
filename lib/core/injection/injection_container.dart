@@ -48,6 +48,17 @@ import 'package:system_web_medias/features/catalogos/domain/usecases/get_product
 import 'package:system_web_medias/features/catalogos/domain/usecases/filter_productos_by_combinacion.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/get_colores_estadisticas.dart';
 import 'package:system_web_medias/features/catalogos/presentation/bloc/colores_bloc.dart';
+import 'package:system_web_medias/features/productos_maestros/data/datasources/producto_maestro_remote_datasource.dart';
+import 'package:system_web_medias/features/productos_maestros/data/repositories/producto_maestro_repository_impl.dart';
+import 'package:system_web_medias/features/productos_maestros/domain/repositories/producto_maestro_repository.dart';
+import 'package:system_web_medias/features/productos_maestros/domain/usecases/validar_combinacion_comercial.dart';
+import 'package:system_web_medias/features/productos_maestros/domain/usecases/crear_producto_maestro.dart';
+import 'package:system_web_medias/features/productos_maestros/domain/usecases/listar_productos_maestros.dart';
+import 'package:system_web_medias/features/productos_maestros/domain/usecases/editar_producto_maestro.dart';
+import 'package:system_web_medias/features/productos_maestros/domain/usecases/eliminar_producto_maestro.dart';
+import 'package:system_web_medias/features/productos_maestros/domain/usecases/desactivar_producto_maestro.dart';
+import 'package:system_web_medias/features/productos_maestros/domain/usecases/reactivar_producto_maestro.dart';
+import 'package:system_web_medias/features/productos_maestros/presentation/bloc/producto_maestro_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -283,4 +294,43 @@ Future<void> init() async {
       supabase: sl(),
     ),
   );
+
+  // ========== E002-HU-006: PRODUCTOS MAESTROS ==========
+
+  // Bloc - Productos Maestros
+  sl.registerFactory(
+    () => ProductoMaestroBloc(
+      validarCombinacionComercial: sl(),
+      crearProductoMaestro: sl(),
+      listarProductosMaestros: sl(),
+      editarProductoMaestro: sl(),
+      eliminarProductoMaestro: sl(),
+      desactivarProductoMaestro: sl(),
+      reactivarProductoMaestro: sl(),
+    ),
+  );
+
+  // Use Cases - Productos Maestros
+  sl.registerLazySingleton(() => ValidarCombinacionComercial(sl()));
+  sl.registerLazySingleton(() => CrearProductoMaestro(sl()));
+  sl.registerLazySingleton(() => ListarProductosMaestros(sl()));
+  sl.registerLazySingleton(() => EditarProductoMaestro(sl()));
+  sl.registerLazySingleton(() => EliminarProductoMaestro(sl()));
+  sl.registerLazySingleton(() => DesactivarProductoMaestro(sl()));
+  sl.registerLazySingleton(() => ReactivarProductoMaestro(sl()));
+
+  // Repository - Productos Maestros
+  sl.registerLazySingleton<ProductoMaestroRepository>(
+    () => ProductoMaestroRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data Sources - Productos Maestros
+  sl.registerLazySingleton<ProductoMaestroRemoteDataSource>(
+    () => ProductoMaestroRemoteDataSourceImpl(
+      supabase: sl(),
+    ),
+  );
+
 }

@@ -186,7 +186,7 @@ class _FiltrarPorCombinacionPageState extends State<FiltrarPorCombinacionPage> {
 
         return Chip(
           avatar: ColorPreviewCircle(
-            codigoHex: color.codigoHexPrimario,
+            codigosHex: color.codigosHex,
             size: 24,
           ),
           label: Text(color.nombre),
@@ -253,7 +253,7 @@ class _FiltrarPorCombinacionPageState extends State<FiltrarPorCombinacionPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ColorPreviewCircle(
-                  codigoHex: color.codigoHexPrimario,
+                  codigosHex: color.codigosHex,
                   size: 24,
                 ),
                 const SizedBox(width: 8),
@@ -395,7 +395,7 @@ class _FiltrarPorCombinacionPageState extends State<FiltrarPorCombinacionPage> {
                       ),
                     );
                     return ColorPreviewCircle(
-                      codigoHex: colorData.codigoHexPrimario,
+                      codigosHex: colorData.codigosHex,
                       size: 24,
                     );
                   }).toList(),
