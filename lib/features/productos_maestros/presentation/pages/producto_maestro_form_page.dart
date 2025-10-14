@@ -11,10 +11,12 @@ import 'package:system_web_medias/features/catalogos/presentation/bloc/materiale
 import 'package:system_web_medias/features/catalogos/presentation/bloc/tipos_bloc.dart';
 import 'package:system_web_medias/features/catalogos/presentation/bloc/tipos_event.dart';
 import 'package:system_web_medias/features/catalogos/presentation/bloc/tipos_state.dart';
+import 'package:system_web_medias/features/catalogos/presentation/bloc/sistemas_talla/sistemas_talla_bloc.dart';
+import 'package:system_web_medias/features/catalogos/presentation/bloc/sistemas_talla/sistemas_talla_event.dart';
+import 'package:system_web_medias/features/catalogos/presentation/bloc/sistemas_talla/sistemas_talla_state.dart';
 import 'package:system_web_medias/features/productos_maestros/presentation/bloc/producto_maestro_bloc.dart';
 import 'package:system_web_medias/features/productos_maestros/presentation/bloc/producto_maestro_event.dart';
 import 'package:system_web_medias/features/productos_maestros/presentation/bloc/producto_maestro_state.dart';
-import 'package:system_web_medias/features/productos_maestros/presentation/widgets/combinacion_warning_card.dart';
 import 'package:system_web_medias/shared/design_system/atoms/corporate_button.dart';
 
 class ProductoMaestroFormPage extends StatelessWidget {
@@ -29,6 +31,7 @@ class ProductoMaestroFormPage extends StatelessWidget {
         BlocProvider(create: (_) => di.sl<MarcasBloc>()..add(const LoadMarcas())),
         BlocProvider(create: (_) => di.sl<MaterialesBloc>()..add(const LoadMaterialesEvent())),
         BlocProvider(create: (_) => di.sl<TiposBloc>()..add(const LoadTiposEvent())),
+        BlocProvider(create: (_) => di.sl<SistemasTallaBloc>()..add(const LoadSistemasTallaEvent())),
         BlocProvider(create: (_) => di.sl<ProductoMaestroBloc>()),
       ],
       child: _ProductoMaestroFormView(arguments: arguments),
@@ -53,8 +56,6 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
   String? _materialId;
   String? _tipoId;
   String? _sistemaId;
-  List<String> _warnings = [];
-  bool _isLoading = false;
   int _charCount = 0;
 
   bool get _isEditMode => widget.arguments?['mode'] == 'edit';
@@ -82,72 +83,167 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isDesktop = MediaQuery.of(context).size.width >= 1200;
 
-    return PopScope(
-      canPop: !_hasUnsavedChanges(),
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _handleCancel();
+    return BlocConsumer<ProductoMaestroBloc, ProductoMaestroState>(
+      listener: (context, state) {
+        if (state is ProductoMaestroOperationSuccess) {
+          _showSnackbar(context, state.message, isError: false);
+          context.pop();
+        }
+        if (state is ProductoMaestroError) {
+          _showSnackbar(context, state.message, isError: true);
+        }
       },
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF9FAFB),
-        appBar: AppBar(
-          title: Text(_isEditMode ? 'Editar Producto Maestro' : 'Crear Producto Maestro'),
-          backgroundColor: Colors.white,
-        ),
-        body: BlocListener<ProductoMaestroBloc, ProductoMaestroState>(
-          listener: (context, state) {
-            if (state is ProductoMaestroOperationSuccess) {
-              context.pop();
-            }
-            if (state is ProductoMaestroError) {
-              setState(() => _isLoading = false);
-            }
+      builder: (context, state) {
+        final isLoading = state is ProductoMaestroLoading;
+
+        return PopScope(
+          canPop: !_hasUnsavedChanges(),
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) _handleCancel();
           },
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: isDesktop ? 600 : double.infinity),
-                child: Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (_isEditMode && _articulosTotales > 0) _buildWarningCard(),
-                          _buildDropdownMarca(),
-                          const SizedBox(height: 16),
-                          _buildDropdownMaterial(),
-                          const SizedBox(height: 16),
-                          _buildDropdownTipo(),
-                          const SizedBox(height: 16),
-                          _buildDropdownSistemaHardcoded(),
-                          const SizedBox(height: 24),
-                          _buildVistaPrevia(),
-                          const SizedBox(height: 24),
-                          _buildDescripcionField(),
-                          const SizedBox(height: 24),
-                          if (_warnings.isNotEmpty) CombinacionWarningCard(warnings: _warnings),
-                          if (_warnings.isNotEmpty) const SizedBox(height: 24),
-                          _buildButtons(),
-                        ],
-                      ),
+          child: Scaffold(
+            backgroundColor: const Color(0xFFF9FAFB),
+            body: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - (isDesktop ? 48.0 : 32.0),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(context, theme, isDesktop),
+                        const SizedBox(height: 24),
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: isDesktop ? 600 : double.infinity,
+                            ),
+                            child: Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Form(
+                                  key: _formKey,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (_isEditMode && _articulosTotales > 0)
+                                        _buildWarningCard(),
+
+                                      _buildDropdownMarca(),
+                                      const SizedBox(height: 20),
+
+                                      _buildDropdownMaterial(),
+                                      const SizedBox(height: 20),
+
+                                      _buildDropdownTipo(),
+                                      const SizedBox(height: 20),
+
+                                      _buildDropdownSistemaTalla(),
+                                      const SizedBox(height: 20),
+
+                                      _buildDescripcionField(),
+                                      const SizedBox(height: 24),
+
+                                      _buildActionButtons(context, isLoading),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, ThemeData theme, bool isDesktop) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            IconButton(
+              onPressed: () => context.pop(),
+              icon: const Icon(Icons.arrow_back),
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _isEditMode ? 'Editar Producto Maestro' : 'Crear Producto Maestro',
+              style: TextStyle(
+                fontSize: isDesktop ? 28 : 24,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
               ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.only(left: 56),
+          child: _buildBreadcrumbs(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBreadcrumbs(BuildContext context) {
+    return Row(
+      children: [
+        InkWell(
+          onTap: () => context.go('/dashboard'),
+          child: Text(
+            'Dashboard',
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.primary,
+              decoration: TextDecoration.underline,
             ),
           ),
         ),
-      ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Text('>', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+        ),
+        InkWell(
+          onTap: () => context.go('/productos-maestros'),
+          child: Text(
+            'Productos Maestros',
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.primary,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Text('>', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+        ),
+        Text(
+          _isEditMode ? 'Editar' : 'Crear',
+          style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 
@@ -183,17 +279,13 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
         }
         if (state is MarcasLoaded) {
           final activas = state.marcas.where((m) => m.activo).toList();
-          return DropdownButtonFormField<String>(
+          return _buildDropdownField(
+            label: 'Marca *',
             value: _marcaId,
-            decoration: InputDecoration(
-              labelText: 'Marca *',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              filled: true,
-              fillColor: (_isEditMode && _articulosTotales > 0) ? const Color(0xFFF3F4F6) : Colors.white,
-            ),
             items: activas.map((m) => DropdownMenuItem(value: m.id, child: Text(m.nombre))).toList(),
             onChanged: (_isEditMode && _articulosTotales > 0) ? null : (v) => setState(() => _marcaId = v),
             validator: (v) => v == null ? 'Campo requerido' : null,
+            enabled: !(_isEditMode && _articulosTotales > 0),
           );
         }
         return const SizedBox.shrink();
@@ -209,17 +301,13 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
         }
         if (state is MaterialesLoaded) {
           final activos = state.materiales.where((m) => m.activo).toList();
-          return DropdownButtonFormField<String>(
+          return _buildDropdownField(
+            label: 'Material *',
             value: _materialId,
-            decoration: InputDecoration(
-              labelText: 'Material *',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              filled: true,
-              fillColor: (_isEditMode && _articulosTotales > 0) ? const Color(0xFFF3F4F6) : Colors.white,
-            ),
             items: activos.map((m) => DropdownMenuItem(value: m.id, child: Text(m.nombre))).toList(),
             onChanged: (_isEditMode && _articulosTotales > 0) ? null : (v) => setState(() => _materialId = v),
             validator: (v) => v == null ? 'Campo requerido' : null,
+            enabled: !(_isEditMode && _articulosTotales > 0),
           );
         }
         return const SizedBox.shrink();
@@ -235,22 +323,13 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
         }
         if (state is TiposLoaded) {
           final activos = state.tipos.where((t) => t.activo).toList();
-          return DropdownButtonFormField<String>(
+          return _buildDropdownField(
+            label: 'Tipo *',
             value: _tipoId,
-            decoration: InputDecoration(
-              labelText: 'Tipo *',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              filled: true,
-              fillColor: (_isEditMode && _articulosTotales > 0) ? const Color(0xFFF3F4F6) : Colors.white,
-            ),
             items: activos.map((t) => DropdownMenuItem(value: t.id, child: Text(t.nombre))).toList(),
-            onChanged: (_isEditMode && _articulosTotales > 0)
-                ? null
-                : (v) {
-                    setState(() => _tipoId = v);
-                    _validateCombinacion();
-                  },
+            onChanged: (_isEditMode && _articulosTotales > 0) ? null : (v) => setState(() => _tipoId = v),
             validator: (v) => v == null ? 'Campo requerido' : null,
+            enabled: !(_isEditMode && _articulosTotales > 0),
           );
         }
         return const SizedBox.shrink();
@@ -258,82 +337,122 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
     );
   }
 
-  Widget _buildDropdownSistemaHardcoded() {
-    final sistemas = [
-      {'id': 'sistema-1', 'nombre': 'NÚMERO (35-44)'},
-      {'id': 'sistema-2', 'nombre': 'LETRA (S-XXL)'},
-      {'id': 'sistema-3', 'nombre': 'ÚNICA'},
-    ];
-    return Row(
-      children: [
-        Expanded(
-          child: DropdownButtonFormField<String>(
+  Widget _buildDropdownSistemaTalla() {
+    return BlocBuilder<SistemasTallaBloc, SistemasTallaState>(
+      builder: (context, state) {
+        if (state is SistemasTallaLoading) {
+          return const LinearProgressIndicator();
+        }
+        if (state is SistemasTallaLoaded) {
+          final activos = state.sistemas.where((s) => s.activo).toList();
+          return _buildDropdownField(
+            label: 'Sistema de Tallas *',
             value: _sistemaId,
-            decoration: InputDecoration(
-              labelText: 'Sistema de Tallas *',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              filled: true,
-              fillColor: (_isEditMode && _articulosTotales > 0) ? const Color(0xFFF3F4F6) : Colors.white,
-            ),
-            items: sistemas.map((s) => DropdownMenuItem(value: s['id'], child: Text(s['nombre']!))).toList(),
-            onChanged: (_isEditMode && _articulosTotales > 0)
-                ? null
-                : (v) {
-                    setState(() => _sistemaId = v);
-                    _validateCombinacion();
-                  },
+            items: activos.map((s) => DropdownMenuItem(
+              value: s.id,
+              child: Text('${s.nombre} (${s.tipoSistema})'),
+            )).toList(),
+            onChanged: (_isEditMode && _articulosTotales > 0) ? null : (v) => setState(() => _sistemaId = v),
             validator: (v) => v == null ? 'Campo requerido' : null,
+            enabled: !(_isEditMode && _articulosTotales > 0),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required String? value,
+    required List<DropdownMenuItem<String>> items,
+    required void Function(String?)? onChanged,
+    required String? Function(String?) validator,
+    required bool enabled,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
           ),
         ),
-        const SizedBox(width: 8),
-        Tooltip(
-          message: 'Valores disponibles del sistema de tallas seleccionado',
-          child: Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: value,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFF44336)),
+            ),
+            filled: true,
+            fillColor: enabled ? Colors.white : const Color(0xFFF3F4F6),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          items: items,
+          onChanged: onChanged,
+          validator: validator,
         ),
       ],
     );
   }
 
-  Widget _buildVistaPrevia() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3), width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.preview_outlined, color: Theme.of(context).colorScheme.primary, size: 20),
-              const SizedBox(width: 8),
-              const Text('Vista Previa', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _getNombreCompuesto(),
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildDescripcionField() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text(
+          'Descripción (opcional)',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 8),
         TextFormField(
           controller: _descripcionController,
           maxLines: 3,
           maxLength: 200,
           decoration: InputDecoration(
-            labelText: 'Descripción (opcional)',
             hintText: 'Ej: Línea premium invierno 2025',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             counterText: '',
           ),
           onChanged: (v) => setState(() => _charCount = v.length),
@@ -342,60 +461,59 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
         const SizedBox(height: 4),
         Text(
           '$_charCount/200',
-          style: TextStyle(fontSize: 12, color: _charCount > 200 ? const Color(0xFFF44336) : const Color(0xFF6B7280)),
+          style: TextStyle(
+            fontSize: 12,
+            color: _charCount > 200 ? const Color(0xFFF44336) : const Color(0xFF6B7280),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildButtons() {
+  Widget _buildActionButtons(BuildContext context, bool isLoading) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        OutlinedButton(
-          onPressed: _isLoading ? null : _handleCancel,
-          child: const Text('Cancelar'),
+        Expanded(
+          child: CorporateButton(
+            text: 'Cancelar',
+            variant: ButtonVariant.secondary,
+            onPressed: isLoading ? null : _handleCancel,
+          ),
         ),
-        const SizedBox(width: 12),
-        CorporateButton(
-          text: _isEditMode ? 'Actualizar' : 'Guardar',
-          onPressed: _isLoading ? null : _handleSubmit,
-          isLoading: _isLoading,
+        const SizedBox(width: 16),
+        Expanded(
+          child: CorporateButton(
+            text: _isEditMode ? 'Actualizar' : 'Guardar',
+            icon: _isEditMode ? Icons.save : Icons.add,
+            isLoading: isLoading,
+            onPressed: () => _handleSubmit(context),
+          ),
         ),
       ],
     );
   }
 
-  String _getNombreCompuesto() {
-    if (_marcaId == null || _materialId == null || _tipoId == null || _sistemaId == null) {
-      return 'Selecciona todos los campos para ver el nombre...';
+  void _handleSubmit(BuildContext context) {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
     }
-    return 'Vista previa disponible al guardar';
-  }
 
-  void _validateCombinacion() {
-    if (_tipoId != null && _sistemaId != null) {
-      context.read<ProductoMaestroBloc>().add(ValidarCombinacionEvent(tipoId: _tipoId!, sistemaTallaId: _sistemaId!));
-    }
-  }
+    final descripcion = _descripcionController.text.trim();
+    final descripcionFinal = descripcion.isEmpty ? null : descripcion;
 
-  void _handleSubmit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      setState(() => _isLoading = true);
-      if (_isEditMode) {
-        context.read<ProductoMaestroBloc>().add(EditarProductoMaestroEvent(
-              productoId: widget.arguments!['productoId'],
-              descripcion: _descripcionController.text.trim(),
-            ));
-      } else {
-        context.read<ProductoMaestroBloc>().add(CrearProductoMaestroEvent(
-              marcaId: _marcaId!,
-              materialId: _materialId!,
-              tipoId: _tipoId!,
-              sistemaTallaId: _sistemaId!,
-              descripcion: _descripcionController.text.trim(),
-            ));
-      }
+    if (_isEditMode) {
+      context.read<ProductoMaestroBloc>().add(EditarProductoMaestroEvent(
+            productoId: widget.arguments!['productoId'],
+            descripcion: descripcionFinal,
+          ));
+    } else {
+      context.read<ProductoMaestroBloc>().add(CrearProductoMaestroEvent(
+            marcaId: _marcaId!,
+            materialId: _materialId!,
+            tipoId: _tipoId!,
+            sistemaTallaId: _sistemaId!,
+            descripcion: descripcionFinal,
+          ));
     }
   }
 
@@ -428,5 +546,33 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
       return _descripcionController.text != (widget.arguments?['producto']?['descripcion'] ?? '');
     }
     return _marcaId != null || _materialId != null || _tipoId != null || _sistemaId != null || _descripcionController.text.isNotEmpty;
+  }
+
+  void _showSnackbar(BuildContext context, String message, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error : Icons.check_circle,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isError ? const Color(0xFFF44336) : const Color(0xFF4CAF50),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 }

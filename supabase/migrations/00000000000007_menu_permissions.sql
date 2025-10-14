@@ -339,6 +339,7 @@ DECLARE
     v_productos_tallas_id UUID;
     v_productos_colores_id UUID;
     v_productos_maestros_id UUID;
+    v_productos_articulos_id UUID;  -- HU-007
 
     -- Submenús Inventario
     v_inventario_stock_id UUID;
@@ -428,6 +429,12 @@ BEGIN
     VALUES (v_productos_id, 'productos-maestros', 'Productos Maestros', 'view_module', '/productos-maestros', 60, true)
     ON CONFLICT (code) DO UPDATE SET parent_id = v_productos_id, activo = EXCLUDED.activo, route = EXCLUDED.route
     RETURNING id INTO v_productos_maestros_id;
+
+    -- Submenú: Artículos (HU-007)
+    INSERT INTO menu_options (parent_id, code, label, icon, route, orden, activo)
+    VALUES (v_productos_id, 'productos-articulos', 'Artículos', 'label', '/articulos', 70, true)
+    ON CONFLICT (code) DO UPDATE SET parent_id = v_productos_id, activo = EXCLUDED.activo, route = EXCLUDED.route
+    RETURNING id INTO v_productos_articulos_id;
 
     -- ========================================
     -- 4. INVENTARIO (menú desplegable)
@@ -559,6 +566,7 @@ BEGIN
         (v_productos_tallas_id, 'ADMIN', true),
         (v_productos_colores_id, 'ADMIN', true),
         (v_productos_maestros_id, 'ADMIN', true),
+        (v_productos_articulos_id, 'ADMIN', true),
         (v_inventario_id, 'ADMIN', true),
         (v_inventario_stock_id, 'ADMIN', true),
         (v_inventario_transferencias_id, 'ADMIN', true),
@@ -590,6 +598,7 @@ BEGIN
         (v_productos_tallas_id, 'GERENTE', false),
         (v_productos_colores_id, 'GERENTE', false),
         (v_productos_maestros_id, 'GERENTE', false),
+        (v_productos_articulos_id, 'GERENTE', false),
         (v_inventario_id, 'GERENTE', true),
         (v_inventario_stock_id, 'GERENTE', true),
         (v_inventario_transferencias_id, 'GERENTE', true),
@@ -619,6 +628,7 @@ BEGIN
         (v_productos_tallas_id, 'VENDEDOR', false),
         (v_productos_colores_id, 'VENDEDOR', false),
         (v_productos_maestros_id, 'VENDEDOR', false),
+        (v_productos_articulos_id, 'VENDEDOR', false),
         (v_inventario_id, 'VENDEDOR', true),
         (v_inventario_stock_id, 'VENDEDOR', true),
         (v_ventas_id, 'VENDEDOR', true),
@@ -633,7 +643,7 @@ BEGIN
         (v_config_id, 'VENDEDOR', false)
     ON CONFLICT (menu_option_id, role) DO NOTHING;
 
-    RAISE NOTICE 'Menús completos creados exitosamente (9 menús raíz + 16 submenús)';
+    RAISE NOTICE 'Menús completos creados exitosamente (9 menús raíz + 17 submenús)';
 END $$;
 
 COMMIT;

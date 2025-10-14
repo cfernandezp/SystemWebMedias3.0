@@ -56,8 +56,8 @@
 - **Descripción**: Crear productos maestros combinando catálogos base (marca, material, tipo, sistema tallas) sin colores ni stock
 
 ### E002-HU-007: Especializar Artículos con Colores
-- **Archivo**: `docs/historias-usuario/E002-HU-007-especializar-articulos-colores.md`
-- **Estado**: ⚪ Pendiente
+- **Archivo**: `docs/historias-usuario/E002-HU-007-REF-especializar-articulos-colores.md`
+- **Estado**: 🟢 Refinada
 - **Story Points**: 6 pts
 - **Prioridad**: Crítica
 - **Descripción**: Crear artículos especializando productos maestros con combinaciones de colores y generación automática de SKU único
@@ -103,10 +103,10 @@
 ## 📊 PROGRESO
 - Total HU: 11
 - ✅ Completadas: 4 (36%)
-- 🟢 Refinadas: 1 (9%)
+- 🟢 Refinadas: 2 (18%)
 - 🟡 Borradores: 0 (0%)
 - 🔵 En Desarrollo: 0 (0%)
-- ⚪ Pendientes: 6 (55%)
+- ⚪ Pendientes: 5 (46%)
 
 ## 🗃️ DATOS TÉCNICOS
 

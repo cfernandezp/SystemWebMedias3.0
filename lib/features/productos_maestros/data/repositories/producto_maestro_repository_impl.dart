@@ -4,6 +4,8 @@ import 'package:system_web_medias/core/error/failures.dart';
 import 'package:system_web_medias/features/productos_maestros/data/datasources/producto_maestro_remote_datasource.dart';
 import 'package:system_web_medias/features/productos_maestros/data/models/producto_maestro_filter_model.dart';
 import 'package:system_web_medias/features/productos_maestros/data/models/producto_maestro_model.dart';
+import 'package:system_web_medias/features/productos_maestros/data/models/producto_completo_request_model.dart';
+import 'package:system_web_medias/features/productos_maestros/data/models/producto_completo_response_model.dart';
 import 'package:system_web_medias/features/productos_maestros/domain/repositories/producto_maestro_repository.dart';
 
 class ProductoMaestroRepositoryImpl implements ProductoMaestroRepository {
@@ -161,6 +163,32 @@ class ProductoMaestroRepositoryImpl implements ProductoMaestroRepository {
       return Left(InactiveCatalogFailure(e.message));
     } on ProductoMaestroNotFoundException catch (e) {
       return Left(ProductoMaestroNotFoundFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(ConnectionFailure(e.message));
+    } on AppException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ProductoCompletoResponseModel>> crearProductoCompleto(
+    ProductoCompletoRequestModel request,
+  ) async {
+    try {
+      final response = await remoteDataSource.crearProductoCompleto(request);
+      return Right(response);
+    } on DuplicateCombinationException catch (e) {
+      return Left(DuplicateCombinationFailure(e.message));
+    } on UnauthorizedException catch (e) {
+      return Left(UnauthorizedFailure(e.message));
+    } on InactiveCatalogException catch (e) {
+      return Left(InactiveCatalogFailure(e.message));
+    } on ColorInactiveException catch (e) {
+      return Left(ValidationFailure(e.message));
+    } on DuplicateSkuException catch (e) {
+      return Left(ValidationFailure(e.message));
+    } on ValidationException catch (e) {
+      return Left(ValidationFailure(e.message));
     } on NetworkException catch (e) {
       return Left(ConnectionFailure(e.message));
     } on AppException catch (e) {

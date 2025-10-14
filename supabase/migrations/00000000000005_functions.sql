@@ -4291,7 +4291,6 @@ CREATE OR REPLACE FUNCTION editar_producto_maestro(
 DECLARE
     v_articulos_totales INTEGER := 0;
     v_error_hint TEXT;
-    v_nombre_completo TEXT;
 BEGIN
     -- Validar producto existe
     IF NOT EXISTS(SELECT 1 FROM productos_maestros WHERE id = p_producto_id) THEN
@@ -4354,21 +4353,41 @@ BEGIN
         WHERE id = p_producto_id;
     END IF;
 
-    -- Construir nombre completo actualizado
-    SELECT ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || st.nombre
-    INTO v_nombre_completo
-    FROM productos_maestros pm
-    INNER JOIN marcas ma ON pm.marca_id = ma.id
-    INNER JOIN materiales mat ON pm.material_id = mat.id
-    INNER JOIN tipos t ON pm.tipo_id = t.id
-    INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
-    WHERE pm.id = p_producto_id;
-
+    -- Devolver producto completo actualizado (mismo formato que listar_productos_maestros)
     RETURN json_build_object(
         'success', true,
-        'data', json_build_object(
-            'id', p_producto_id,
-            'nombre_completo', v_nombre_completo
+        'data', (
+            SELECT json_build_object(
+                'id', pm.id,
+                'marca_id', pm.marca_id,
+                'marca_nombre', ma.nombre,
+                'marca_codigo', ma.codigo,
+                'material_id', pm.material_id,
+                'material_nombre', mat.nombre,
+                'material_codigo', mat.codigo,
+                'tipo_id', pm.tipo_id,
+                'tipo_nombre', t.nombre,
+                'tipo_codigo', t.codigo,
+                'sistema_talla_id', pm.sistema_talla_id,
+                'sistema_talla_nombre', st.nombre,
+                'sistema_talla_tipo', st.tipo_sistema,
+                'descripcion', pm.descripcion,
+                'activo', pm.activo,
+                'articulos_activos', 0,
+                'articulos_totales', 0,
+                'tiene_catalogos_inactivos', (
+                    NOT ma.activo OR NOT mat.activo OR NOT t.activo OR NOT st.activo
+                ),
+                'nombre_completo', ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || st.nombre,
+                'created_at', pm.created_at,
+                'updated_at', pm.updated_at
+            )
+            FROM productos_maestros pm
+            INNER JOIN marcas ma ON pm.marca_id = ma.id
+            INNER JOIN materiales mat ON pm.material_id = mat.id
+            INNER JOIN tipos t ON pm.tipo_id = t.id
+            INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+            WHERE pm.id = p_producto_id
         )
     );
 
@@ -4600,3 +4619,947 @@ COMMIT;
 --   - listar_colores, crear_color, editar_color, eliminar_color
 --   - obtener_productos_por_color, estadisticas_colores
 -- ============================================
+-- ARTICULOS (E002-HU-007):
+--   - generar_sku, validar_sku_unico, crear_articulo
+--   - listar_articulos, obtener_articulo, editar_articulo
+--   - eliminar_articulo, desactivar_articulo
+
+-- ============================================
+-- SECCIÓN 9: FUNCIONES DE ARTÍCULOS (E002-HU-007)
+-- ============================================
+
+-- HU-007: generar_sku - Genera SKU automático con formato MARCA-TIPO-MATERIAL-TALLA-COLOR1-COLOR2-COLOR3
+CREATE OR REPLACE FUNCTION generar_sku(
+    p_producto_maestro_id UUID,
+    p_colores_ids UUID[]
+)
+RETURNS JSON AS $$
+DECLARE
+    v_marca_codigo TEXT;
+    v_tipo_codigo TEXT;
+    v_material_codigo TEXT;
+    v_talla_codigo TEXT;
+    v_colores_codigos TEXT[];
+    v_color_id UUID;
+    v_sku TEXT;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar producto maestro existe
+    IF NOT EXISTS (SELECT 1 FROM productos_maestros WHERE id = p_producto_maestro_id) THEN
+        v_error_hint := 'producto_maestro_not_found';
+        RAISE EXCEPTION 'Producto maestro no encontrado';
+    END IF;
+
+    -- Validar colores no vacío
+    IF array_length(p_colores_ids, 1) IS NULL OR array_length(p_colores_ids, 1) = 0 THEN
+        v_error_hint := 'colores_required';
+        RAISE EXCEPTION 'Debe especificar al menos un color';
+    END IF;
+
+    -- Obtener códigos de catálogos del producto maestro
+    SELECT
+        ma.codigo,
+        ti.codigo,
+        mt.codigo,
+        CASE
+            WHEN st.tipo_sistema = 'UNICA' THEN 'UNI'
+            ELSE COALESCE(
+                (SELECT valor FROM valores_talla WHERE sistema_talla_id = st.id AND activo = true ORDER BY orden LIMIT 1),
+                'UNI'
+            )
+        END
+    INTO v_marca_codigo, v_tipo_codigo, v_material_codigo, v_talla_codigo
+    FROM productos_maestros pm
+    INNER JOIN marcas ma ON pm.marca_id = ma.id
+    INNER JOIN tipos ti ON pm.tipo_id = ti.id
+    INNER JOIN materiales mt ON pm.material_id = mt.id
+    INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+    WHERE pm.id = p_producto_maestro_id;
+
+    -- Validar que todos los códigos existan (RN-057)
+    IF v_marca_codigo IS NULL OR v_tipo_codigo IS NULL OR v_material_codigo IS NULL THEN
+        v_error_hint := 'missing_catalog_codes';
+        RAISE EXCEPTION 'Faltan códigos en los catálogos relacionados';
+    END IF;
+
+    -- Obtener códigos de colores en orden (RN-049)
+    v_colores_codigos := ARRAY[]::TEXT[];
+    FOREACH v_color_id IN ARRAY p_colores_ids
+    LOOP
+        -- Extraer los primeros 3 caracteres del nombre del color en mayúsculas
+        DECLARE
+            v_color_codigo TEXT;
+        BEGIN
+            SELECT UPPER(SUBSTRING(nombre FROM 1 FOR 3))
+            INTO v_color_codigo
+            FROM colores
+            WHERE id = v_color_id AND activo = true;
+
+            IF v_color_codigo IS NULL THEN
+                v_error_hint := 'color_not_found';
+                RAISE EXCEPTION 'Color no encontrado o inactivo: %', v_color_id;
+            END IF;
+
+            v_colores_codigos := array_append(v_colores_codigos, v_color_codigo);
+        END;
+    END LOOP;
+
+    -- Construir SKU con formato: MARCA-TIPO-MATERIAL-TALLA-COLOR1-COLOR2-COLOR3
+    v_sku := UPPER(v_marca_codigo || '-' || v_tipo_codigo || '-' || v_material_codigo || '-' || v_talla_codigo);
+
+    -- Agregar códigos de colores
+    FOR i IN 1..array_length(v_colores_codigos, 1)
+    LOOP
+        v_sku := v_sku || '-' || v_colores_codigos[i];
+    END LOOP;
+
+    -- Retornar SKU generado
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'sku', v_sku
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION generar_sku IS 'E002-HU-007: Genera SKU único con formato MARCA-TIPO-MATERIAL-TALLA-COLOR1-COLOR2-COLOR3 (RN-053)';
+
+-- HU-007: validar_sku_unico - Verifica si SKU ya existe en el sistema
+CREATE OR REPLACE FUNCTION validar_sku_unico(
+    p_sku TEXT,
+    p_articulo_id UUID DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+    v_exists BOOLEAN;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar SKU no vacío
+    IF p_sku IS NULL OR LENGTH(TRIM(p_sku)) = 0 THEN
+        v_error_hint := 'sku_required';
+        RAISE EXCEPTION 'SKU es requerido';
+    END IF;
+
+    -- Verificar si existe (excluyendo el artículo actual si se está editando)
+    IF p_articulo_id IS NULL THEN
+        SELECT EXISTS(SELECT 1 FROM articulos WHERE sku = UPPER(p_sku)) INTO v_exists;
+    ELSE
+        SELECT EXISTS(SELECT 1 FROM articulos WHERE sku = UPPER(p_sku) AND id != p_articulo_id) INTO v_exists;
+    END IF;
+
+    -- Retornar resultado
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'es_unico', NOT v_exists,
+            'existe', v_exists
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION validar_sku_unico IS 'E002-HU-007: Valida unicidad de SKU en el sistema (RN-047)';
+
+-- HU-007: crear_articulo - Crea artículo especializado con colores y SKU
+CREATE OR REPLACE FUNCTION crear_articulo(
+    p_producto_maestro_id UUID,
+    p_colores_ids UUID[],
+    p_precio DECIMAL
+)
+RETURNS JSON AS $$
+DECLARE
+    v_articulo_id UUID;
+    v_sku TEXT;
+    v_tipo_coloracion VARCHAR(10);
+    v_cantidad_colores INTEGER;
+    v_producto_maestro_activo BOOLEAN;
+    v_catalogo_inactivo TEXT;
+    v_color_inactivo BOOLEAN;
+    v_sku_generado JSON;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar cantidad de colores (RN-048)
+    v_cantidad_colores := array_length(p_colores_ids, 1);
+
+    IF v_cantidad_colores IS NULL OR v_cantidad_colores = 0 THEN
+        v_error_hint := 'colores_required';
+        RAISE EXCEPTION 'Debe seleccionar al menos un color';
+    END IF;
+
+    IF v_cantidad_colores = 1 THEN
+        v_tipo_coloracion := 'unicolor';
+    ELSIF v_cantidad_colores = 2 THEN
+        v_tipo_coloracion := 'bicolor';
+    ELSIF v_cantidad_colores = 3 THEN
+        v_tipo_coloracion := 'tricolor';
+    ELSE
+        v_error_hint := 'invalid_color_count';
+        RAISE EXCEPTION 'Solo se permiten 1, 2 o 3 colores. Cantidad recibida: %', v_cantidad_colores;
+    END IF;
+
+    -- Validar producto maestro activo y con catálogos activos (RN-050)
+    SELECT pm.activo INTO v_producto_maestro_activo
+    FROM productos_maestros pm
+    WHERE pm.id = p_producto_maestro_id;
+
+    IF v_producto_maestro_activo IS NULL THEN
+        v_error_hint := 'producto_maestro_not_found';
+        RAISE EXCEPTION 'Producto maestro no encontrado';
+    END IF;
+
+    IF NOT v_producto_maestro_activo THEN
+        v_error_hint := 'producto_maestro_inactive';
+        RAISE EXCEPTION 'Producto maestro está inactivo';
+    END IF;
+
+    -- Validar catálogos activos del producto maestro
+    SELECT
+        CASE
+            WHEN NOT ma.activo THEN 'marca'
+            WHEN NOT mt.activo THEN 'material'
+            WHEN NOT ti.activo THEN 'tipo'
+            WHEN NOT st.activo THEN 'sistema_talla'
+            ELSE NULL
+        END
+    INTO v_catalogo_inactivo
+    FROM productos_maestros pm
+    INNER JOIN marcas ma ON pm.marca_id = ma.id
+    INNER JOIN materiales mt ON pm.material_id = mt.id
+    INNER JOIN tipos ti ON pm.tipo_id = ti.id
+    INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+    WHERE pm.id = p_producto_maestro_id;
+
+    IF v_catalogo_inactivo IS NOT NULL THEN
+        v_error_hint := 'catalog_inactive';
+        RAISE EXCEPTION 'El catálogo % del producto maestro está inactivo', v_catalogo_inactivo;
+    END IF;
+
+    -- Validar colores activos (RN-051)
+    SELECT EXISTS(
+        SELECT 1 FROM unnest(p_colores_ids) AS color_id
+        WHERE NOT EXISTS(SELECT 1 FROM colores WHERE id = color_id AND activo = true)
+    ) INTO v_color_inactivo;
+
+    IF v_color_inactivo THEN
+        v_error_hint := 'color_inactive';
+        RAISE EXCEPTION 'Uno o más colores seleccionados están inactivos';
+    END IF;
+
+    -- Validar precio mínimo (RN-052)
+    IF p_precio IS NULL OR p_precio < 0.01 THEN
+        v_error_hint := 'invalid_price';
+        RAISE EXCEPTION 'El precio debe ser mayor o igual a 0.01';
+    END IF;
+
+    -- Generar SKU automático (RN-053)
+    SELECT generar_sku(p_producto_maestro_id, p_colores_ids) INTO v_sku_generado;
+
+    IF (v_sku_generado->>'success')::BOOLEAN = false THEN
+        v_error_hint := 'sku_generation_failed';
+        RAISE EXCEPTION 'Error al generar SKU: %', v_sku_generado->'error'->>'message';
+    END IF;
+
+    v_sku := v_sku_generado->'data'->>'sku';
+
+    -- Validar SKU único (RN-047)
+    IF EXISTS(SELECT 1 FROM articulos WHERE sku = v_sku) THEN
+        v_error_hint := 'duplicate_sku';
+        RAISE EXCEPTION 'Ya existe un artículo con este SKU: %', v_sku;
+    END IF;
+
+    -- Insertar artículo
+    INSERT INTO articulos (
+        producto_maestro_id,
+        sku,
+        tipo_coloracion,
+        colores_ids,
+        precio,
+        activo
+    ) VALUES (
+        p_producto_maestro_id,
+        v_sku,
+        v_tipo_coloracion,
+        p_colores_ids,
+        p_precio,
+        true
+    )
+    RETURNING id INTO v_articulo_id;
+
+    -- Retornar artículo creado con detalles
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', v_articulo_id,
+            'sku', v_sku,
+            'tipo_coloracion', v_tipo_coloracion,
+            'precio', p_precio,
+            'activo', true
+        ),
+        'message', 'Artículo creado exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION crear_articulo IS 'E002-HU-007: Crea artículo con validaciones RN-047 a RN-053';
+
+-- HU-007: listar_articulos - Lista artículos con filtros y joins a catálogos
+CREATE OR REPLACE FUNCTION listar_articulos(
+    p_producto_maestro_id UUID DEFAULT NULL,
+    p_marca_id UUID DEFAULT NULL,
+    p_tipo_id UUID DEFAULT NULL,
+    p_material_id UUID DEFAULT NULL,
+    p_activo BOOLEAN DEFAULT NULL,
+    p_search TEXT DEFAULT NULL,
+    p_limit INTEGER DEFAULT 50,
+    p_offset INTEGER DEFAULT 0
+)
+RETURNS JSON AS $$
+DECLARE
+    v_articulos JSON;
+    v_total INTEGER;
+    v_error_hint TEXT;
+BEGIN
+    -- Contar total de registros
+    SELECT COUNT(*)
+    INTO v_total
+    FROM articulos a
+    INNER JOIN productos_maestros pm ON a.producto_maestro_id = pm.id
+    INNER JOIN marcas ma ON pm.marca_id = ma.id
+    INNER JOIN materiales mt ON pm.material_id = mt.id
+    INNER JOIN tipos ti ON pm.tipo_id = ti.id
+    INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+    WHERE
+        (p_producto_maestro_id IS NULL OR a.producto_maestro_id = p_producto_maestro_id) AND
+        (p_marca_id IS NULL OR pm.marca_id = p_marca_id) AND
+        (p_tipo_id IS NULL OR pm.tipo_id = p_tipo_id) AND
+        (p_material_id IS NULL OR pm.material_id = p_material_id) AND
+        (p_activo IS NULL OR a.activo = p_activo) AND
+        (p_search IS NULL OR a.sku ILIKE '%' || p_search || '%');
+
+    -- Obtener artículos con detalles
+    SELECT json_agg(
+        json_build_object(
+            'id', a.id,
+            'sku', a.sku,
+            'tipo_coloracion', a.tipo_coloracion,
+            'precio', a.precio,
+            'activo', a.activo,
+            'created_at', a.created_at,
+            'producto_maestro', json_build_object(
+                'id', pm.id,
+                'marca', json_build_object('id', ma.id, 'nombre', ma.nombre, 'codigo', ma.codigo),
+                'material', json_build_object('id', mt.id, 'nombre', mt.nombre, 'codigo', mt.codigo),
+                'tipo', json_build_object('id', ti.id, 'nombre', ti.nombre, 'codigo', ti.codigo),
+                'sistema_talla', json_build_object('id', st.id, 'nombre', st.nombre, 'tipo_sistema', st.tipo_sistema)
+            ),
+            'colores', (
+                SELECT json_agg(
+                    json_build_object(
+                        'id', c.id,
+                        'nombre', c.nombre,
+                        'codigos_hex', c.codigos_hex,
+                        'tipo_color', c.tipo_color,
+                        'activo', c.activo
+                    ) ORDER BY array_position(a.colores_ids, c.id)
+                )
+                FROM colores c
+                WHERE c.id = ANY(a.colores_ids)
+            )
+        ) ORDER BY a.created_at DESC
+    )
+    INTO v_articulos
+    FROM articulos a
+    INNER JOIN productos_maestros pm ON a.producto_maestro_id = pm.id
+    INNER JOIN marcas ma ON pm.marca_id = ma.id
+    INNER JOIN materiales mt ON pm.material_id = mt.id
+    INNER JOIN tipos ti ON pm.tipo_id = ti.id
+    INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+    WHERE
+        (p_producto_maestro_id IS NULL OR a.producto_maestro_id = p_producto_maestro_id) AND
+        (p_marca_id IS NULL OR pm.marca_id = p_marca_id) AND
+        (p_tipo_id IS NULL OR pm.tipo_id = p_tipo_id) AND
+        (p_material_id IS NULL OR pm.material_id = p_material_id) AND
+        (p_activo IS NULL OR a.activo = p_activo) AND
+        (p_search IS NULL OR a.sku ILIKE '%' || p_search || '%')
+    LIMIT p_limit
+    OFFSET p_offset;
+
+    -- Retornar resultado paginado
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'articulos', COALESCE(v_articulos, '[]'::json),
+            'total', v_total,
+            'limit', p_limit,
+            'offset', p_offset
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION listar_articulos IS 'E002-HU-007: Lista artículos con joins a productos_maestros y catálogos';
+
+-- HU-007: obtener_articulo - Obtiene detalle completo de un artículo
+CREATE OR REPLACE FUNCTION obtener_articulo(
+    p_articulo_id UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    v_articulo JSON;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar artículo existe
+    IF NOT EXISTS (SELECT 1 FROM articulos WHERE id = p_articulo_id) THEN
+        v_error_hint := 'articulo_not_found';
+        RAISE EXCEPTION 'Artículo no encontrado';
+    END IF;
+
+    -- Obtener artículo con todos los detalles
+    SELECT json_build_object(
+        'id', a.id,
+        'sku', a.sku,
+        'tipo_coloracion', a.tipo_coloracion,
+        'precio', a.precio,
+        'activo', a.activo,
+        'created_at', a.created_at,
+        'updated_at', a.updated_at,
+        'producto_maestro', json_build_object(
+            'id', pm.id,
+            'descripcion', pm.descripcion,
+            'activo', pm.activo,
+            'marca', json_build_object(
+                'id', ma.id,
+                'nombre', ma.nombre,
+                'codigo', ma.codigo,
+                'activo', ma.activo
+            ),
+            'material', json_build_object(
+                'id', mt.id,
+                'nombre', mt.nombre,
+                'codigo', mt.codigo,
+                'descripcion', mt.descripcion,
+                'activo', mt.activo
+            ),
+            'tipo', json_build_object(
+                'id', ti.id,
+                'nombre', ti.nombre,
+                'codigo', ti.codigo,
+                'descripcion', ti.descripcion,
+                'imagen_url', ti.imagen_url,
+                'activo', ti.activo
+            ),
+            'sistema_talla', json_build_object(
+                'id', st.id,
+                'nombre', st.nombre,
+                'tipo_sistema', st.tipo_sistema,
+                'descripcion', st.descripcion,
+                'activo', st.activo,
+                'valores', (
+                    SELECT json_agg(
+                        json_build_object(
+                            'id', vt.id,
+                            'valor', vt.valor,
+                            'orden', vt.orden,
+                            'activo', vt.activo
+                        ) ORDER BY vt.orden
+                    )
+                    FROM valores_talla vt
+                    WHERE vt.sistema_talla_id = st.id
+                )
+            )
+        ),
+        'colores', (
+            SELECT json_agg(
+                json_build_object(
+                    'id', c.id,
+                    'nombre', c.nombre,
+                    'codigos_hex', c.codigos_hex,
+                    'tipo_color', c.tipo_color,
+                    'activo', c.activo
+                ) ORDER BY array_position(a.colores_ids, c.id)
+            )
+            FROM colores c
+            WHERE c.id = ANY(a.colores_ids)
+        )
+    )
+    INTO v_articulo
+    FROM articulos a
+    INNER JOIN productos_maestros pm ON a.producto_maestro_id = pm.id
+    INNER JOIN marcas ma ON pm.marca_id = ma.id
+    INNER JOIN materiales mt ON pm.material_id = mt.id
+    INNER JOIN tipos ti ON pm.tipo_id = ti.id
+    INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+    WHERE a.id = p_articulo_id;
+
+    -- Retornar artículo
+    RETURN json_build_object(
+        'success', true,
+        'data', v_articulo
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION obtener_articulo IS 'E002-HU-007: Obtiene detalle completo de un artículo con todos los datos relacionados';
+
+-- HU-007: editar_articulo - Edita artículo con restricciones según stock
+CREATE OR REPLACE FUNCTION editar_articulo(
+    p_articulo_id UUID,
+    p_precio DECIMAL DEFAULT NULL,
+    p_activo BOOLEAN DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+    v_articulo_actual RECORD;
+    v_tiene_stock BOOLEAN := false;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar artículo existe
+    SELECT * INTO v_articulo_actual
+    FROM articulos
+    WHERE id = p_articulo_id;
+
+    IF v_articulo_actual.id IS NULL THEN
+        v_error_hint := 'articulo_not_found';
+        RAISE EXCEPTION 'Artículo no encontrado';
+    END IF;
+
+    -- TODO: Verificar stock cuando se implemente HU-008
+    -- Por ahora asumimos stock = 0
+    v_tiene_stock := false;
+
+    -- Validar restricciones de edición (RN-055)
+    -- Si tiene stock > 0, solo permitir editar precio y estado
+    -- Esta función ya está limitada a esos campos por diseño
+
+    -- Actualizar campos permitidos
+    UPDATE articulos
+    SET
+        precio = COALESCE(p_precio, precio),
+        activo = COALESCE(p_activo, activo),
+        updated_at = NOW()
+    WHERE id = p_articulo_id;
+
+    -- Retornar artículo actualizado
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_articulo_id,
+            'precio', COALESCE(p_precio, v_articulo_actual.precio),
+            'activo', COALESCE(p_activo, v_articulo_actual.activo),
+            'updated_at', NOW()
+        ),
+        'message', 'Artículo actualizado exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION editar_articulo IS 'E002-HU-007: Edita precio y estado de artículo con restricciones RN-055 (solo permite editar precio/activo)';
+
+-- HU-007: eliminar_articulo - Elimina artículo solo si stock = 0
+CREATE OR REPLACE FUNCTION eliminar_articulo(
+    p_articulo_id UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    v_tiene_stock BOOLEAN := false;
+    v_articulo_exists BOOLEAN;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar artículo existe
+    SELECT EXISTS(SELECT 1 FROM articulos WHERE id = p_articulo_id) INTO v_articulo_exists;
+
+    IF NOT v_articulo_exists THEN
+        v_error_hint := 'articulo_not_found';
+        RAISE EXCEPTION 'Artículo no encontrado';
+    END IF;
+
+    -- TODO: Verificar stock cuando se implemente HU-008
+    -- Por ahora asumimos stock = 0
+    v_tiene_stock := false;
+
+    -- Validar stock = 0 (RN-056)
+    IF v_tiene_stock THEN
+        v_error_hint := 'has_stock';
+        RAISE EXCEPTION 'No se puede eliminar. El artículo tiene stock en tiendas. Solo puede desactivarlo';
+    END IF;
+
+    -- Eliminar artículo permanentemente
+    DELETE FROM articulos WHERE id = p_articulo_id;
+
+    -- Retornar confirmación
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_articulo_id,
+            'deleted', true
+        ),
+        'message', 'Artículo eliminado permanentemente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION eliminar_articulo IS 'E002-HU-007: Elimina artículo permanentemente solo si stock = 0 (RN-056)';
+
+-- HU-007: desactivar_articulo - Desactiva artículo (soft delete)
+CREATE OR REPLACE FUNCTION desactivar_articulo(
+    p_articulo_id UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    v_articulo_exists BOOLEAN;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar artículo existe
+    SELECT EXISTS(SELECT 1 FROM articulos WHERE id = p_articulo_id) INTO v_articulo_exists;
+
+    IF NOT v_articulo_exists THEN
+        v_error_hint := 'articulo_not_found';
+        RAISE EXCEPTION 'Artículo no encontrado';
+    END IF;
+
+    -- Desactivar artículo (soft delete)
+    UPDATE articulos
+    SET activo = false, updated_at = NOW()
+    WHERE id = p_articulo_id;
+
+    -- Retornar confirmación
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_articulo_id,
+            'activo', false
+        ),
+        'message', 'Artículo desactivado exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION desactivar_articulo IS 'E002-HU-007: Desactiva artículo (soft delete) sin eliminar datos (RN-054, RN-056)';
+
+-- ============================================
+-- HU-008: Wizard Producto Maestro - Modo Experto
+-- ============================================
+
+-- HU-008: generar_sku_simple - Helper function para generar SKU único (versión simplificada)
+CREATE OR REPLACE FUNCTION generar_sku_simple(
+    p_marca_codigo TEXT,
+    p_material_codigo TEXT,
+    p_tipo_codigo TEXT,
+    p_colores_nombres TEXT[]
+)
+RETURNS TEXT AS $$
+DECLARE
+    v_sku TEXT;
+    v_color_codigo TEXT;
+    v_color_nombre TEXT;
+BEGIN
+    -- Iniciar con marca-material-tipo
+    v_sku := UPPER(p_marca_codigo || '-' || p_material_codigo || '-' || p_tipo_codigo);
+
+    -- Agregar códigos de colores (primeras 3 letras en mayúsculas)
+    FOREACH v_color_nombre IN ARRAY p_colores_nombres
+    LOOP
+        -- Tomar primeras 3 letras del nombre del color
+        v_color_codigo := UPPER(LEFT(TRIM(v_color_nombre), 3));
+        v_sku := v_sku || '-' || v_color_codigo;
+    END LOOP;
+
+    RETURN v_sku;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+COMMENT ON FUNCTION generar_sku_simple IS 'E002-HU-008: Genera SKU único con formato MARCA-MATERIAL-TIPO-COLOR1-COLOR2-COLOR3 (RN-008-006)';
+
+-- HU-008: crear_producto_completo - Crea producto maestro + artículos de forma transaccional
+CREATE OR REPLACE FUNCTION crear_producto_completo(
+    p_producto_maestro JSONB,
+    p_articulos JSONB[]
+)
+RETURNS JSON AS $$
+DECLARE
+    v_producto_maestro_id UUID;
+    v_marca_id UUID;
+    v_material_id UUID;
+    v_tipo_id UUID;
+    v_sistema_talla_id UUID;
+    v_descripcion TEXT;
+
+    v_marca_record RECORD;
+    v_material_record RECORD;
+    v_tipo_record RECORD;
+    v_sistema_talla_record RECORD;
+
+    v_articulo JSONB;
+    v_colores_ids UUID[];
+    v_precio DECIMAL(10, 2);
+    v_tipo_coloracion TEXT;
+    v_sku TEXT;
+    v_colores_nombres TEXT[] := ARRAY[]::TEXT[];
+    v_color_id UUID;
+    v_color_nombre TEXT;
+    v_articulo_id UUID;
+
+    v_articulos_creados INTEGER := 0;
+    v_skus_generados TEXT[] := ARRAY[]::TEXT[];
+    v_error_hint TEXT;
+BEGIN
+    -- Validar permisos: Solo ADMIN puede crear
+    IF NOT EXISTS (
+        SELECT 1 FROM auth.users
+        WHERE id = auth.uid()
+        AND raw_user_meta_data->>'rol' = 'ADMIN'
+    ) THEN
+        v_error_hint := 'unauthorized';
+        RAISE EXCEPTION 'Solo administradores pueden crear productos';
+    END IF;
+
+    -- Extraer datos del producto maestro
+    v_marca_id := (p_producto_maestro->>'marca_id')::UUID;
+    v_material_id := (p_producto_maestro->>'material_id')::UUID;
+    v_tipo_id := (p_producto_maestro->>'tipo_id')::UUID;
+    v_sistema_talla_id := (p_producto_maestro->>'sistema_talla_id')::UUID;
+    v_descripcion := p_producto_maestro->>'descripcion';
+
+    -- Validar parámetros requeridos
+    IF v_marca_id IS NULL OR v_material_id IS NULL OR v_tipo_id IS NULL OR v_sistema_talla_id IS NULL THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'Marca, Material, Tipo y Sistema de Talla son obligatorios';
+    END IF;
+
+    -- Validar que catálogos existen y están activos (RN-008-006)
+    SELECT * INTO v_marca_record FROM marcas WHERE id = v_marca_id AND activo = true;
+    IF v_marca_record.id IS NULL THEN
+        v_error_hint := 'invalid_catalog';
+        RAISE EXCEPTION 'Marca no existe o está inactiva';
+    END IF;
+
+    SELECT * INTO v_material_record FROM materiales WHERE id = v_material_id AND activo = true;
+    IF v_material_record.id IS NULL THEN
+        v_error_hint := 'invalid_catalog';
+        RAISE EXCEPTION 'Material no existe o está inactivo';
+    END IF;
+
+    SELECT * INTO v_tipo_record FROM tipos WHERE id = v_tipo_id AND activo = true;
+    IF v_tipo_record.id IS NULL THEN
+        v_error_hint := 'invalid_catalog';
+        RAISE EXCEPTION 'Tipo no existe o está inactivo';
+    END IF;
+
+    SELECT * INTO v_sistema_talla_record FROM sistemas_talla WHERE id = v_sistema_talla_id AND activo = true;
+    IF v_sistema_talla_record.id IS NULL THEN
+        v_error_hint := 'invalid_catalog';
+        RAISE EXCEPTION 'Sistema de Talla no existe o está inactivo';
+    END IF;
+
+    -- Crear producto maestro (RN-008-004: constraint verifica combinación única)
+    BEGIN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_talla_id, v_descripcion)
+        RETURNING id INTO v_producto_maestro_id;
+    EXCEPTION
+        WHEN unique_violation THEN
+            v_error_hint := 'duplicate_producto';
+            RAISE EXCEPTION 'Esta combinación de producto ya existe (Marca + Material + Tipo + Sistema Talla)';
+    END;
+
+    -- Crear artículos (si hay)
+    IF p_articulos IS NOT NULL AND array_length(p_articulos, 1) > 0 THEN
+        FOREACH v_articulo IN ARRAY p_articulos
+        LOOP
+            -- Extraer datos del artículo
+            v_colores_ids := ARRAY(
+                SELECT jsonb_array_elements_text(v_articulo->'colores_ids')::UUID
+            );
+            v_precio := (v_articulo->>'precio')::DECIMAL(10, 2);
+
+            -- Validar precio
+            IF v_precio IS NULL OR v_precio <= 0 THEN
+                v_error_hint := 'missing_param';
+                RAISE EXCEPTION 'El precio debe ser mayor a 0';
+            END IF;
+
+            -- Validar colores (1-3)
+            IF array_length(v_colores_ids, 1) IS NULL OR
+               array_length(v_colores_ids, 1) < 1 OR
+               array_length(v_colores_ids, 1) > 3 THEN
+                v_error_hint := 'invalid_color';
+                RAISE EXCEPTION 'Debe seleccionar entre 1 y 3 colores';
+            END IF;
+
+            -- Determinar tipo_coloracion según cantidad de colores
+            CASE array_length(v_colores_ids, 1)
+                WHEN 1 THEN v_tipo_coloracion := 'unicolor';
+                WHEN 2 THEN v_tipo_coloracion := 'bicolor';
+                WHEN 3 THEN v_tipo_coloracion := 'tricolor';
+            END CASE;
+
+            -- Validar que colores existen y están activos (RN-008-005)
+            v_colores_nombres := ARRAY[]::TEXT[];
+            FOREACH v_color_id IN ARRAY v_colores_ids
+            LOOP
+                SELECT nombre INTO v_color_nombre FROM colores WHERE id = v_color_id AND activo = true;
+
+                IF v_color_nombre IS NULL THEN
+                    v_error_hint := 'invalid_color';
+                    RAISE EXCEPTION 'Uno o más colores no existen o están inactivos';
+                END IF;
+
+                v_colores_nombres := array_append(v_colores_nombres, v_color_nombre);
+            END LOOP;
+
+            -- Generar SKU (RN-008-006)
+            v_sku := generar_sku_simple(
+                v_marca_record.codigo,
+                v_material_record.codigo,
+                v_tipo_record.codigo,
+                v_colores_nombres
+            );
+
+            -- Validar SKU único
+            IF EXISTS (SELECT 1 FROM articulos WHERE sku = v_sku) THEN
+                v_error_hint := 'duplicate_sku';
+                RAISE EXCEPTION 'Ya existe un artículo con el SKU: %', v_sku;
+            END IF;
+
+            -- Crear artículo
+            INSERT INTO articulos (
+                producto_maestro_id,
+                sku,
+                tipo_coloracion,
+                colores_ids,
+                precio
+            )
+            VALUES (
+                v_producto_maestro_id,
+                v_sku,
+                v_tipo_coloracion,
+                v_colores_ids,
+                v_precio
+            )
+            RETURNING id INTO v_articulo_id;
+
+            -- Incrementar contador y agregar SKU a lista
+            v_articulos_creados := v_articulos_creados + 1;
+            v_skus_generados := array_append(v_skus_generados, v_sku);
+        END LOOP;
+    END IF;
+
+    -- Retornar resultado exitoso
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'producto_maestro_id', v_producto_maestro_id,
+            'articulos_creados', v_articulos_creados,
+            'skus_generados', v_skus_generados
+        ),
+        'message', CASE
+            WHEN v_articulos_creados = 0 THEN 'Producto maestro creado exitosamente (sin artículos)'
+            ELSE 'Producto maestro creado con ' || v_articulos_creados || ' artículo(s)'
+        END
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION crear_producto_completo IS 'E002-HU-008: Crea producto maestro + artículos de forma transaccional con validaciones RN-008-001 a RN-008-006';
+
+COMMIT;

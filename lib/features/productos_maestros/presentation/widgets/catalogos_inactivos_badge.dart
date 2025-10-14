@@ -6,19 +6,19 @@ class CatalogosInactivosBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFF9800),
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.warning_amber, color: Colors.white, size: 14),
-          SizedBox(width: 6),
+          Icon(Icons.warning_amber_rounded, color: Color(0xFFFF9800), size: 12),
+          SizedBox(width: 3),
           Text(
-            'Catálogos inactivos',
-            style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+            'Inactivos',
+            style: TextStyle(color: Color(0xFFE65100), fontSize: 10, fontWeight: FontWeight.w600),
           ),
         ],
       ),

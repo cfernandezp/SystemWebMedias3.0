@@ -171,6 +171,749 @@ INSERT INTO colores (nombre, codigos_hex, tipo_color, activo) VALUES
 ON CONFLICT (nombre) DO NOTHING;
 
 -- ============================================
+-- PASO 2E: Productos Maestros de ejemplo (E002-HU-006)
+-- ============================================
+
+DO $$
+DECLARE
+    v_marca_id UUID;
+    v_material_id UUID;
+    v_tipo_id UUID;
+    v_sistema_id UUID;
+    v_productos_creados INTEGER := 0;
+BEGIN
+    -- Producto 1: Adidas + Algodón + Fútbol + Número
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'ADS' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'ALG' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'FUT' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Línea deportiva profesional', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 2: Nike + Microfibra + Running + Número
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'NIK' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'MIC' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'RUN' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Para corredores exigentes', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 3: Puma + Lycra + Compresión + Letra
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'PUM' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'LYC' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'COM' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Máxima compresión deportiva', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 4: Umbro + Poliéster + Ejecutiva + Número
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'UMB' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'POL' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'EJE' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Comodidad ejecutiva premium', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 5: Reebok + Bambú + Invisible + Única
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'REE' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'BAM' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'INV' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Talla Única Estándar' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Tecnología antibacterial avanzada', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 6: New Balance + Nylon + Tobillera + Letra
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'NBL' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'NYL' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'TOB' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Ajuste perfecto tobillo', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 7: Adidas + Lana Merino + Térmica + Letra
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'ADS' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'MER' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'TER' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Protección térmica invierno', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 8: Nike + Seda + Ejecutiva + Número
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'NIK' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'SED' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'EJE' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Elegancia formal diaria', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 9: Puma + Algodón + Media Caña + Número
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'PUM' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'ALG' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'MCA' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Comodidad casual diaria', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 10: Umbro + Nylon + Fútbol + Número
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'UMB' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'NYL' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'FUT' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Resistencia extrema cancha', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 11: Reebok + Poliéster + Running + Número
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'REE' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'POL' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'RUN' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Velocidad y rendimiento', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 12: New Balance + Microfibra + Larga + Letra
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'NBL' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'MIC' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'LAR' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Cobertura total pierna', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 13: Adidas + Bambú + Tobillera + Número
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'ADS' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'BAM' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'TOB' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Ecológico antibacterial', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 14: Nike + Lycra + Compresión + Letra
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'NIK' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'LYC' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'COM' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Tecnología de compresión', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    -- Producto 15: Puma + Lana Merino + Térmica + Número
+    SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'PUM' LIMIT 1;
+    SELECT id INTO v_material_id FROM materiales WHERE codigo = 'MER' LIMIT 1;
+    SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'TER' LIMIT 1;
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Calor natural regulado', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+        v_productos_creados := v_productos_creados + 1;
+    END IF;
+
+    RAISE NOTICE 'Productos maestros de ejemplo creados: %', v_productos_creados;
+END $$;
+
+-- ============================================
+-- PASO 2F: Artículos Derivados de ejemplo (E002-HU-007)
+-- ============================================
+
+DO $$
+DECLARE
+    v_producto_maestro_id UUID;
+    v_color_rojo_id UUID;
+    v_color_negro_id UUID;
+    v_color_blanco_id UUID;
+    v_color_azul_id UUID;
+    v_color_verde_id UUID;
+    v_color_amarillo_id UUID;
+    v_color_naranja_id UUID;
+    v_color_rosa_id UUID;
+    v_color_gris_id UUID;
+    v_color_morado_id UUID;
+    v_color_cafe_id UUID;
+    v_color_azul_marino_id UUID;
+    v_color_verde_oscuro_id UUID;
+    v_color_rojo_oscuro_id UUID;
+    v_color_gris_oscuro_id UUID;
+    v_color_beige_id UUID;
+    v_color_turquesa_id UUID;
+    v_color_fucsia_id UUID;
+    v_color_verde_lima_id UUID;
+    v_color_azul_cielo_id UUID;
+    v_articulos_creados INTEGER := 0;
+BEGIN
+    -- Obtener IDs de colores
+    SELECT id INTO v_color_rojo_id FROM colores WHERE nombre = 'Rojo' LIMIT 1;
+    SELECT id INTO v_color_negro_id FROM colores WHERE nombre = 'Negro' LIMIT 1;
+    SELECT id INTO v_color_blanco_id FROM colores WHERE nombre = 'Blanco' LIMIT 1;
+    SELECT id INTO v_color_azul_id FROM colores WHERE nombre = 'Azul' LIMIT 1;
+    SELECT id INTO v_color_verde_id FROM colores WHERE nombre = 'Verde' LIMIT 1;
+    SELECT id INTO v_color_amarillo_id FROM colores WHERE nombre = 'Amarillo' LIMIT 1;
+    SELECT id INTO v_color_naranja_id FROM colores WHERE nombre = 'Naranja' LIMIT 1;
+    SELECT id INTO v_color_rosa_id FROM colores WHERE nombre = 'Rosa' LIMIT 1;
+    SELECT id INTO v_color_gris_id FROM colores WHERE nombre = 'Gris' LIMIT 1;
+    SELECT id INTO v_color_morado_id FROM colores WHERE nombre = 'Morado' LIMIT 1;
+    SELECT id INTO v_color_cafe_id FROM colores WHERE nombre = 'Café' LIMIT 1;
+    SELECT id INTO v_color_azul_marino_id FROM colores WHERE nombre = 'Azul Marino' LIMIT 1;
+    SELECT id INTO v_color_verde_oscuro_id FROM colores WHERE nombre = 'Verde Oscuro' LIMIT 1;
+    SELECT id INTO v_color_rojo_oscuro_id FROM colores WHERE nombre = 'Rojo Oscuro' LIMIT 1;
+    SELECT id INTO v_color_gris_oscuro_id FROM colores WHERE nombre = 'Gris Oscuro' LIMIT 1;
+    SELECT id INTO v_color_beige_id FROM colores WHERE nombre = 'Beige' LIMIT 1;
+    SELECT id INTO v_color_turquesa_id FROM colores WHERE nombre = 'Turquesa' LIMIT 1;
+    SELECT id INTO v_color_fucsia_id FROM colores WHERE nombre = 'Fucsia' LIMIT 1;
+    SELECT id INTO v_color_verde_lima_id FROM colores WHERE nombre = 'Verde Lima' LIMIT 1;
+    SELECT id INTO v_color_azul_cielo_id FROM colores WHERE nombre = 'Azul Cielo' LIMIT 1;
+
+    -- ============================================
+    -- ARTÍCULOS UNICOLOR (21 artículos - 60%)
+    -- ============================================
+
+    -- Producto 1: Adidas-Algodón-Fútbol (3 variantes)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'ADS' AND ma.codigo = 'ALG' AND t.codigo = 'FUT'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'ADS-ALG-FUT-NEG', 'unicolor', ARRAY[v_color_negro_id], 16.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_blanco_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'ADS-ALG-FUT-BLA', 'unicolor', ARRAY[v_color_blanco_id], 16.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_rojo_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'ADS-ALG-FUT-ROJ', 'unicolor', ARRAY[v_color_rojo_id], 16.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 2: Nike-Microfibra-Running (3 variantes)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'NIK' AND ma.codigo = 'MIC' AND t.codigo = 'RUN'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NIK-MIC-RUN-NEG', 'unicolor', ARRAY[v_color_negro_id], 22.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_azul_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NIK-MIC-RUN-AZU', 'unicolor', ARRAY[v_color_azul_id], 22.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_verde_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NIK-MIC-RUN-VER', 'unicolor', ARRAY[v_color_verde_id], 22.99, false)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 3: Puma-Lycra-Compresión (2 variantes)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'PUM' AND ma.codigo = 'LYC' AND t.codigo = 'COM'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'PUM-LYC-COM-NEG', 'unicolor', ARRAY[v_color_negro_id], 24.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_gris_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'PUM-LYC-COM-GRI', 'unicolor', ARRAY[v_color_gris_id], 24.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 4: Umbro-Poliéster-Ejecutiva (2 variantes)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'UMB' AND ma.codigo = 'POL' AND t.codigo = 'EJE'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_azul_marino_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'UMB-POL-EJE-AZM', 'unicolor', ARRAY[v_color_azul_marino_id], 14.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_gris_oscuro_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'UMB-POL-EJE-GRO', 'unicolor', ARRAY[v_color_gris_oscuro_id], 14.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 5: Reebok-Bambú-Invisible (2 variantes)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'REE' AND ma.codigo = 'BAM' AND t.codigo = 'INV'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_beige_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'REE-BAM-INV-BEI', 'unicolor', ARRAY[v_color_beige_id], 13.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_blanco_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'REE-BAM-INV-BLA', 'unicolor', ARRAY[v_color_blanco_id], 13.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 6: New Balance-Nylon-Tobillera (2 variantes)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'NBL' AND ma.codigo = 'NYL' AND t.codigo = 'TOB'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_gris_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NBL-NYL-TOB-GRI', 'unicolor', ARRAY[v_color_gris_id], 15.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NBL-NYL-TOB-NEG', 'unicolor', ARRAY[v_color_negro_id], 15.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 7: Adidas-Lana Merino-Térmica (1 variante)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'ADS' AND ma.codigo = 'MER' AND t.codigo = 'TER'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_gris_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'ADS-MER-TER-GRI', 'unicolor', ARRAY[v_color_gris_id], 27.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 8: Nike-Seda-Ejecutiva (1 variante)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'NIK' AND ma.codigo = 'SED' AND t.codigo = 'EJE'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NIK-SED-EJE-NEG', 'unicolor', ARRAY[v_color_negro_id], 32.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 9: Puma-Algodón-Media Caña (1 variante)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'PUM' AND ma.codigo = 'ALG' AND t.codigo = 'MCA'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_blanco_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'PUM-ALG-MCA-BLA', 'unicolor', ARRAY[v_color_blanco_id], 12.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 10: Umbro-Nylon-Fútbol (1 variante)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'UMB' AND ma.codigo = 'NYL' AND t.codigo = 'FUT'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_verde_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'UMB-NYL-FUT-VER', 'unicolor', ARRAY[v_color_verde_id], 14.99, false)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 11: Reebok-Poliéster-Running (1 variante)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'REE' AND ma.codigo = 'POL' AND t.codigo = 'RUN'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_naranja_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'REE-POL-RUN-NAR', 'unicolor', ARRAY[v_color_naranja_id], 18.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 12: New Balance-Microfibra-Larga (1 variante)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'NBL' AND ma.codigo = 'MIC' AND t.codigo = 'LAR'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_azul_marino_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NBL-MIC-LAR-AZM', 'unicolor', ARRAY[v_color_azul_marino_id], 19.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Producto 13: Adidas-Bambú-Tobillera (1 variante)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'ADS' AND ma.codigo = 'BAM' AND t.codigo = 'TOB'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_turquesa_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'ADS-BAM-TOB-TUR', 'unicolor', ARRAY[v_color_turquesa_id], 17.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- ============================================
+    -- ARTÍCULOS BICOLOR (11 artículos - 31%)
+    -- ============================================
+
+    -- Bicolor 1: Adidas-Algodón-Fútbol Negro-Blanco
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'ADS' AND ma.codigo = 'ALG' AND t.codigo = 'FUT'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL AND v_color_blanco_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'ADS-ALG-FUT-NEG-BLA', 'bicolor', ARRAY[v_color_negro_id, v_color_blanco_id], 20.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Bicolor 2: Nike-Microfibra-Running Rojo-Negro
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'NIK' AND ma.codigo = 'MIC' AND t.codigo = 'RUN'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_rojo_id IS NOT NULL AND v_color_negro_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NIK-MIC-RUN-ROJ-NEG', 'bicolor', ARRAY[v_color_rojo_id, v_color_negro_id], 26.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Bicolor 3: Puma-Lycra-Compresión Negro-Verde
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'PUM' AND ma.codigo = 'LYC' AND t.codigo = 'COM'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL AND v_color_verde_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'PUM-LYC-COM-NEG-VER', 'bicolor', ARRAY[v_color_negro_id, v_color_verde_id], 28.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Bicolor 4: Nike-Lycra-Compresión Azul-Blanco
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'NIK' AND ma.codigo = 'LYC' AND t.codigo = 'COM'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_azul_id IS NOT NULL AND v_color_blanco_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NIK-LYC-COM-AZU-BLA', 'bicolor', ARRAY[v_color_azul_id, v_color_blanco_id], 27.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Bicolor 5: Umbro-Nylon-Fútbol Negro-Rojo
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'UMB' AND ma.codigo = 'NYL' AND t.codigo = 'FUT'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL AND v_color_rojo_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'UMB-NYL-FUT-NEG-ROJ', 'bicolor', ARRAY[v_color_negro_id, v_color_rojo_id], 18.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Bicolor 6: Reebok-Poliéster-Running Gris-Naranja
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'REE' AND ma.codigo = 'POL' AND t.codigo = 'RUN'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_gris_id IS NOT NULL AND v_color_naranja_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'REE-POL-RUN-GRI-NAR', 'bicolor', ARRAY[v_color_gris_id, v_color_naranja_id], 22.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Bicolor 7: Puma-Algodón-Media Caña Negro-Amarillo
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'PUM' AND ma.codigo = 'ALG' AND t.codigo = 'MCA'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL AND v_color_amarillo_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'PUM-ALG-MCA-NEG-AMA', 'bicolor', ARRAY[v_color_negro_id, v_color_amarillo_id], 16.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Bicolor 8: New Balance-Nylon-Tobillera Gris-Azul
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'NBL' AND ma.codigo = 'NYL' AND t.codigo = 'TOB'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_gris_id IS NOT NULL AND v_color_azul_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NBL-NYL-TOB-GRI-AZU', 'bicolor', ARRAY[v_color_gris_id, v_color_azul_id], 19.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Bicolor 9: Adidas-Bambú-Tobillera Blanco-Verde (inactivo)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'ADS' AND ma.codigo = 'BAM' AND t.codigo = 'TOB'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_blanco_id IS NOT NULL AND v_color_verde_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'ADS-BAM-TOB-BLA-VER', 'bicolor', ARRAY[v_color_blanco_id, v_color_verde_id], 21.99, false)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Bicolor 10: Nike-Seda-Ejecutiva Negro-Gris
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'NIK' AND ma.codigo = 'SED' AND t.codigo = 'EJE'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL AND v_color_gris_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NIK-SED-EJE-NEG-GRI', 'bicolor', ARRAY[v_color_negro_id, v_color_gris_id], 36.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Bicolor 11: Adidas-Lana Merino-Térmica Gris-Azul Marino
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'ADS' AND ma.codigo = 'MER' AND t.codigo = 'TER'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_gris_id IS NOT NULL AND v_color_azul_marino_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'ADS-MER-TER-GRI-AZM', 'bicolor', ARRAY[v_color_gris_id, v_color_azul_marino_id], 31.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- ============================================
+    -- ARTÍCULOS TRICOLOR (3 artículos - 9%)
+    -- ============================================
+
+    -- Tricolor 1: Nike-Microfibra-Running Rojo-Blanco-Azul
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'NIK' AND ma.codigo = 'MIC' AND t.codigo = 'RUN'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_rojo_id IS NOT NULL
+       AND v_color_blanco_id IS NOT NULL AND v_color_azul_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'NIK-MIC-RUN-ROJ-BLA-AZU', 'tricolor',
+                ARRAY[v_color_rojo_id, v_color_blanco_id, v_color_azul_id], 29.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Tricolor 2: Puma-Lycra-Compresión Negro-Verde-Amarillo
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'PUM' AND ma.codigo = 'LYC' AND t.codigo = 'COM'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL
+       AND v_color_verde_id IS NOT NULL AND v_color_amarillo_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'PUM-LYC-COM-NEG-VER-AMA', 'tricolor',
+                ARRAY[v_color_negro_id, v_color_verde_id, v_color_amarillo_id], 32.99, true)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    -- Tricolor 3: Adidas-Algodón-Fútbol Negro-Blanco-Rojo (inactivo)
+    SELECT pm.id INTO v_producto_maestro_id FROM productos_maestros pm
+    JOIN marcas m ON pm.marca_id = m.id
+    JOIN materiales ma ON pm.material_id = ma.id
+    JOIN tipos t ON pm.tipo_id = t.id
+    WHERE m.codigo = 'ADS' AND ma.codigo = 'ALG' AND t.codigo = 'FUT'
+    LIMIT 1;
+
+    IF v_producto_maestro_id IS NOT NULL AND v_color_negro_id IS NOT NULL
+       AND v_color_blanco_id IS NOT NULL AND v_color_rojo_id IS NOT NULL THEN
+        INSERT INTO articulos (producto_maestro_id, sku, tipo_coloracion, colores_ids, precio, activo)
+        VALUES (v_producto_maestro_id, 'ADS-ALG-FUT-NEG-BLA-ROJ', 'tricolor',
+                ARRAY[v_color_negro_id, v_color_blanco_id, v_color_rojo_id], 25.99, false)
+        ON CONFLICT (sku) DO NOTHING;
+        v_articulos_creados := v_articulos_creados + 1;
+    END IF;
+
+    RAISE NOTICE 'Artículos derivados de ejemplo creados: %', v_articulos_creados;
+END $$;
+
+-- ============================================
 -- PASO 3: Tiendas de ejemplo
 -- ============================================
 
@@ -448,6 +1191,11 @@ DECLARE
     v_sistemas_talla INTEGER;
     v_valores_talla INTEGER;
     v_colores INTEGER;
+    v_productos_maestros INTEGER;
+    v_articulos INTEGER;
+    v_articulos_unicolor INTEGER;
+    v_articulos_bicolor INTEGER;
+    v_articulos_tricolor INTEGER;
     v_tiendas INTEGER;
     v_productos INTEGER;
     v_clientes INTEGER;
@@ -460,6 +1208,11 @@ BEGIN
     SELECT COUNT(*) INTO v_sistemas_talla FROM sistemas_talla;
     SELECT COUNT(*) INTO v_valores_talla FROM valores_talla;
     SELECT COUNT(*) INTO v_colores FROM colores;
+    SELECT COUNT(*) INTO v_productos_maestros FROM productos_maestros;
+    SELECT COUNT(*) INTO v_articulos FROM articulos;
+    SELECT COUNT(*) INTO v_articulos_unicolor FROM articulos WHERE tipo_coloracion = 'unicolor';
+    SELECT COUNT(*) INTO v_articulos_bicolor FROM articulos WHERE tipo_coloracion = 'bicolor';
+    SELECT COUNT(*) INTO v_articulos_tricolor FROM articulos WHERE tipo_coloracion = 'tricolor';
     SELECT COUNT(*) INTO v_tiendas FROM tiendas;
     SELECT COUNT(*) INTO v_productos FROM productos;
     SELECT COUNT(*) INTO v_clientes FROM clientes;
@@ -475,6 +1228,8 @@ BEGIN
     RAISE NOTICE 'Sistemas de tallas: %', v_sistemas_talla;
     RAISE NOTICE 'Valores de tallas: %', v_valores_talla;
     RAISE NOTICE 'Colores: %', v_colores;
+    RAISE NOTICE 'Productos maestros: %', v_productos_maestros;
+    RAISE NOTICE 'Artículos derivados: % (Unicolor: %, Bicolor: %, Tricolor: %)', v_articulos, v_articulos_unicolor, v_articulos_bicolor, v_articulos_tricolor;
     RAISE NOTICE 'Tiendas: %', v_tiendas;
     RAISE NOTICE 'Productos: %', v_productos;
     RAISE NOTICE 'Clientes: %', v_clientes;

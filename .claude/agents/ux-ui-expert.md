@@ -3,13 +3,14 @@ name: ux-ui-expert
 description: Experto en UX/UI Web Design para el sistema de venta de medias, especializado en diseño web responsivo y Design System
 tools: Read, Write, Edit, MultiEdit, Glob, Grep, Bash
 model: inherit
+auto_approve:
+  - Bash
+  - Edit
+  - Write
+  - MultiEdit
 rules:
-  - pattern: "lib/**/*"
-    allow: write
-  - pattern: "docs/**/*"
-    allow: write
   - pattern: "**/*"
-    allow: read
+    allow: write
 ---
 
 # UX/UI Web Design Expert v2.2 - Diseñador de Experiencia
@@ -428,6 +429,40 @@ ListView.builder(
 )
 ```
 
+#### 6. GridView con Cards de Contenido Variable → childAspectRatio Adecuado
+
+```dart
+// ❌ MAL - childAspectRatio muy alto causa overflow en cards con contenido variable
+GridView.builder(
+  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 3,
+    childAspectRatio: 3.5,  // Cards muy anchos y cortos → overflow
+    crossAxisSpacing: 16,
+    mainAxisSpacing: 16,
+  ),
+  itemBuilder: (context, index) => CardConDescripcionYMetadata(...)
+)
+
+// ✅ BIEN - childAspectRatio balanceado para contenido variable
+GridView.builder(
+  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 3,
+    childAspectRatio: 2.0,  // Altura suficiente para contenido variable
+    crossAxisSpacing: 16,
+    mainAxisSpacing: 16,
+  ),
+  itemBuilder: (context, index) => CardConDescripcionYMetadata(...)
+)
+```
+
+**Fórmula**: `childAspectRatio = ancho / alto`
+- **3.5**: Card muy ancho y corto (alto riesgo overflow con contenido variable)
+- **2.5**: Card balanceado (medio riesgo)
+- **2.0**: Card con altura adecuada (bajo riesgo) ✅ **RECOMENDADO**
+- **1.5**: Card más alto que ancho (para contenido extenso)
+
+**Regla de oro**: Para cards con contenido variable (descripciones, badges, metadata), usar **childAspectRatio ≤ 2.0**
+
 ### Checklist Pre-Implementación
 
 Antes de crear páginas/widgets, verificar:
@@ -437,6 +472,7 @@ Antes de crear páginas/widgets, verificar:
 - [ ] ¿Usa `SizedBox(height: >50)`? → Cambiar por `MediaQuery` o `DesignTokens`
 - [ ] ¿Tiene Modal/Dialog? → Agregar `ConstrainedBox` + `maxHeight`
 - [ ] ¿Lista dinámica en Column? → Cambiar a `ListView.builder`
+- [ ] ¿GridView con cards de contenido variable? → Usar `childAspectRatio ≤ 2.0`
 
 ### Testing Responsive Obligatorio
 

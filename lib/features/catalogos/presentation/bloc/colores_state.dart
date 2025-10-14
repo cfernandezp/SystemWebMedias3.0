@@ -21,6 +21,7 @@ class ColoresLoaded extends ColoresState {
   final List<ColorModel> colores;
   final List<ColorModel> filteredColores;
   final String searchQuery;
+  final String? tipoColorFilter;
   final int coloresActivos;
   final int coloresInactivos;
 
@@ -28,6 +29,7 @@ class ColoresLoaded extends ColoresState {
     required this.colores,
     required this.filteredColores,
     this.searchQuery = '',
+    this.tipoColorFilter,
     required this.coloresActivos,
     required this.coloresInactivos,
   });
@@ -37,6 +39,7 @@ class ColoresLoaded extends ColoresState {
         colores,
         filteredColores,
         searchQuery,
+        tipoColorFilter,
         coloresActivos,
         coloresInactivos,
       ];
@@ -45,6 +48,7 @@ class ColoresLoaded extends ColoresState {
     List<ColorModel>? colores,
     List<ColorModel>? filteredColores,
     String? searchQuery,
+    String? tipoColorFilter,
     int? coloresActivos,
     int? coloresInactivos,
   }) {
@@ -52,6 +56,7 @@ class ColoresLoaded extends ColoresState {
       colores: colores ?? this.colores,
       filteredColores: filteredColores ?? this.filteredColores,
       searchQuery: searchQuery ?? this.searchQuery,
+      tipoColorFilter: tipoColorFilter ?? this.tipoColorFilter,
       coloresActivos: coloresActivos ?? this.coloresActivos,
       coloresInactivos: coloresInactivos ?? this.coloresInactivos,
     );

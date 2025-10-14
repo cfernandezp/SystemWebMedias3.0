@@ -89,7 +89,7 @@ class _MaterialCardState extends State<MaterialCard> with SingleTickerProviderSt
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
                     // Fila principal
                     Row(
@@ -194,34 +194,37 @@ class _MaterialCardState extends State<MaterialCard> with SingleTickerProviderSt
                     // Descripción expandible (CA-001)
                     if (widget.descripcion != null && widget.descripcion!.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _isExpanded = !_isExpanded;
-                          });
-                        },
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                widget.descripcion!,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF6B7280),
+                      Flexible(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isExpanded = !_isExpanded;
+                            });
+                          },
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  widget.descripcion!,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF6B7280),
+                                  ),
+                                  maxLines: _isExpanded ? 4 : 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: _isExpanded ? null : 2,
-                                overflow: _isExpanded ? null : TextOverflow.ellipsis,
                               ),
-                            ),
-                            if (widget.descripcion!.length > 80) ...[
-                              const SizedBox(width: 8),
-                              Icon(
-                                _isExpanded ? Icons.expand_less : Icons.expand_more,
-                                size: 20,
-                                color: theme.colorScheme.primary,
-                              ),
+                              if (widget.descripcion!.length > 80) ...[
+                                const SizedBox(width: 8),
+                                Icon(
+                                  _isExpanded ? Icons.expand_less : Icons.expand_more,
+                                  size: 20,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     ],

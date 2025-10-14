@@ -210,7 +210,7 @@ class _TiposListView extends StatelessWidget {
         return GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            childAspectRatio: 3.5,
+            childAspectRatio: 2.0,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),

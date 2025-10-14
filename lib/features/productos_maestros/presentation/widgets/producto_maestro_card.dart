@@ -6,6 +6,7 @@ import 'package:system_web_medias/features/productos_maestros/presentation/bloc/
 import 'package:system_web_medias/features/productos_maestros/presentation/bloc/producto_maestro_event.dart';
 import 'package:system_web_medias/features/productos_maestros/presentation/widgets/articulos_derivados_badge.dart';
 import 'package:system_web_medias/features/productos_maestros/presentation/widgets/catalogos_inactivos_badge.dart';
+import 'package:system_web_medias/features/catalogos/presentation/widgets/status_badge.dart';
 
 class ProductoMaestroCard extends StatefulWidget {
   final ProductoMaestroModel producto;
@@ -16,123 +17,309 @@ class ProductoMaestroCard extends StatefulWidget {
   State<ProductoMaestroCard> createState() => _ProductoMaestroCardState();
 }
 
-class _ProductoMaestroCardState extends State<ProductoMaestroCard> {
-  bool _isHovered = false;
+class _ProductoMaestroCardState extends State<ProductoMaestroCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _hoverController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _elevationAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _hoverController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.02).animate(
+      CurvedAnimation(parent: _hoverController, curve: Curves.easeInOut),
+    );
+
+    _elevationAnimation = Tween<double>(begin: 2.0, end: 8.0).animate(
+      CurvedAnimation(parent: _hoverController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _hoverController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDesktop = MediaQuery.of(context).size.width >= 1200;
+
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: InkWell(
-        onTap: () => context.push('/producto-maestro-detail', extra: widget.producto.id),
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _isHovered ? Theme.of(context).colorScheme.primary : const Color(0xFFE5E7EB),
-              width: _isHovered ? 2 : 1,
+      onEnter: (_) => _hoverController.forward(),
+      onExit: (_) => _hoverController.reverse(),
+      child: AnimatedBuilder(
+        animation: _hoverController,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Card(
+              elevation: _elevationAnimation.value,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              color: Colors.white,
+              child: InkWell(
+                onTap: () => context.push('/producto-maestro-detail', extra: widget.producto.id),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: isDesktop
+                      ? _buildDesktopLayout(context, theme)
+                      : _buildMobileLayout(context, theme),
+                ),
+              ),
             ),
-            boxShadow: _isHovered
-                ? [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 4))]
-                : [],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context, ThemeData theme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.inventory_2_outlined,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Text(
-                      widget.producto.nombreCompleto,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF374151)),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    widget.producto.nombreCompleto,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Sistema: ${widget.producto.sistemaTallaNombre}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF6B7280),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        if (widget.producto.descripcion != null && widget.producto.descripcion!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            widget.producto.descripcion!,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF6B7280),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+
+        const SizedBox(height: 8),
+
+        Row(
+          children: [
+            StatusBadge(activo: widget.producto.activo),
+
+            const SizedBox(width: 8),
+
+            ArticulosDerivadosBadge(
+              articulosActivos: widget.producto.articulosActivos,
+              articulosTotales: widget.producto.articulosTotales,
+            ),
+
+            if (widget.producto.tieneCatalogosInactivos) ...[
+              const SizedBox(width: 6),
+              const CatalogosInactivosBadge(),
+            ],
+
+            const Spacer(),
+
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Editar',
+                  color: theme.colorScheme.primary,
+                  iconSize: 18,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  onPressed: _handleEdit,
+                ),
+
+                IconButton(
+                  icon: Icon(
+                    widget.producto.activo ? Icons.toggle_on : Icons.toggle_off,
+                  ),
+                  tooltip: widget.producto.activo ? 'Desactivar' : 'Reactivar',
+                  color: widget.producto.activo
+                      ? const Color(0xFF4CAF50)
+                      : const Color(0xFF9CA3AF),
+                  iconSize: 22,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  onPressed: widget.producto.activo ? _handleDeactivate : _handleReactivate,
+                ),
+
+                if (widget.producto.articulosTotales == 0)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Eliminar',
+                    color: const Color(0xFFF44336),
+                    iconSize: 18,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    onPressed: _handleDelete,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.inventory_2_outlined,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.producto.nombreCompleto,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Sistema: ${widget.producto.sistemaTallaNombre}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF6B7280),
                     ),
                   ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert),
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'edit':
-                          _handleEdit();
-                          break;
-                        case 'deactivate':
-                          _handleDeactivate();
-                          break;
-                        case 'reactivate':
-                          _handleReactivate();
-                          break;
-                        case 'delete':
-                          _handleDelete();
-                          break;
-                      }
-                    },
-                    itemBuilder: (_) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(children: [Icon(Icons.edit_outlined, size: 20), SizedBox(width: 12), Text('Editar')]),
-                      ),
-                      PopupMenuItem(
-                        value: widget.producto.activo ? 'deactivate' : 'reactivate',
-                        child: Row(
-                          children: [
-                            Icon(widget.producto.activo ? Icons.block : Icons.check_circle_outline, size: 20),
-                            const SizedBox(width: 12),
-                            Text(widget.producto.activo ? 'Desactivar' : 'Reactivar'),
-                          ],
-                        ),
-                      ),
-                      if (widget.producto.articulosTotales == 0)
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                              SizedBox(width: 12),
-                              Text('Eliminar', style: TextStyle(color: Colors.red)),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
                 ],
               ),
-              const Divider(height: 24),
-              Text(
-                'Sistema: ${widget.producto.sistemaTallaNombre}',
-                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ArticulosDerivadosBadge(
-                    articulosActivos: widget.producto.articulosActivos,
-                    articulosTotales: widget.producto.articulosTotales,
-                  ),
-                  if (widget.producto.tieneCatalogosInactivos) const CatalogosInactivosBadge(),
-                ],
-              ),
-              if (widget.producto.descripcion != null && widget.producto.descripcion!.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  widget.producto.descripcion!,
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ],
-          ),
+            ),
+
+            StatusBadge(activo: widget.producto.activo),
+          ],
         ),
-      ),
+
+        const SizedBox(height: 8),
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                ArticulosDerivadosBadge(
+                  articulosActivos: widget.producto.articulosActivos,
+                  articulosTotales: widget.producto.articulosTotales,
+                ),
+                if (widget.producto.tieneCatalogosInactivos) ...[
+                  const SizedBox(width: 8),
+                  const CatalogosInactivosBadge(),
+                ],
+              ],
+            ),
+
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  color: theme.colorScheme.primary,
+                  iconSize: 20,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  onPressed: _handleEdit,
+                ),
+                IconButton(
+                  icon: Icon(
+                    widget.producto.activo ? Icons.toggle_on : Icons.toggle_off,
+                  ),
+                  color: widget.producto.activo
+                      ? const Color(0xFF4CAF50)
+                      : const Color(0xFF9CA3AF),
+                  iconSize: 24,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  onPressed: widget.producto.activo ? _handleDeactivate : _handleReactivate,
+                ),
+                if (widget.producto.articulosTotales == 0)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    color: const Color(0xFFF44336),
+                    iconSize: 20,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    onPressed: _handleDelete,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ],
     );
   }
 

@@ -2,6 +2,8 @@ import 'package:dartz/dartz.dart';
 import 'package:system_web_medias/core/error/failures.dart';
 import 'package:system_web_medias/features/productos_maestros/data/models/producto_maestro_filter_model.dart';
 import 'package:system_web_medias/features/productos_maestros/data/models/producto_maestro_model.dart';
+import 'package:system_web_medias/features/productos_maestros/data/models/producto_completo_request_model.dart';
+import 'package:system_web_medias/features/productos_maestros/data/models/producto_completo_response_model.dart';
 
 abstract class ProductoMaestroRepository {
   Future<Either<Failure, Map<String, dynamic>>> validarCombinacionComercial({
@@ -38,4 +40,8 @@ abstract class ProductoMaestroRepository {
   Future<Either<Failure, void>> reactivarProductoMaestro({
     required String productoId,
   });
+
+  Future<Either<Failure, ProductoCompletoResponseModel>> crearProductoCompleto(
+    ProductoCompletoRequestModel request,
+  );
 }

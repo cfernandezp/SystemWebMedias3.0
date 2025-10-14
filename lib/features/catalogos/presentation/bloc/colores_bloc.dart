@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:system_web_medias/features/catalogos/data/models/color_model.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/create_color.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/delete_color.dart';
 import 'package:system_web_medias/features/catalogos/domain/usecases/filter_productos_by_combinacion.dart';
@@ -35,6 +36,7 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
     on<LoadEstadisticas>(_onLoadEstadisticas);
     on<LoadProductosByColor>(_onLoadProductosByColor);
     on<FilterProductosByCombinacionEvent>(_onFilterProductosByCombinacion);
+    on<FilterByTipoColorEvent>(_onFilterByTipoColor);
   }
 
   Future<void> _onLoadColores(
@@ -182,23 +184,26 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
       final currentState = state as ColoresLoaded;
       final query = event.query.toLowerCase();
 
-      if (query.isEmpty) {
-        emit(currentState.copyWith(
-          filteredColores: currentState.colores,
-          searchQuery: '',
-        ));
-      } else {
-        final filtered = currentState.colores.where((color) {
+      List<ColorModel> filtered = List<ColorModel>.from(currentState.colores);
+
+      if (currentState.tipoColorFilter != null) {
+        filtered = filtered.where((color) =>
+          color.tipoColor == currentState.tipoColorFilter
+        ).toList();
+      }
+
+      if (query.isNotEmpty) {
+        filtered = filtered.where((color) {
           final matchesName = color.nombre.toLowerCase().contains(query);
           final matchesHex = color.codigosHex.any((hex) => hex.toLowerCase().contains(query));
           return matchesName || matchesHex;
         }).toList();
-
-        emit(currentState.copyWith(
-          filteredColores: filtered,
-          searchQuery: query,
-        ));
       }
+
+      emit(currentState.copyWith(
+        filteredColores: filtered,
+        searchQuery: query,
+      ));
     }
   }
 
@@ -254,5 +259,35 @@ class ColoresBloc extends Bloc<ColoresEvent, ColoresState> {
         colores: event.colores,
       )),
     );
+  }
+
+  void _onFilterByTipoColor(
+    FilterByTipoColorEvent event,
+    Emitter<ColoresState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is ColoresLoaded) {
+      List<ColorModel> filtered = List<ColorModel>.from(currentState.colores);
+
+      if (event.tipoColorFilter != null) {
+        filtered = filtered.where((color) =>
+          color.tipoColor == event.tipoColorFilter
+        ).toList();
+      }
+
+      if (currentState.searchQuery.isNotEmpty) {
+        final query = currentState.searchQuery.toLowerCase();
+        filtered = filtered.where((color) {
+          final matchesName = color.nombre.toLowerCase().contains(query);
+          final matchesHex = color.codigosHex.any((hex) => hex.toLowerCase().contains(query));
+          return matchesName || matchesHex;
+        }).toList();
+      }
+
+      emit(currentState.copyWith(
+        filteredColores: filtered,
+        tipoColorFilter: event.tipoColorFilter,
+      ));
+    }
   }
 }

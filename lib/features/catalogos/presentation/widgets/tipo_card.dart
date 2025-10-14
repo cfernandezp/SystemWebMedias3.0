@@ -48,6 +48,7 @@ class TipoCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
             children: [
               // Header: Imagen + Info
               Row(
@@ -131,14 +132,16 @@ class TipoCard extends StatelessWidget {
 
               // Descripción
               if (descripcion != null && descripcion!.isNotEmpty) ...[
-                Text(
-                  descripcion!,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
+                Flexible(
+                  child: Text(
+                    descripcion!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF6B7280),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 12),
               ],

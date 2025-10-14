@@ -570,6 +570,71 @@ CREATE POLICY authenticated_view_productos_maestros ON productos_maestros
     TO authenticated
     USING (true);
 
+-- ============================================
+-- PASO 15: Tabla articulos (E002-HU-007)
+-- ============================================
+
+CREATE TABLE articulos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    producto_maestro_id UUID NOT NULL REFERENCES productos_maestros(id),
+    sku TEXT NOT NULL,
+    tipo_coloracion VARCHAR(10) NOT NULL,
+    colores_ids UUID[] NOT NULL,
+    precio DECIMAL(10, 2) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Constraints
+    CONSTRAINT articulos_sku_unique UNIQUE (sku),
+    CONSTRAINT articulos_tipo_coloracion_valid CHECK (tipo_coloracion IN ('unicolor', 'bicolor', 'tricolor')),
+    CONSTRAINT articulos_colores_count_unicolor CHECK (
+        (tipo_coloracion = 'unicolor' AND array_length(colores_ids, 1) = 1) OR
+        tipo_coloracion != 'unicolor'
+    ),
+    CONSTRAINT articulos_colores_count_bicolor CHECK (
+        (tipo_coloracion = 'bicolor' AND array_length(colores_ids, 1) = 2) OR
+        tipo_coloracion != 'bicolor'
+    ),
+    CONSTRAINT articulos_colores_count_tricolor CHECK (
+        (tipo_coloracion = 'tricolor' AND array_length(colores_ids, 1) = 3) OR
+        tipo_coloracion != 'tricolor'
+    ),
+    CONSTRAINT articulos_precio_positive CHECK (precio >= 0.01),
+    CONSTRAINT articulos_sku_uppercase CHECK (sku = UPPER(sku))
+);
+
+-- Índices optimización
+CREATE INDEX idx_articulos_producto_maestro ON articulos(producto_maestro_id);
+CREATE INDEX idx_articulos_sku ON articulos(sku);
+CREATE INDEX idx_articulos_tipo_coloracion ON articulos(tipo_coloracion);
+CREATE INDEX idx_articulos_activo ON articulos(activo);
+CREATE INDEX idx_articulos_created_at ON articulos(created_at DESC);
+CREATE INDEX idx_articulos_colores_gin ON articulos USING GIN(colores_ids);
+
+-- Trigger updated_at
+CREATE TRIGGER update_articulos_updated_at
+    BEFORE UPDATE ON articulos
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Comentarios
+COMMENT ON TABLE articulos IS 'E002-HU-007: Artículos especializados (producto maestro + colores + SKU único)';
+COMMENT ON COLUMN articulos.producto_maestro_id IS 'Referencia a producto maestro (inmutable si tiene stock) - RN-050, RN-055';
+COMMENT ON COLUMN articulos.sku IS 'SKU único generado automáticamente (formato: MARCA-TIPO-MATERIAL-TALLA-COLOR1-COLOR2-COLOR3) - RN-047, RN-053';
+COMMENT ON COLUMN articulos.tipo_coloracion IS 'Tipo de coloración: unicolor (1), bicolor (2), tricolor (3) - RN-048';
+COMMENT ON COLUMN articulos.colores_ids IS 'Array ordenado de UUIDs de colores (orden significativo) - RN-049, RN-051';
+COMMENT ON COLUMN articulos.precio IS 'Precio de venta (mínimo 0.01, editable con stock) - RN-052, RN-060';
+COMMENT ON COLUMN articulos.activo IS 'Estado del artículo (soft delete) - RN-054';
+
+-- RLS Policy
+ALTER TABLE articulos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY authenticated_view_articulos ON articulos
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
 
 COMMIT;
 

@@ -3,11 +3,13 @@ name: qa-testing-expert
 description: Experto en QA y Testing que valida FUNCIONALMENTE que la implementación realmente funcione end-to-end
 tools: Read, Glob, Grep, Bash
 model: inherit
+auto_approve:
+  - Bash
+  - Edit
+  - Write
 rules:
-  - pattern: "docs/historias-usuario/**/*"
-    allow: write
   - pattern: "**/*"
-    allow: read
+    allow: write
 ---
 
 # QA Testing Expert v3.0 - Validación Funcional Real

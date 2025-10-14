@@ -2,6 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:system_web_medias/core/error/exceptions.dart';
 import 'package:system_web_medias/features/productos_maestros/data/models/producto_maestro_filter_model.dart';
 import 'package:system_web_medias/features/productos_maestros/data/models/producto_maestro_model.dart';
+import 'package:system_web_medias/features/productos_maestros/data/models/producto_completo_request_model.dart';
+import 'package:system_web_medias/features/productos_maestros/data/models/producto_completo_response_model.dart';
 
 abstract class ProductoMaestroRemoteDataSource {
   Future<Map<String, dynamic>> validarCombinacionComercial({
@@ -34,6 +36,8 @@ abstract class ProductoMaestroRemoteDataSource {
   });
 
   Future<void> reactivarProductoMaestro({required String productoId});
+
+  Future<ProductoCompletoResponseModel> crearProductoCompleto(ProductoCompletoRequestModel request);
 }
 
 class ProductoMaestroRemoteDataSourceImpl implements ProductoMaestroRemoteDataSource {
@@ -288,6 +292,43 @@ class ProductoMaestroRemoteDataSourceImpl implements ProductoMaestroRemoteDataSo
         } else {
           throw ServerException(error['message'], 500);
         }
+      }
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw NetworkException('Error de conexión: $e');
+    }
+  }
+
+  @override
+  Future<ProductoCompletoResponseModel> crearProductoCompleto(
+    ProductoCompletoRequestModel request,
+  ) async {
+    try {
+      final response = await supabase.rpc(
+        'crear_producto_completo',
+        params: request.toJson(),
+      );
+
+      final result = response as Map<String, dynamic>;
+
+      if (result['success'] == true) {
+        return ProductoCompletoResponseModel.fromJson(result);
+      } else {
+        final error = result['error'] as Map<String, dynamic>;
+        final hint = error['hint'] as String?;
+
+        if (hint == 'duplicate_producto') {
+          throw DuplicateCombinationException(error['message'], 409);
+        } else if (hint == 'unauthorized') {
+          throw UnauthorizedException(error['message'], 401);
+        } else if (hint == 'invalid_catalog') {
+          throw InactiveCatalogException(error['message'], 400);
+        } else if (hint == 'invalid_color') {
+          throw ColorInactiveException(error['message'], 400);
+        } else if (hint == 'duplicate_sku') {
+          throw DuplicateSkuException(error['message'], 409);
+        }
+        throw ServerException(error['message'], 500);
       }
     } catch (e) {
       if (e is AppException) rethrow;

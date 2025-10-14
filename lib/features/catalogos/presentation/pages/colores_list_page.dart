@@ -58,6 +58,11 @@ class _ColoresListView extends StatelessWidget {
 
                 if (state is ColoresLoaded || state is ColorOperationSuccess) const SizedBox(height: 16),
 
+                if (state is ColoresLoaded || state is ColorOperationSuccess)
+                  _buildTipoColorFilter(context, state),
+
+                if (state is ColoresLoaded || state is ColorOperationSuccess) const SizedBox(height: 16),
+
                 _buildCounter(context, state),
                 const SizedBox(height: 24),
 
@@ -169,6 +174,95 @@ class _ColoresListView extends StatelessWidget {
           style: TextStyle(fontSize: 14, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
         ),
       ],
+    );
+  }
+
+  Widget _buildTipoColorFilter(BuildContext context, ColoresState state) {
+    final currentFilter = state is ColoresLoaded ? state.tipoColorFilter : null;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _buildFilterChip(
+            context,
+            label: 'Todos',
+            isSelected: currentFilter == null,
+            onTap: () {
+              context.read<ColoresBloc>().add(const FilterByTipoColorEvent(null));
+            },
+          ),
+          const SizedBox(width: 8),
+          _buildFilterChip(
+            context,
+            label: 'Únicos',
+            icon: Icons.circle,
+            isSelected: currentFilter == 'unico',
+            onTap: () {
+              context.read<ColoresBloc>().add(const FilterByTipoColorEvent('unico'));
+            },
+          ),
+          const SizedBox(width: 8),
+          _buildFilterChip(
+            context,
+            label: 'Compuestos',
+            icon: Icons.palette,
+            isSelected: currentFilter == 'compuesto',
+            onTap: () {
+              context.read<ColoresBloc>().add(const FilterByTipoColorEvent('compuesto'));
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(
+    BuildContext context, {
+    required String label,
+    IconData? icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.colorScheme.primary
+              : theme.colorScheme.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: theme.colorScheme.primary,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Colors.white : theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

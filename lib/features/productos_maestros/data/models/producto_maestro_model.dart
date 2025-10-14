@@ -71,28 +71,37 @@ class ProductoMaestroModel extends Equatable {
   });
 
   factory ProductoMaestroModel.fromJson(Map<String, dynamic> json) {
+    final marca = json['marca'] as Map<String, dynamic>?;
+    final material = json['material'] as Map<String, dynamic>?;
+    final tipo = json['tipo'] as Map<String, dynamic>?;
+    final sistemaTalla = json['sistema_talla'] as Map<String, dynamic>?;
+
     return ProductoMaestroModel(
-      id: json['id'] as String,
-      marcaId: json['marca_id'] as String,
-      marcaNombre: json['marca_nombre'] as String,
-      marcaCodigo: json['marca_codigo'] as String,
-      materialId: json['material_id'] as String,
-      materialNombre: json['material_nombre'] as String,
-      materialCodigo: json['material_codigo'] as String,
-      tipoId: json['tipo_id'] as String,
-      tipoNombre: json['tipo_nombre'] as String,
-      tipoCodigo: json['tipo_codigo'] as String,
-      sistemaTallaId: json['sistema_talla_id'] as String,
-      sistemaTallaNombre: json['sistema_talla_nombre'] as String,
-      sistemaTallaTipo: json['sistema_talla_tipo'] as String,
+      id: json['id'] as String? ?? '',
+      marcaId: marca?['id'] as String? ?? json['marca_id'] as String? ?? '',
+      marcaNombre: marca?['nombre'] as String? ?? json['marca_nombre'] as String? ?? '',
+      marcaCodigo: marca?['codigo'] as String? ?? json['marca_codigo'] as String? ?? '',
+      materialId: material?['id'] as String? ?? json['material_id'] as String? ?? '',
+      materialNombre: material?['nombre'] as String? ?? json['material_nombre'] as String? ?? '',
+      materialCodigo: material?['codigo'] as String? ?? json['material_codigo'] as String? ?? '',
+      tipoId: tipo?['id'] as String? ?? json['tipo_id'] as String? ?? '',
+      tipoNombre: tipo?['nombre'] as String? ?? json['tipo_nombre'] as String? ?? '',
+      tipoCodigo: tipo?['codigo'] as String? ?? json['tipo_codigo'] as String? ?? '',
+      sistemaTallaId: sistemaTalla?['id'] as String? ?? json['sistema_talla_id'] as String? ?? '',
+      sistemaTallaNombre: sistemaTalla?['nombre'] as String? ?? json['sistema_talla_nombre'] as String? ?? '',
+      sistemaTallaTipo: sistemaTalla?['tipo_sistema'] as String? ?? json['sistema_talla_tipo'] as String? ?? '',
       descripcion: json['descripcion'] as String?,
-      activo: json['activo'] as bool,
+      activo: json['activo'] as bool? ?? true,
       articulosActivos: json['articulos_activos'] as int? ?? 0,
       articulosTotales: json['articulos_totales'] as int? ?? 0,
       tieneCatalogosInactivos: json['tiene_catalogos_inactivos'] as bool? ?? false,
-      nombreCompleto: json['nombre_completo'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      nombreCompleto: json['nombre_completo'] as String? ?? '',
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),
     );
   }
 

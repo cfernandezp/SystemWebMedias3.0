@@ -191,3 +191,28 @@ class ProductoMaestroNotFoundException extends AppException {
   ProductoMaestroNotFoundException([super.message = 'Producto maestro no encontrado', super.statusCode = 404]);
 }
 
+/// E002-HU-007: Especializar Artículos con Colores exceptions
+class DuplicateSkuException extends AppException {
+  DuplicateSkuException([super.message = 'Este SKU ya existe para otro artículo', super.statusCode = 409]);
+}
+
+class InvalidColorCountException extends AppException {
+  InvalidColorCountException([super.message = 'Cantidad de colores inválida', super.statusCode = 400]);
+}
+
+class ColorInactiveException extends AppException {
+  ColorInactiveException([super.message = 'Uno o más colores están inactivos', super.statusCode = 400]);
+}
+
+class InvalidPriceException extends AppException {
+  InvalidPriceException([super.message = 'El precio debe ser mayor a 0', super.statusCode = 400]);
+}
+
+class ArticuloNotFoundException extends AppException {
+  ArticuloNotFoundException([super.message = 'Artículo no encontrado', super.statusCode = 404]);
+}
+
+class ArticuloHasStockException extends AppException {
+  ArticuloHasStockException([super.message = 'No se puede eliminar. El artículo tiene stock en tiendas', super.statusCode = 400]);
+}
+

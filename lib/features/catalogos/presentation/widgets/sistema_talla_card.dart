@@ -48,6 +48,7 @@ class SistemaTallaCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,14 +89,16 @@ class SistemaTallaCard extends StatelessWidget {
 
               if (descripcion != null && descripcion!.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Text(
-                  descripcion!,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
+                Flexible(
+                  child: Text(
+                    descripcion!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF6B7280),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
 

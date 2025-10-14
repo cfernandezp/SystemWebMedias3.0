@@ -29,6 +29,9 @@ import 'package:system_web_medias/features/catalogos/presentation/pages/producto
 import 'package:system_web_medias/features/productos_maestros/presentation/pages/productos_maestros_list_page.dart';
 import 'package:system_web_medias/features/productos_maestros/presentation/pages/producto_maestro_form_page.dart';
 import 'package:system_web_medias/features/productos_maestros/presentation/pages/producto_maestro_detail_page.dart';
+import 'package:system_web_medias/features/productos_maestros/presentation/pages/producto_creation_expert_page.dart';
+import 'package:system_web_medias/features/articulos/presentation/pages/articulos_list_page.dart';
+import 'package:system_web_medias/features/articulos/presentation/pages/articulo_form_page.dart';
 import 'package:system_web_medias/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_bloc.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_event.dart';
@@ -297,6 +300,26 @@ class AppRouter {
               return ProductoMaestroDetailPage(productoId: productoId);
             },
           ),
+          // HU-008: Crear Producto Completo (Modo Experto)
+          GoRoute(
+            path: '/productos-maestros-nuevo',
+            name: 'productos-maestros-nuevo',
+            builder: (context, state) => const ProductoCreationExpertPage(),
+          ),
+          // HU-007: Especializar Artículos con Colores
+          GoRoute(
+            path: '/articulos',
+            name: 'articulos',
+            builder: (context, state) => const ArticulosListPage(),
+          ),
+          GoRoute(
+            path: '/articulo-form',
+            name: 'articulo-form',
+            builder: (context, state) {
+              final arguments = state.extra as Map<String, dynamic>?;
+              return ArticuloFormPage(arguments: arguments);
+            },
+          ),
         ],
       ),
     ],
@@ -424,6 +447,9 @@ class _MainLayoutWrapper extends StatelessWidget {
       '/productos-maestros': ('Productos Maestros', '/productos-maestros'),
       '/producto-maestro-form': ('Formulario Producto Maestro', null),
       '/producto-maestro-detail': ('Detalle Producto Maestro', null),
+      '/productos-maestros-nuevo': ('Crear Producto Completo', null),
+      '/articulos': ('Artículos Especializados', '/articulos'),
+      '/articulo-form': ('Formulario de Artículo', null),
     };
 
     final current = routeMap[route];

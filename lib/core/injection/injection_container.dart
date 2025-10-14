@@ -58,7 +58,19 @@ import 'package:system_web_medias/features/productos_maestros/domain/usecases/ed
 import 'package:system_web_medias/features/productos_maestros/domain/usecases/eliminar_producto_maestro.dart';
 import 'package:system_web_medias/features/productos_maestros/domain/usecases/desactivar_producto_maestro.dart';
 import 'package:system_web_medias/features/productos_maestros/domain/usecases/reactivar_producto_maestro.dart';
+import 'package:system_web_medias/features/productos_maestros/domain/usecases/crear_producto_completo_usecase.dart';
 import 'package:system_web_medias/features/productos_maestros/presentation/bloc/producto_maestro_bloc.dart';
+import 'package:system_web_medias/features/productos_maestros/presentation/bloc/producto_completo_bloc.dart';
+import 'package:system_web_medias/features/articulos/data/datasources/articulos_remote_datasource.dart';
+import 'package:system_web_medias/features/articulos/data/repositories/articulos_repository_impl.dart';
+import 'package:system_web_medias/features/articulos/domain/repositories/articulos_repository.dart';
+import 'package:system_web_medias/features/articulos/domain/usecases/generar_sku_usecase.dart';
+import 'package:system_web_medias/features/articulos/domain/usecases/crear_articulo_usecase.dart';
+import 'package:system_web_medias/features/articulos/domain/usecases/listar_articulos_usecase.dart';
+import 'package:system_web_medias/features/articulos/domain/usecases/obtener_articulo_usecase.dart';
+import 'package:system_web_medias/features/articulos/domain/usecases/editar_articulo_usecase.dart';
+import 'package:system_web_medias/features/articulos/domain/usecases/eliminar_articulo_usecase.dart';
+import 'package:system_web_medias/features/articulos/presentation/bloc/articulos_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -310,6 +322,13 @@ Future<void> init() async {
     ),
   );
 
+  // Bloc - Producto Completo (HU-008)
+  sl.registerFactory(
+    () => ProductoCompletoBloc(
+      crearProductoCompletoUseCase: sl(),
+    ),
+  );
+
   // Use Cases - Productos Maestros
   sl.registerLazySingleton(() => ValidarCombinacionComercial(sl()));
   sl.registerLazySingleton(() => CrearProductoMaestro(sl()));
@@ -318,6 +337,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => EliminarProductoMaestro(sl()));
   sl.registerLazySingleton(() => DesactivarProductoMaestro(sl()));
   sl.registerLazySingleton(() => ReactivarProductoMaestro(sl()));
+  sl.registerLazySingleton(() => CrearProductoCompletoUseCase(sl()));
 
   // Repository - Productos Maestros
   sl.registerLazySingleton<ProductoMaestroRepository>(
@@ -329,6 +349,42 @@ Future<void> init() async {
   // Data Sources - Productos Maestros
   sl.registerLazySingleton<ProductoMaestroRemoteDataSource>(
     () => ProductoMaestroRemoteDataSourceImpl(
+      supabase: sl(),
+    ),
+  );
+
+  // ========== E002-HU-007: ARTICULOS ==========
+
+  // Bloc - Artículos
+  sl.registerFactory(
+    () => ArticulosBloc(
+      generarSkuUseCase: sl(),
+      crearArticuloUseCase: sl(),
+      listarArticulosUseCase: sl(),
+      obtenerArticuloUseCase: sl(),
+      editarArticuloUseCase: sl(),
+      eliminarArticuloUseCase: sl(),
+    ),
+  );
+
+  // Use Cases - Artículos
+  sl.registerLazySingleton(() => GenerarSkuUseCase(repository: sl()));
+  sl.registerLazySingleton(() => CrearArticuloUseCase(repository: sl()));
+  sl.registerLazySingleton(() => ListarArticulosUseCase(repository: sl()));
+  sl.registerLazySingleton(() => ObtenerArticuloUseCase(repository: sl()));
+  sl.registerLazySingleton(() => EditarArticuloUseCase(repository: sl()));
+  sl.registerLazySingleton(() => EliminarArticuloUseCase(repository: sl()));
+
+  // Repository - Artículos
+  sl.registerLazySingleton<ArticulosRepository>(
+    () => ArticulosRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data Sources - Artículos
+  sl.registerLazySingleton<ArticulosRemoteDataSource>(
+    () => ArticulosRemoteDataSourceImpl(
       supabase: sl(),
     ),
   );

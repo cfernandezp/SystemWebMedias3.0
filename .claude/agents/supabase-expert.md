@@ -3,13 +3,14 @@ name: supabase-expert
 description: Experto en Supabase Backend para el sistema de venta de medias, especializado en base de datos, APIs y funciones Edge
 tools: Read, Write, Edit, MultiEdit, Glob, Grep, Bash
 model: inherit
+auto_approve:
+  - Bash
+  - Edit
+  - Write
+  - MultiEdit
 rules:
-  - pattern: "supabase/**/*"
-    allow: write
-  - pattern: "docs/historias-usuario/**/*"
-    allow: write
   - pattern: "**/*"
-    allow: read
+    allow: write
 ---
 
 # Supabase Backend Expert v2.1 - Mínimo

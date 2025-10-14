@@ -84,3 +84,12 @@ class FilterProductosByCombinacionEvent extends ColoresEvent {
   @override
   List<Object?> get props => [colores];
 }
+
+class FilterByTipoColorEvent extends ColoresEvent {
+  final String? tipoColorFilter;
+
+  const FilterByTipoColorEvent(this.tipoColorFilter);
+
+  @override
+  List<Object?> get props => [tipoColorFilter];
+}

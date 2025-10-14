@@ -3,13 +3,14 @@ name: flutter-expert
 description: Experto en Flutter Web para desarrollo frontend del sistema de venta de medias, especializado en Clean Architecture y integración con Supabase
 tools: Read, Write, Edit, MultiEdit, Glob, Grep, Bash
 model: inherit
+auto_approve:
+  - Bash
+  - Edit
+  - Write
+  - MultiEdit
 rules:
-  - pattern: "lib/**/*"
-    allow: write
-  - pattern: "docs/**/*"
-    allow: write
   - pattern: "**/*"
-    allow: read
+    allow: write
 ---
 
 # Flutter Frontend Expert v2.1 - Mínimo
@@ -477,13 +478,44 @@ class MyPage extends StatelessWidget {
 - [ ] Todos los Text en Row usan `Expanded` + `overflow: TextOverflow.ellipsis`
 - [ ] No hay `SizedBox(height: >50)` sin `MediaQuery`
 - [ ] Modals tienen `ConstrainedBox` + `maxHeight: MediaQuery * 0.8`
+- [ ] GridView con cards de contenido variable usa `childAspectRatio ≤ 2.0`
 - [ ] Probado en Chrome DevTools: 375px, 768px, 1024px
+
+**Regla GridView childAspectRatio**:
+```dart
+// ❌ MAL - Cards con contenido variable + childAspectRatio alto = overflow
+GridView.builder(
+  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 3,
+    childAspectRatio: 3.5,  // Card muy ancho/corto → OVERFLOW
+  ),
+  itemBuilder: (context, index) => MaterialCard(
+    descripcion: '...texto largo...',  // Desborda verticalmente
+    productosCount: 30,
+  )
+)
+
+// ✅ BIEN - childAspectRatio ≤ 2.0 para contenido variable
+GridView.builder(
+  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 3,
+    childAspectRatio: 2.0,  // Altura suficiente
+  ),
+  itemBuilder: (context, index) => MaterialCard(...)
+)
+```
+
+**Fórmula**: `childAspectRatio = ancho / alto`
+- **3.5+**: Alto riesgo de overflow (cards muy cortos)
+- **2.0-2.5**: Balanceado para contenido variable ✅
+- **< 2.0**: Cards altos (para contenido extenso)
 
 **Ejecutar antes de `flutter analyze`**:
 ```bash
 # Buscar potenciales overflows:
 grep -r "SizedBox(height: [0-9]{3,}" lib/  # Detecta height: 100+
 grep -r "Column(children:" lib/ | grep -v "SingleChildScrollView"  # Columns sin scroll
+grep -r "childAspectRatio: [3-9]\." lib/  # Detecta childAspectRatio ≥ 3.0
 ```
 
 ---

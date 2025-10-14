@@ -28,83 +28,9 @@
     "central_docs": "SISTEMA_DOCUMENTACION.md"
   },
   "permissions": {
-    "auto_approve_code_creation": true,
-    "trusted_agents": [
-      "workflow-architect-expert",
-      "supabase-expert",
-      "flutter-expert",
-      "ux-ui-expert",
-      "qa-testing-expert",
-      "web-architect-expert"
-    ],
-    "auto_approve_file_types": [".dart", ".sql", ".md", ".json", ".yaml"],
-    "role_restrictions": {
-      "workflow-architect-expert": {
-        "can_edit": [".md"],
-        "cannot_edit": [".dart", ".js", ".ts", ".sql"],
-        "can_edit_config": [".json", ".yaml"],
-        "role": "orchestrator",
-        "must_use_task_for": ["code_implementation", "db_migrations"],
-        "can_directly_do": ["workflow_design", "agent_coordination", "quality_gates", "documentation"]
-      },
-      "negocio-medias-expert": {
-        "can_edit": [".md"],
-        "cannot_edit": [".dart", ".js", ".ts", ".sql", ".yaml", ".json"],
-        "role": "coordinator_only",
-        "must_use_task_for": ["code_changes", "dependency_changes", "config_changes"]
-      }
-    }
-  },
-  "autoApprove": {
-    "enabled": true,
-    "requireConfirmation": false,
-    "tools": [
-      "Read",
-      "Write",
-      "Edit",
-      "MultiEdit",
-      "Bash",
-      "Glob",
-      "Grep",
-      "Task",
-      "NotebookEdit"
-    ],
-    "patterns": {
-      "Write": [
-        "**/*"
-      ],
-      "Edit": [
-        "**/*"
-      ],
-      "Bash": [
-        "*"
-      ]
-    },
-    "agents": {
-      "flutter-expert": {
-        "auto_approve_all": true,
-        "can_modify": ["**/*.dart", "**/*.yaml", "**/*.json"]
-      },
-      "supabase-expert": {
-        "auto_approve_all": true,
-        "can_modify": ["**/*.sql", "supabase/**/*"]
-      },
-      "ux-ui-expert": {
-        "auto_approve_all": true,
-        "can_modify": ["**/*.dart", "**/*.css", "**/*.scss", "assets/**/*"]
-      },
-      "qa-testing-expert": {
-        "auto_approve_all": true,
-        "can_modify": ["test/**/*", "integration_test/**/*"]
-      },
-      "web-architect-expert": {
-        "auto_approve_all": true,
-        "can_modify": ["**/*"]
-      },
-      "error-fixer-expert": {
-        "auto_approve_all": true,
-        "can_modify": ["**/*"]
-      }
-    }
+    "allow": ["*"],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "bypassPermissions"
   }
 }

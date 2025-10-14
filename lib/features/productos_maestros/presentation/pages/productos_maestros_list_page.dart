@@ -8,7 +8,8 @@ import 'package:system_web_medias/features/productos_maestros/presentation/bloc/
 import 'package:system_web_medias/features/productos_maestros/presentation/bloc/producto_maestro_event.dart';
 import 'package:system_web_medias/features/productos_maestros/presentation/bloc/producto_maestro_state.dart';
 import 'package:system_web_medias/features/productos_maestros/presentation/widgets/producto_maestro_card.dart';
-import 'package:system_web_medias/features/productos_maestros/presentation/widgets/producto_maestro_filter_widget.dart';
+import 'package:system_web_medias/features/productos_maestros/presentation/widgets/producto_maestro_search_bar.dart';
+import 'package:system_web_medias/features/productos_maestros/data/models/producto_maestro_filter_model.dart';
 
 class ProductosMaestrosListPage extends StatelessWidget {
   const ProductosMaestrosListPage({Key? key}) : super(key: key);
@@ -41,22 +42,32 @@ class _ProductosMaestrosListView extends StatelessWidget {
           }
         },
         builder: (context, state) {
-          return SingleChildScrollView(
+          return Padding(
             padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(context, isDesktop),
                 const SizedBox(height: 24),
-                ProductoMaestroFilterWidget(
-                  onFilterChanged: (filters) {
-                    context.read<ProductoMaestroBloc>().add(ListarProductosMaestrosEvent(filtros: filters));
+                ProductoMaestroSearchBar(
+                  onSearchChanged: (query) {
+                    if (state is ProductoMaestroLoaded || state is ProductoMaestroOperationSuccess) {
+                      context.read<ProductoMaestroBloc>().add(
+                        ListarProductosMaestrosEvent(
+                          filtros: ProductoMaestroFilterModel(
+                            searchText: query.isEmpty ? null : query,
+                          ),
+                        ),
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: 16),
                 _buildCounter(context, state),
                 const SizedBox(height: 24),
-                _buildContent(context, state, isDesktop),
+                Expanded(
+                  child: _buildContent(context, state, isDesktop),
+                ),
               ],
             ),
           );
@@ -68,7 +79,7 @@ class _ProductosMaestrosListView extends StatelessWidget {
           if (!isAdmin) return const SizedBox.shrink();
 
           return FloatingActionButton.extended(
-            onPressed: () => context.push('/producto-maestro-form'),
+            onPressed: () => context.push('/productos-maestros-nuevo'),
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
             icon: const Icon(Icons.add),
@@ -126,6 +137,9 @@ class _ProductosMaestrosListView extends StatelessWidget {
     if (state is ProductoMaestroLoaded) {
       activos = state.productos.where((p) => p.activo).length;
       inactivos = state.productos.where((p) => !p.activo).length;
+    } else if (state is ProductoMaestroOperationSuccess) {
+      activos = state.productos.where((p) => p.activo).length;
+      inactivos = state.productos.where((p) => !p.activo).length;
     }
 
     return Container(
@@ -155,31 +169,31 @@ class _ProductosMaestrosListView extends StatelessWidget {
       );
     }
 
-    if (state is ProductoMaestroLoaded) {
-      if (state.productos.isEmpty) {
+    if (state is ProductoMaestroLoaded || state is ProductoMaestroOperationSuccess) {
+      final productos = state is ProductoMaestroLoaded
+          ? state.productos
+          : (state as ProductoMaestroOperationSuccess).productos;
+
+      if (productos.isEmpty) {
         return _buildEmptyState(context);
       }
 
       if (isDesktop) {
         return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 1.8,
+            childAspectRatio: 3.2,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
-          itemCount: state.productos.length,
-          itemBuilder: (context, index) => ProductoMaestroCard(producto: state.productos[index]),
+          itemCount: productos.length,
+          itemBuilder: (context, index) => ProductoMaestroCard(producto: productos[index]),
         );
       } else {
         return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: state.productos.length,
+          itemCount: productos.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) => ProductoMaestroCard(producto: state.productos[index]),
+          itemBuilder: (context, index) => ProductoMaestroCard(producto: productos[index]),
         );
       }
     }
