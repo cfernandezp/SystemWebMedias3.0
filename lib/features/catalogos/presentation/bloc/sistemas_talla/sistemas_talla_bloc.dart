@@ -71,17 +71,25 @@ class SistemasTallaBloc extends Bloc<SistemasTallaEvent, SistemasTallaState> {
     LoadSistemaTallaValoresEvent event,
     Emitter<SistemasTallaState> emit,
   ) async {
-    emit(SistemasTallaLoading());
+    try {
+      emit(SistemasTallaLoading());
 
-    final result = await repository.getSistemaTallaValores(event.sistemaId);
+      final result = await repository.getSistemaTallaValores(event.sistemaId);
 
-    result.fold(
-      (failure) => emit(SistemasTallaError(failure.message)),
-      (data) => emit(SistemaTallaValoresLoaded(
-        data['sistema'],
-        data['valores'],
-      )),
-    );
+      result.fold(
+        (failure) {
+          emit(SistemasTallaError(failure.message));
+        },
+        (data) {
+          emit(SistemaTallaValoresLoaded(
+            data['sistema'],
+            data['valores'],
+          ));
+        },
+      );
+    } catch (e) {
+      emit(SistemasTallaError('Error inesperado: $e'));
+    }
   }
 
   Future<void> _onAddValorTalla(

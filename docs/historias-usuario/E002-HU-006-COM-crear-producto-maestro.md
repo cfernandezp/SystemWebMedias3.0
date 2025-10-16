@@ -974,3 +974,201 @@ Se necesita re-ejecutar QA completo por qa-testing-expert para validar:
 2. Todos los tests de validaciones comerciales (4 combinaciones)
 3. Flujo completo crear_producto_maestro con warnings
 4. Verificar que no se introdujeron regresiones
+
+---
+
+## 🐛 CORRECCIÓN CA-012 - 2025-10-15
+
+**Responsable**: flutter-expert
+**Contexto**: Implementación de valores de tallas disponibles en CA-012
+
+### Problema Detectado
+**CA-012**: "Información de Tallas Disponibles" requiere mostrar los valores de tallas (ej: "35-36, 37-38, 39-40, 41-42, 43-44") al seleccionar un sistema en el formulario de producto maestro.
+
+**Causa identificada**:
+1. Backend función `get_sistemas_talla` solo devolvía `valores_count` (cantidad), NO los valores reales
+2. Modelo Dart `SistemaTallaModel` solo tenía `valoresCount`, NO lista de valores
+3. UI no podía mostrar tooltip con valores disponibles (CA-012 incompleto)
+
+### Solución Implementada
+
+#### 1. Backend - Modificación función `get_sistemas_talla`
+**Archivo**: `supabase/migrations/00000000000005_functions.sql` (líneas 2400-2405)
+
+**Cambio aplicado**: Agregar campo `valores` con array_agg de valores de tallas
+
+```sql
+'valores', (
+    SELECT array_agg(v.valor ORDER BY v.orden)
+    FROM valores_talla v
+    WHERE v.sistema_talla_id = s.id
+      AND v.activo = true
+),
+```
+
+**Impacto**: La función ahora devuelve:
+```json
+{
+  "id": "uuid",
+  "nombre": "NÚMERO 35-44",
+  "tipo_sistema": "NUMERO",
+  "valores_count": 5,
+  "valores": ["35-36", "37-38", "39-40", "41-42", "43-44"],
+  ...
+}
+```
+
+#### 2. Frontend - Actualización SistemaTallaModel
+**Archivo**: `lib/features/catalogos/data/models/sistema_talla_model.dart`
+
+**Cambios aplicados**:
+- Agregado campo `final List<String> valores;` en clase
+- Actualizado constructor para requerir `valores`
+- Actualizado `fromJson` para parsear array con manejo null-safe:
+  ```dart
+  List<String> valoresList = [];
+  if (json['valores'] != null) {
+    if (json['valores'] is List) {
+      valoresList = (json['valores'] as List).map((e) => e.toString()).toList();
+    }
+  }
+  ```
+- Actualizado `toJson` para incluir `'valores': valores`
+- Actualizado `copyWith` con parámetro opcional `List<String>? valores`
+- Actualizado `props` en Equatable con `valores`
+- Actualizada documentación del modelo
+
+**Mapping explícito**:
+- BD: `valores` (TEXT[] en PostgreSQL) → Dart: `valores` (List<String>)
+- Manejo null-safe: Si `valores` es null en JSON → lista vacía `[]`
+
+#### 3. Verificación
+- flutter analyze (archivo modificado): 0 errores
+- Sintaxis SQL válida
+- Backward compatible: Frontend manejará sistemas sin valores con lista vacía
+
+### Archivos Modificados
+1. `supabase/migrations/00000000000005_functions.sql` - Función `get_sistemas_talla` (línea 2400-2405)
+2. `lib/features/catalogos/data/models/sistema_talla_model.dart` - Modelo completo actualizado
+
+### Beneficios
+- CA-012 ahora puede implementarse completamente en UI
+- Tooltip en formulario producto maestro mostrará valores reales
+- No se requieren llamadas adicionales al backend (`get_sistema_talla_valores`)
+- Mejor UX: Usuario ve qué tallas incluye el sistema antes de seleccionar
+
+### Testing Pendiente
+**Responsable**: @qa-testing-expert
+1. Verificar que `get_sistemas_talla` devuelve valores correctamente
+2. Validar que UI tooltip muestre valores (cuando se implemente)
+3. Probar con sistemas sin valores (array vacío)
+4. Validar performance con múltiples sistemas (array_agg no afecta)
+
+---
+
+## 🐛 CORRECCIÓN CA-012 UI - 2025-10-15
+
+**Responsable**: ux-ui-expert
+**Contexto**: Implementación visual de valores de tallas en dropdown de formulario
+
+### Problema UI Detectado
+Tras la corrección backend/frontend del CA-012, faltaba implementar la visualización de valores en la UI del formulario de producto maestro.
+
+**Estado previo**:
+- Dropdown solo mostraba: `NÚMERO 35-44 (NUMERO)`
+- NO mostraba valores disponibles: `35-36, 37-38, 39-40, 41-42, 43-44`
+
+### Solución Implementada
+
+#### Modificación `_buildDropdownSistemaTalla()`
+**Archivo**: `lib/features/productos_maestros/presentation/pages/producto_maestro_form_page.dart`
+
+**Cambios aplicados**:
+- Reemplazado widget helper `_buildDropdownField()` por implementación custom
+- Agregado `Column` en cada `DropdownMenuItem` para mostrar 2 líneas:
+  1. **Línea principal**: Nombre sistema + tipo (ej: `NÚMERO 35-44 (NUMERO)`)
+  2. **Línea secundaria** (condicional): `Tallas: 35-36, 37-38, 39-40, 41-42, 43-44`
+- Aplicado `TextOverflow.ellipsis` con `maxLines: 1` para prevenir overflow en tallas largas
+- Estilo visual diferenciado:
+  - Línea principal: `fontSize: 14, fontWeight: w500, color: 0xFF374151`
+  - Línea secundaria: `fontSize: 12, color: 0xFF6B7280` (gris claro)
+- Espaciado: `padding: EdgeInsets.only(top: 4)` entre líneas
+
+**Código implementado**:
+```dart
+items: activos.map((s) {
+  return DropdownMenuItem(
+    value: s.id,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('${s.nombre} (${s.tipoSistema})', ...),
+        if (s.valores.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Tallas: ${s.valores.join(', ')}',
+              style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+    ),
+  );
+}).toList(),
+```
+
+### Casos Especiales Manejados
+
+**Sistemas sin valores (array vacío)**:
+- Condicional `if (s.valores.isNotEmpty)` previene mostrar línea vacía
+- Dropdown solo muestra nombre del sistema
+- Backward compatible con sistemas legacy sin valores configurados
+
+**Valores muy largos (overflow)**:
+- `maxLines: 1` + `overflow: TextOverflow.ellipsis`
+- Ejemplo: `Tallas: 35-36, 37-38, 39-40, 41-42, 43-44, 45-46, 47-48...`
+
+**Edición con artículos derivados**:
+- Campo deshabilitado visualmente (`fillColor: Color(0xFFF3F4F6)`)
+- `onChanged: null` previene cambios
+- Valores de tallas siguen siendo visibles (solo lectura)
+
+### Criterios de Aceptación Cumplidos
+
+**CA-012**: ✅ COMPLETADO
+- [x] Al seleccionar sistema de tallas en formulario
+- [x] Información emergente muestra:
+  - [x] Nombre del sistema (ej: "NÚMERO", "ÚNICA", "LETRA")
+  - [x] Valores disponibles configurados (ej: "35-36, 37-38, 39-40, 41-42, 43-44")
+- [x] Usuario entiende qué tallas abarcará el producto maestro antes de guardar
+
+### Verificación
+
+- ✅ `flutter analyze`: 0 errores
+- ✅ Responsive: Column con `mainAxisSize: MainAxisSize.min` previene overflow vertical
+- ✅ Anti-overflow: `TextOverflow.ellipsis` en línea de tallas
+- ✅ Design System: Colores `0xFF374151` y `0xFF6B7280` (paleta estándar)
+- ✅ Consistencia: Mismo patrón visual que otros dropdowns del formulario
+
+### Archivos Modificados
+1. `lib/features/productos_maestros/presentation/pages/producto_maestro_form_page.dart` (método `_buildDropdownSistemaTalla()`)
+
+### Testing Manual Sugerido
+**Responsable**: @qa-testing-expert
+1. Abrir formulario de crear producto maestro
+2. Abrir dropdown "Sistema de Tallas"
+3. Verificar que cada item muestra:
+   - Línea 1: Nombre + tipo
+   - Línea 2: Valores de tallas (si existen)
+4. Probar con sistema sin valores (solo debe mostrar 1 línea)
+5. Probar con sistema con muchos valores (verificar ellipsis)
+6. Verificar responsive en mobile (375px width)
+
+### Beneficios UX
+- Usuario ve inmediatamente qué tallas incluye cada sistema
+- No requiere consultar catálogo de sistemas de tallas por separado
+- Reduce errores de selección (ej: seleccionar sistema ÚNICA para producto que necesita tallas numéricas)
+- Cumple CA-012 completamente sin modals/tooltips adicionales (más simple y directo)

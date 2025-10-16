@@ -326,7 +326,8 @@ DECLARE
     v_productos_id UUID;
     v_inventario_id UUID;
     v_ventas_id UUID;
-    v_clientes_id UUID;
+    v_personas_id UUID;  -- E004: Nuevo módulo Personas
+    v_clientes_id UUID;  -- E004: Ahora es submenú de Personas
     v_reportes_id UUID;
     v_admin_id UUID;
     v_config_id UUID;
@@ -349,9 +350,12 @@ DECLARE
     v_ventas_historial_id UUID;
     v_ventas_comisiones_id UUID;
 
-    -- Submenús Clientes
+    -- Submenús Personas (E004)
+    v_personas_tipos_documento_id UUID;  -- E004-HU-001: Movido desde Productos
     v_clientes_registrar_id UUID;
     v_clientes_base_id UUID;
+    v_personas_proveedores_id UUID;  -- E004-HU-004: Preparado
+    v_personas_transportistas_id UUID;  -- E004-HU-005: Preparado
 
     -- Submenús Reportes
     v_reportes_analisis_id UUID;
@@ -477,11 +481,23 @@ BEGIN
     RETURNING id INTO v_ventas_comisiones_id;
 
     -- ========================================
-    -- 6. CLIENTES (menú desplegable)
+    -- 6. PERSONAS (menú desplegable - E004)
     -- ========================================
     INSERT INTO menu_options (code, label, icon, route, orden, activo)
-    VALUES ('clientes', 'Clientes', 'people', null, 60, true)
+    VALUES ('personas', 'Personas', 'people', null, 55, true)
     ON CONFLICT (code) DO UPDATE SET label = EXCLUDED.label, icon = EXCLUDED.icon, route = EXCLUDED.route, orden = EXCLUDED.orden, activo = EXCLUDED.activo
+    RETURNING id INTO v_personas_id;
+
+    -- Submenú: Tipos de Documento (E004-HU-001 - Movido desde Productos)
+    INSERT INTO menu_options (parent_id, code, label, icon, route, orden, activo)
+    VALUES (v_personas_id, 'catalogos-tipos-documento', 'Tipos de Documento', 'document_scanner', '/tipos-documento', 10, true)
+    ON CONFLICT (code) DO UPDATE SET parent_id = v_personas_id, activo = EXCLUDED.activo, route = EXCLUDED.route
+    RETURNING id INTO v_personas_tipos_documento_id;
+
+    -- Submenú: Clientes (E004-HU-003 - Ahora submenú de Personas)
+    INSERT INTO menu_options (parent_id, code, label, icon, route, orden, activo)
+    VALUES (v_personas_id, 'clientes', 'Clientes', 'people', null, 20, true)
+    ON CONFLICT (code) DO UPDATE SET parent_id = v_personas_id, activo = EXCLUDED.activo
     RETURNING id INTO v_clientes_id;
 
     -- Submenú: Registrar cliente
@@ -495,6 +511,18 @@ BEGIN
     VALUES (v_clientes_id, 'clientes-base', 'Base de datos de clientes', 'people', '/clientes', 20, false)
     ON CONFLICT (code) DO UPDATE SET parent_id = v_clientes_id
     RETURNING id INTO v_clientes_base_id;
+
+    -- Submenú: Proveedores (E004-HU-004 - Preparado, inactivo)
+    INSERT INTO menu_options (parent_id, code, label, icon, route, orden, activo)
+    VALUES (v_personas_id, 'personas-proveedores', 'Proveedores', 'store', '/proveedores', 30, false)
+    ON CONFLICT (code) DO UPDATE SET parent_id = v_personas_id, activo = EXCLUDED.activo, route = EXCLUDED.route
+    RETURNING id INTO v_personas_proveedores_id;
+
+    -- Submenú: Transportistas (E004-HU-005 - Preparado, inactivo)
+    INSERT INTO menu_options (parent_id, code, label, icon, route, orden, activo)
+    VALUES (v_personas_id, 'personas-transportistas', 'Transportistas', 'local_shipping', '/transportistas', 40, false)
+    ON CONFLICT (code) DO UPDATE SET parent_id = v_personas_id, activo = EXCLUDED.activo, route = EXCLUDED.route
+    RETURNING id INTO v_personas_transportistas_id;
 
     -- ========================================
     -- 7. REPORTES (menú desplegable)
@@ -573,9 +601,13 @@ BEGIN
         (v_ventas_id, 'ADMIN', true),
         (v_ventas_historial_id, 'ADMIN', true),
         (v_ventas_comisiones_id, 'ADMIN', true),
+        (v_personas_id, 'ADMIN', true),
+        (v_personas_tipos_documento_id, 'ADMIN', true),
         (v_clientes_id, 'ADMIN', true),
         (v_clientes_registrar_id, 'ADMIN', true),
         (v_clientes_base_id, 'ADMIN', true),
+        (v_personas_proveedores_id, 'ADMIN', true),
+        (v_personas_transportistas_id, 'ADMIN', true),
         (v_reportes_id, 'ADMIN', true),
         (v_reportes_analisis_id, 'ADMIN', true),
         (v_reportes_dashboard_id, 'ADMIN', true),
@@ -586,7 +618,7 @@ BEGIN
         (v_config_sistema_id, 'ADMIN', true)
     ON CONFLICT (menu_option_id, role) DO NOTHING;
 
-    -- GERENTE: dashboard, punto venta, productos (solo catálogo), inventario, ventas, clientes, reportes, configuración
+    -- GERENTE: dashboard, punto venta, productos (solo catálogo), inventario, ventas, personas, reportes, configuración
     INSERT INTO menu_permissions (menu_option_id, role, puede_ver) VALUES
         (v_dashboard_id, 'GERENTE', true),
         (v_punto_venta_id, 'GERENTE', true),
@@ -605,9 +637,13 @@ BEGIN
         (v_ventas_id, 'GERENTE', true),
         (v_ventas_historial_id, 'GERENTE', true),
         (v_ventas_comisiones_id, 'GERENTE', true),
+        (v_personas_id, 'GERENTE', true),
+        (v_personas_tipos_documento_id, 'GERENTE', true),
         (v_clientes_id, 'GERENTE', true),
         (v_clientes_registrar_id, 'GERENTE', true),
         (v_clientes_base_id, 'GERENTE', true),
+        (v_personas_proveedores_id, 'GERENTE', false),
+        (v_personas_transportistas_id, 'GERENTE', false),
         (v_reportes_id, 'GERENTE', true),
         (v_reportes_analisis_id, 'GERENTE', true),
         (v_reportes_dashboard_id, 'GERENTE', true),
@@ -616,7 +652,7 @@ BEGIN
         (v_config_sistema_id, 'GERENTE', true)
     ON CONFLICT (menu_option_id, role) DO NOTHING;
 
-    -- VENDEDOR: dashboard, punto venta, productos (solo catálogo), inventario (solo lectura), ventas (mis comisiones), clientes, reportes
+    -- VENDEDOR: dashboard, punto venta, productos (solo catálogo), inventario (solo lectura), ventas (mis comisiones), personas (clientes), reportes
     INSERT INTO menu_permissions (menu_option_id, role, puede_ver) VALUES
         (v_dashboard_id, 'VENDEDOR', true),
         (v_punto_venta_id, 'VENDEDOR', true),
@@ -634,16 +670,20 @@ BEGIN
         (v_ventas_id, 'VENDEDOR', true),
         (v_ventas_historial_id, 'VENDEDOR', true),
         (v_ventas_comisiones_id, 'VENDEDOR', true),
+        (v_personas_id, 'VENDEDOR', true),
+        (v_personas_tipos_documento_id, 'VENDEDOR', false),
         (v_clientes_id, 'VENDEDOR', true),
         (v_clientes_registrar_id, 'VENDEDOR', true),
         (v_clientes_base_id, 'VENDEDOR', true),
+        (v_personas_proveedores_id, 'VENDEDOR', false),
+        (v_personas_transportistas_id, 'VENDEDOR', false),
         (v_reportes_id, 'VENDEDOR', true),
         (v_reportes_analisis_id, 'VENDEDOR', true),
         (v_admin_id, 'VENDEDOR', false),
         (v_config_id, 'VENDEDOR', false)
     ON CONFLICT (menu_option_id, role) DO NOTHING;
 
-    RAISE NOTICE 'Menús completos creados exitosamente (9 menús raíz + 17 submenús)';
+    RAISE NOTICE 'Menús completos creados exitosamente (9 menús raíz + 21 submenús) - E004: Módulo Personas agregado';
 END $$;
 
 COMMIT;

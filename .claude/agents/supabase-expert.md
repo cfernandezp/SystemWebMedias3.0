@@ -219,15 +219,40 @@ curl -X POST http://localhost:54321/functions/v1/function-name \
 
 ### Funciones RPC Implementadas
 
+**⚠️ CONTRATO DE API PARA @flutter-expert y @ux-ui-expert**:
+
 **`function_name(p_param TYPE) → JSON`**
 - **Descripción**: [Qué hace brevemente]
 - **Reglas de Negocio**: RN-001, RN-002
-- **Request**: `{"p_param": "value"}`
-- **Response Success**: `{"success": true, "data": {...}, "message": "..."}`
-- **Response Error**: `{"success": false, "error": {"code": "...", "message": "...", "hint": "..."}}`
+- **Parámetros**:
+  - `p_param`: [tipo] - [descripción]
+  - `p_otro_param`: [tipo] - [descripción opcional/requerido]
+- **Request ejemplo**:
+  ```json
+  {"p_param": "value", "p_otro_param": 123}
+  ```
+- **Response Success**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "id": "uuid",
+      "campo1": "valor",
+      "campo_snake_case": "valor"
+    },
+    "message": "Operación exitosa"
+  }
+  ```
+- **Response Error - Hints específicos**:
+  - `duplicate_email` → 409 - Email ya existe
+  - `invalid_param` → 400 - Parámetro inválido
+  - `not_found` → 404 - Registro no encontrado
+  - `forbidden` → 403 - Sin permisos
+- **Mapping Backend → Dart**:
+  - `campo_snake_case` → `campoSnakeCase` (camelCase en Dart)
 
 **`otra_funcion(params) → JSON`**
-- [Misma estructura]
+- [Misma estructura completa con hints y mapping]
 
 ### Archivos Modificados
 - `supabase/migrations/00000000000003_catalog_tables.sql` (tablas catálogo)

@@ -305,11 +305,36 @@ class _ColorSelectorModalState extends State<ColorSelectorModal> {
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
       ],
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Precio de Venta *',
-        prefixText: '\$',
-        border: OutlineInputBorder(),
+        prefixText: '\$ ',
+        filled: true,
+        fillColor: Colors.white,
         helperText: 'Precio debe ser mayor a 0',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: DesignColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: DesignColors.accent, width: 2.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: DesignColors.error, width: 2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: DesignColors.error, width: 2.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: DesignSpacing.md,
+          vertical: DesignSpacing.md,
+        ),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {

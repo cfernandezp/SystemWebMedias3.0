@@ -71,6 +71,15 @@ import 'package:system_web_medias/features/articulos/domain/usecases/obtener_art
 import 'package:system_web_medias/features/articulos/domain/usecases/editar_articulo_usecase.dart';
 import 'package:system_web_medias/features/articulos/domain/usecases/eliminar_articulo_usecase.dart';
 import 'package:system_web_medias/features/articulos/presentation/bloc/articulos_bloc.dart';
+import 'package:system_web_medias/features/tipos_documento/data/datasources/tipo_documento_remote_datasource.dart';
+import 'package:system_web_medias/features/tipos_documento/data/repositories/tipo_documento_repository_impl.dart';
+import 'package:system_web_medias/features/tipos_documento/domain/repositories/tipo_documento_repository.dart';
+import 'package:system_web_medias/features/tipos_documento/domain/usecases/listar_tipos_documento_usecase.dart';
+import 'package:system_web_medias/features/tipos_documento/domain/usecases/crear_tipo_documento_usecase.dart';
+import 'package:system_web_medias/features/tipos_documento/domain/usecases/actualizar_tipo_documento_usecase.dart';
+import 'package:system_web_medias/features/tipos_documento/domain/usecases/eliminar_tipo_documento_usecase.dart';
+import 'package:system_web_medias/features/tipos_documento/domain/usecases/validar_formato_documento_usecase.dart';
+import 'package:system_web_medias/features/tipos_documento/presentation/bloc/tipo_documento_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -385,6 +394,40 @@ Future<void> init() async {
   // Data Sources - Artículos
   sl.registerLazySingleton<ArticulosRemoteDataSource>(
     () => ArticulosRemoteDataSourceImpl(
+      supabase: sl(),
+    ),
+  );
+
+  // ========== E004-HU-001: TIPOS DE DOCUMENTO ==========
+
+  // Bloc - Tipos de Documento
+  sl.registerFactory(
+    () => TipoDocumentoBloc(
+      listarTiposDocumentoUseCase: sl(),
+      crearTipoDocumentoUseCase: sl(),
+      actualizarTipoDocumentoUseCase: sl(),
+      eliminarTipoDocumentoUseCase: sl(),
+      validarFormatoDocumentoUseCase: sl(),
+    ),
+  );
+
+  // Use Cases - Tipos de Documento
+  sl.registerLazySingleton(() => ListarTiposDocumentoUseCase(repository: sl()));
+  sl.registerLazySingleton(() => CrearTipoDocumentoUseCase(repository: sl()));
+  sl.registerLazySingleton(() => ActualizarTipoDocumentoUseCase(repository: sl()));
+  sl.registerLazySingleton(() => EliminarTipoDocumentoUseCase(repository: sl()));
+  sl.registerLazySingleton(() => ValidarFormatoDocumentoUseCase(repository: sl()));
+
+  // Repository - Tipos de Documento
+  sl.registerLazySingleton<TipoDocumentoRepository>(
+    () => TipoDocumentoRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data Sources - Tipos de Documento
+  sl.registerLazySingleton<TipoDocumentoRemoteDataSource>(
+    () => TipoDocumentoRemoteDataSourceImpl(
       supabase: sl(),
     ),
   );

@@ -17,7 +17,16 @@
       "Bash(supabase db reset:*)",
       "Bash(SERVICE_ROLE_KEY=:*)",
       "Bash(ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0\")",
-      "Bash(ACCESS_TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2F1dGgvdjEiLCJzdWIiOiJhYWFhYWFhYS1hYWFhLWFhYWEtYWFhYS1hYWFhYWFhYWFhYWEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzYwNDgzMTE5LCJpYXQiOjE3NjA0Nzk1MTksImVtYWlsIjoiYWRtaW5AdGVzdC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoiYWRtaW5AdGVzdC5jb20iLCJub21icmVfY29tcGxldG8iOiJBZG1pbmlzdHJhZG9yIFByaW5jaXBhbCIsInJvbCI6IkFETUlOIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NjA0Nzk1MTl9XSwic2Vzc2lvbl9pZCI6ImRkNGE3NDkyLTJhZDQtNDcyMi1hZDZlLTM0N2FiMTI0YzJlOCIsImlzX2Fub255bW91cyI6ZmFsc2V9.2ufAUg3vZH9c5WojD7WEGXAHqK-YyU11LRgzZKDG054\")"
+      "Bash(ACCESS_TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2F1dGgvdjEiLCJzdWIiOiJhYWFhYWFhYS1hYWFhLWFhYWEtYWFhYS1hYWFhYWFhYWFhYWEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzYwNDgzMTE5LCJpYXQiOjE3NjA0Nzk1MTksImVtYWlsIjoiYWRtaW5AdGVzdC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoiYWRtaW5AdGVzdC5jb20iLCJub21icmVfY29tcGxldG8iOiJBZG1pbmlzdHJhZG9yIFByaW5jaXBhbCIsInJvbCI6IkFETUlOIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NjA0Nzk1MTl9XSwic2Vzc2lvbl9pZCI6ImRkNGE3NDkyLTJhZDQtNDcyMi1hZDZlLTM0N2FiMTI0YzJlOCIsImlzX2Fub255bW91cyI6ZmFsc2V9.2ufAUg3vZH9c5WojD7WEGXAHqK-YyU11LRgzZKDG054\")",
+      "Bash(docker exec:*)",
+      "Bash(docker ps:*)",
+      "Bash(findstr:*)",
+      "Bash(Select-String \"app_sidebar.dart\")",
+      "Bash(taskkill:*)",
+      "Bash(tee:*)",
+      "Bash(dir /s /b c:SystemWebMedias3.0libfeaturescatalogosdatamodels)",
+      "Bash(curl:*)",
+      "Bash(PGPASSWORD=postgres psql:*)"
     ],
     "deny": [],
     "ask": [],

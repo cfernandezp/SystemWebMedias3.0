@@ -255,7 +255,7 @@ class _SistemasTallaListPageContentState extends State<_SistemasTallaListPageCon
         const SizedBox(width: 16),
         Expanded(
           child: DropdownButtonFormField<String>(
-            initialValue: _tipoFilter,
+            value: _tipoFilter,
             decoration: InputDecoration(
               labelText: 'Tipo',
               filled: true,
@@ -283,7 +283,7 @@ class _SistemasTallaListPageContentState extends State<_SistemasTallaListPageCon
         const SizedBox(width: 16),
         Expanded(
           child: DropdownButtonFormField<bool>(
-            initialValue: _activoFilter,
+            value: _activoFilter,
             decoration: InputDecoration(
               labelText: 'Estado',
               filled: true,

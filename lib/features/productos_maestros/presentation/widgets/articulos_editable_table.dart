@@ -248,12 +248,29 @@ class _ArticulosEditableTableState extends State<ArticulosEditableTable> {
           FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
         ],
         decoration: InputDecoration(
-          prefixText: '\$',
+          prefixText: '\$ ',
+          filled: true,
+          fillColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: DesignSpacing.sm,
-            vertical: DesignSpacing.xs,
+            vertical: DesignSpacing.sm,
           ),
-          border: const OutlineInputBorder(),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(DesignRadius.lg),
+            borderSide: const BorderSide(color: DesignColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(DesignRadius.lg),
+            borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(DesignRadius.lg),
+            borderSide: const BorderSide(color: DesignColors.accent, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(DesignRadius.lg),
+            borderSide: const BorderSide(color: DesignColors.error, width: 2),
+          ),
         ),
         onChanged: (value) {
           final newPrecio = double.tryParse(value);

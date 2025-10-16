@@ -528,14 +528,14 @@ CREATE TABLE productos_maestros (
     marca_id UUID NOT NULL REFERENCES marcas(id),
     material_id UUID NOT NULL REFERENCES materiales(id),
     tipo_id UUID NOT NULL REFERENCES tipos(id),
-    sistema_talla_id UUID NOT NULL REFERENCES sistemas_talla(id),
+    valor_talla_id UUID NOT NULL REFERENCES valores_talla(id),
     descripcion TEXT,
     activo BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 
     -- Constraints (RN-037, RN-039)
-    CONSTRAINT productos_maestros_unique_combination UNIQUE(marca_id, material_id, tipo_id, sistema_talla_id),
+    CONSTRAINT productos_maestros_unique_combination UNIQUE(marca_id, material_id, tipo_id, valor_talla_id),
     CONSTRAINT productos_maestros_descripcion_length CHECK (descripcion IS NULL OR LENGTH(descripcion) <= 200)
 );
 
@@ -543,7 +543,7 @@ CREATE TABLE productos_maestros (
 CREATE INDEX idx_productos_maestros_marca ON productos_maestros(marca_id);
 CREATE INDEX idx_productos_maestros_material ON productos_maestros(material_id);
 CREATE INDEX idx_productos_maestros_tipo ON productos_maestros(tipo_id);
-CREATE INDEX idx_productos_maestros_sistema_talla ON productos_maestros(sistema_talla_id);
+CREATE INDEX idx_productos_maestros_valor_talla ON productos_maestros(valor_talla_id);
 CREATE INDEX idx_productos_maestros_activo ON productos_maestros(activo);
 CREATE INDEX idx_productos_maestros_created_at ON productos_maestros(created_at DESC);
 
@@ -558,7 +558,7 @@ COMMENT ON TABLE productos_maestros IS 'E002-HU-006: Productos maestros (definic
 COMMENT ON COLUMN productos_maestros.marca_id IS 'Referencia a marca activa (inmutable si tiene artículos) - RN-037, RN-038';
 COMMENT ON COLUMN productos_maestros.material_id IS 'Referencia a material activo (inmutable si tiene artículos) - RN-037, RN-038';
 COMMENT ON COLUMN productos_maestros.tipo_id IS 'Referencia a tipo activo (inmutable si tiene artículos) - RN-037, RN-038';
-COMMENT ON COLUMN productos_maestros.sistema_talla_id IS 'Referencia a sistema de tallas activo (inmutable si tiene artículos) - RN-037, RN-038';
+COMMENT ON COLUMN productos_maestros.valor_talla_id IS 'Referencia a valor de talla específico (inmutable si tiene artículos) - RN-037, RN-038';
 COMMENT ON COLUMN productos_maestros.descripcion IS 'Descripción opcional (max 200 caracteres) - RN-039, RN-044';
 COMMENT ON COLUMN productos_maestros.activo IS 'Estado del producto maestro (soft delete) - RN-042';
 
@@ -631,6 +631,66 @@ COMMENT ON COLUMN articulos.activo IS 'Estado del artículo (soft delete) - RN-0
 ALTER TABLE articulos ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY authenticated_view_articulos ON articulos
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
+-- ============================================
+-- PASO 16: Tabla tipos_documento (E004-HU-001)
+-- ============================================
+
+-- ENUM para formato de documento
+CREATE TYPE tipo_documento_formato AS ENUM ('NUMERICO', 'ALFANUMERICO');
+
+COMMENT ON TYPE tipo_documento_formato IS 'E004-HU-001: Formato de validación del documento (NUMERICO o ALFANUMERICO)';
+
+CREATE TABLE tipos_documento (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    codigo TEXT NOT NULL,
+    nombre TEXT NOT NULL,
+    formato tipo_documento_formato NOT NULL,
+    longitud_minima INTEGER NOT NULL,
+    longitud_maxima INTEGER NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Constraints (RN-040, RN-041, RN-046)
+    CONSTRAINT tipos_documento_codigo_unique UNIQUE (codigo),
+    CONSTRAINT tipos_documento_codigo_length CHECK (LENGTH(codigo) <= 10 AND LENGTH(codigo) > 0),
+    CONSTRAINT tipos_documento_codigo_no_spaces CHECK (codigo !~ '\s'),
+    CONSTRAINT tipos_documento_codigo_uppercase CHECK (codigo = UPPER(codigo)),
+    CONSTRAINT tipos_documento_nombre_unique UNIQUE (nombre),
+    CONSTRAINT tipos_documento_nombre_length CHECK (LENGTH(nombre) <= 100 AND LENGTH(nombre) > 0),
+    CONSTRAINT tipos_documento_longitud_minima_positive CHECK (longitud_minima > 0),
+    CONSTRAINT tipos_documento_longitud_maxima_gte_minima CHECK (longitud_maxima >= longitud_minima)
+);
+
+-- Índices optimización
+CREATE INDEX idx_tipos_documento_codigo ON tipos_documento(codigo);
+CREATE INDEX idx_tipos_documento_nombre ON tipos_documento(LOWER(nombre));
+CREATE INDEX idx_tipos_documento_activo ON tipos_documento(activo);
+CREATE INDEX idx_tipos_documento_created_at ON tipos_documento(created_at DESC);
+
+-- Trigger updated_at
+CREATE TRIGGER update_tipos_documento_updated_at
+    BEFORE UPDATE ON tipos_documento
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Comentarios
+COMMENT ON TABLE tipos_documento IS 'E004-HU-001: Catálogo de tipos de documentos de identidad con validaciones por formato y longitud - RN-040, RN-041, RN-045, RN-046';
+COMMENT ON COLUMN tipos_documento.codigo IS 'Código único del tipo de documento (max 10 caracteres, mayúsculas, sin espacios, case-insensitive) - RN-040, RN-046';
+COMMENT ON COLUMN tipos_documento.nombre IS 'Nombre del tipo de documento (único case-insensitive, max 100 caracteres) - RN-046';
+COMMENT ON COLUMN tipos_documento.formato IS 'Formato de validación: NUMERICO (solo dígitos 0-9) o ALFANUMERICO (letras y números) - RN-041, RN-044';
+COMMENT ON COLUMN tipos_documento.longitud_minima IS 'Longitud mínima del documento (mayor a 0) - RN-041, RN-046';
+COMMENT ON COLUMN tipos_documento.longitud_maxima IS 'Longitud máxima del documento (mayor o igual a mínima) - RN-041, RN-046';
+COMMENT ON COLUMN tipos_documento.activo IS 'Estado del tipo de documento (soft delete, controla visibilidad en selectores) - RN-042';
+
+-- RLS Policy
+ALTER TABLE tipos_documento ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY authenticated_view_tipos_documento ON tipos_documento
     FOR SELECT
     TO authenticated
     USING (true);

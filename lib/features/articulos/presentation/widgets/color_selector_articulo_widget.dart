@@ -163,7 +163,7 @@ class _ColorSelectorArticuloWidgetState extends State<ColorSelectorArticuloWidge
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          initialValue: _idsSeleccionados.isNotEmpty ? _idsSeleccionados.first : null,
+          value: _idsSeleccionados.isNotEmpty ? _idsSeleccionados.first : null,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -342,7 +342,7 @@ class _ColorSelectorArticuloWidgetState extends State<ColorSelectorArticuloWidge
                       widget.onColoresChanged(_idsSeleccionados);
                     }
                   },
-                  initialValue: null,
+                  value: null,
                 ),
               ],
             ],

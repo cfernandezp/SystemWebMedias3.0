@@ -232,19 +232,32 @@ flutter test              # (si existen)
 ### Estructura Clean Architecture
 
 #### Archivos Creados/Modificados
+
+**Domain** (`lib/features/[modulo]/domain/`):
+- `entities/[entity]_entity.dart`: Entidad de negocio inmutable
+
+**⚠️ SI USAS ENUMS CUSTOM, DOCUMENTA ASÍ PARA @ux-ui-expert**:
+```markdown
+**entities/[entity]_entity.dart**:
+- Enum `EnumName`: valores(`valor1`, `valor2`)
+  - Métodos: `.toBackendString()`, `.fromString(String)`
+  - Ejemplo uso: `formato.toBackendString()` → `'VALOR_BACKEND'`
+```
+
 **Models** (`lib/features/[modulo]/data/models/`):
-- `[entity]_model.dart`: Mapping explícito snake_case ↔ camelCase
+- `[entity]_model.dart`: Mapping snake_case ↔ camelCase
+  - `campo_snake` → `campoSnake`
 
 **DataSources** (`lib/features/[modulo]/data/datasources/`):
-- `[modulo]_remote_datasource.dart`: Llamadas RPC a funciones backend
+- `[modulo]_remote_datasource.dart`: Llamadas RPC
+  - Hints: `duplicate_x` → Exception
 
 **Repositories** (`lib/features/[modulo]/data/repositories/`):
-- `[modulo]_repository_impl.dart`: Either<Failure, Success> pattern
+- `[modulo]_repository_impl.dart`: Either<Failure, Success>
 
 **Bloc** (`lib/features/[modulo]/presentation/bloc/`):
-- `[modulo]_bloc.dart`: States (Loading/Success/Error) + Events
-- `[modulo]_event.dart`: Eventos de UI
-- `[modulo]_state.dart`: Estados del sistema
+- `[modulo]_bloc.dart`: States + Events
+- `[modulo]_event.dart`, `[modulo]_state.dart`
 
 **Pages** (`lib/features/[modulo]/presentation/pages/`):
 - `[entity]_list_page.dart`: Lista con BlocConsumer pattern

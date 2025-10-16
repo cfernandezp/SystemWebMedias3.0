@@ -13,6 +13,7 @@ import 'package:equatable/equatable.dart';
 /// - `descripcion` → `descripcion`
 /// - `activo` → `activo`
 /// - `valores_count` → `valoresCount`
+/// - `valores` → `valores` (array de strings)
 /// - `created_at` → `createdAt`
 /// - `updated_at` → `updatedAt`
 class SistemaTallaModel extends Equatable {
@@ -22,6 +23,7 @@ class SistemaTallaModel extends Equatable {
   final String? descripcion;
   final bool activo;
   final int valoresCount;
+  final List<String> valores;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -32,12 +34,20 @@ class SistemaTallaModel extends Equatable {
     this.descripcion,
     required this.activo,
     required this.valoresCount,
+    required this.valores,
     required this.createdAt,
     required this.updatedAt,
   });
 
   /// Crea SistemaTallaModel desde JSON (snake_case → camelCase)
   factory SistemaTallaModel.fromJson(Map<String, dynamic> json) {
+    List<String> valoresList = [];
+    if (json['valores'] != null) {
+      if (json['valores'] is List) {
+        valoresList = (json['valores'] as List).map((e) => e.toString()).toList();
+      }
+    }
+
     return SistemaTallaModel(
       id: json['id'] as String,
       nombre: json['nombre'] as String,
@@ -45,6 +55,7 @@ class SistemaTallaModel extends Equatable {
       descripcion: json['descripcion'] as String?,
       activo: json['activo'] as bool? ?? true,
       valoresCount: json['valores_count'] as int? ?? 0,         // ⭐ snake_case → camelCase
+      valores: valoresList,                                      // ⭐ Lista de valores de tallas
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),                                      // ⭐ snake_case → camelCase
@@ -62,6 +73,7 @@ class SistemaTallaModel extends Equatable {
       'tipo_sistema': tipoSistema,                          // ⭐ camelCase → snake_case
       'descripcion': descripcion,
       'activo': activo,
+      'valores': valores,                                   // ⭐ Lista de valores
       'created_at': createdAt.toIso8601String(),            // ⭐ camelCase → snake_case
       'updated_at': updatedAt.toIso8601String(),            // ⭐ camelCase → snake_case
     };
@@ -75,6 +87,7 @@ class SistemaTallaModel extends Equatable {
     String? descripcion,
     bool? activo,
     int? valoresCount,
+    List<String>? valores,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -85,6 +98,7 @@ class SistemaTallaModel extends Equatable {
       descripcion: descripcion ?? this.descripcion,
       activo: activo ?? this.activo,
       valoresCount: valoresCount ?? this.valoresCount,
+      valores: valores ?? this.valores,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -98,6 +112,7 @@ class SistemaTallaModel extends Equatable {
         descripcion,
         activo,
         valoresCount,
+        valores,
         createdAt,
         updatedAt,
       ];

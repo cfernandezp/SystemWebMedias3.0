@@ -143,6 +143,30 @@ BEGIN
     END IF;
 END $$;
 
+-- Sistema NUMERO_INDIVIDUAL
+INSERT INTO sistemas_talla (nombre, tipo_sistema, descripcion, activo) VALUES
+    ('Tallas Numéricas Individuales', 'NUMERO_INDIVIDUAL', 'Tallas numéricas individuales (no rangos)', true)
+ON CONFLICT (nombre) DO NOTHING;
+
+DO $$
+DECLARE
+    v_sistema_id UUID;
+    v_orden INTEGER := 0;
+    v_talla INTEGER;
+BEGIN
+    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Individuales';
+
+    IF v_sistema_id IS NOT NULL THEN
+        FOR v_talla IN 35..46
+        LOOP
+            v_orden := v_orden + 1;
+            INSERT INTO valores_talla (sistema_talla_id, valor, orden, activo)
+            VALUES (v_sistema_id, v_talla::TEXT, v_orden, true)
+            ON CONFLICT (sistema_talla_id, valor) DO NOTHING;
+        END LOOP;
+    END IF;
+END $$;
+
 -- ============================================
 -- PASO 2D: Colores de ejemplo (E002-HU-005)
 -- ============================================
@@ -179,19 +203,25 @@ DECLARE
     v_marca_id UUID;
     v_material_id UUID;
     v_tipo_id UUID;
-    v_sistema_id UUID;
+    v_valor_talla_id UUID;
     v_productos_creados INTEGER := 0;
 BEGIN
     -- Producto 1: Adidas + Algodón + Fútbol + Número
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'ADS' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'ALG' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'FUT' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas Numéricas Europeas'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Línea deportiva profesional', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Línea deportiva profesional', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -199,12 +229,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'NIK' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'MIC' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'RUN' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas Numéricas Europeas'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Para corredores exigentes', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Para corredores exigentes', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -212,12 +248,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'PUM' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'LYC' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'COM' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas por Letras Estándar'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Máxima compresión deportiva', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Máxima compresión deportiva', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -225,12 +267,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'UMB' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'POL' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'EJE' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas Numéricas Europeas'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Comodidad ejecutiva premium', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Comodidad ejecutiva premium', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -238,12 +286,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'REE' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'BAM' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'INV' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Talla Única Estándar' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Talla Única Estándar'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Tecnología antibacterial avanzada', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Tecnología antibacterial avanzada', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -251,12 +305,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'NBL' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'NYL' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'TOB' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas por Letras Estándar'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Ajuste perfecto tobillo', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Ajuste perfecto tobillo', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -264,12 +324,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'ADS' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'MER' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'TER' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas por Letras Estándar'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Protección térmica invierno', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Protección térmica invierno', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -277,12 +343,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'NIK' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'SED' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'EJE' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas Numéricas Europeas'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Elegancia formal diaria', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Elegancia formal diaria', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -290,12 +362,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'PUM' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'ALG' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'MCA' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas Numéricas Europeas'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Comodidad casual diaria', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Comodidad casual diaria', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -303,12 +381,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'UMB' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'NYL' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'FUT' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas Numéricas Europeas'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Resistencia extrema cancha', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Resistencia extrema cancha', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -316,12 +400,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'REE' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'POL' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'RUN' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas Numéricas Europeas'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Velocidad y rendimiento', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Velocidad y rendimiento', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -329,12 +419,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'NBL' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'MIC' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'LAR' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas por Letras Estándar'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Cobertura total pierna', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Cobertura total pierna', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -342,12 +438,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'ADS' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'BAM' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'TOB' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas Numéricas Europeas'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Ecológico antibacterial', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Ecológico antibacterial', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -355,12 +457,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'NIK' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'LYC' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'COM' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas por Letras Estándar' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas por Letras Estándar'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Tecnología de compresión', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Tecnología de compresión', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -368,12 +476,18 @@ BEGIN
     SELECT id INTO v_marca_id FROM marcas WHERE codigo = 'PUM' LIMIT 1;
     SELECT id INTO v_material_id FROM materiales WHERE codigo = 'MER' LIMIT 1;
     SELECT id INTO v_tipo_id FROM tipos WHERE codigo = 'TER' LIMIT 1;
-    SELECT id INTO v_sistema_id FROM sistemas_talla WHERE nombre = 'Tallas Numéricas Europeas' LIMIT 1;
+    SELECT vt.id INTO v_valor_talla_id
+    FROM valores_talla vt
+    JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE st.nombre = 'Tallas Numéricas Europeas'
+      AND vt.activo = true
+    ORDER BY vt.orden ASC
+    LIMIT 1;
 
-    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_sistema_id IS NOT NULL THEN
-        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-        VALUES (v_marca_id, v_material_id, v_tipo_id, v_sistema_id, 'Calor natural regulado', true)
-        ON CONFLICT (marca_id, material_id, tipo_id, sistema_talla_id) DO NOTHING;
+    IF v_marca_id IS NOT NULL AND v_material_id IS NOT NULL AND v_tipo_id IS NOT NULL AND v_valor_talla_id IS NOT NULL THEN
+        INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+        VALUES (v_marca_id, v_material_id, v_tipo_id, v_valor_talla_id, 'Calor natural regulado', true)
+        ON CONFLICT (marca_id, material_id, tipo_id, valor_talla_id) DO NOTHING;
         v_productos_creados := v_productos_creados + 1;
     END IF;
 
@@ -1240,5 +1354,43 @@ BEGIN
     RAISE NOTICE 'admin@test.com / asdasd211';
     RAISE NOTICE 'gerente@test.com / asdasd211';
     RAISE NOTICE 'vendedor@test.com / asdasd211';
+    RAISE NOTICE '========================================';
+END $$;
+
+-- ============================================
+-- PASO 9: Tipos de Documento de ejemplo (E004-HU-001)
+-- ============================================
+-- Tipos de documento iniciales para Perú según RN-045
+
+BEGIN;
+
+INSERT INTO tipos_documento (codigo, nombre, formato, longitud_minima, longitud_maxima, activo) VALUES
+    ('DNI', 'Documento Nacional de Identidad', 'NUMERICO', 8, 8, true),
+    ('RUC', 'Registro Único de Contribuyente', 'NUMERICO', 11, 11, true),
+    ('CE', 'Carnet de Extranjería', 'ALFANUMERICO', 9, 9, true),
+    ('PAS', 'Pasaporte', 'ALFANUMERICO', 6, 12, true)
+ON CONFLICT (codigo) DO NOTHING;
+
+COMMIT;
+
+-- ============================================
+-- PASO 10: Resumen Final Actualizado
+-- ============================================
+
+DO $$
+DECLARE
+    v_tipos_documento INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO v_tipos_documento FROM tipos_documento;
+
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'SEED DATA E004-HU-001 COMPLETADO';
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'Tipos de documento: %', v_tipos_documento;
+    RAISE NOTICE 'Configuración inicial para Perú:';
+    RAISE NOTICE '  - DNI: 8 dígitos numéricos';
+    RAISE NOTICE '  - RUC: 11 dígitos numéricos';
+    RAISE NOTICE '  - CE: 9 caracteres alfanuméricos';
+    RAISE NOTICE '  - PAS: 6-12 caracteres alfanuméricos';
     RAISE NOTICE '========================================';
 END $$;

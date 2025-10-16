@@ -216,3 +216,26 @@ class ArticuloHasStockException extends AppException {
   ArticuloHasStockException([super.message = 'No se puede eliminar. El artículo tiene stock en tiendas', super.statusCode = 400]);
 }
 
+/// E004-HU-001: Catálogo de Tipos de Documento exceptions
+class TipoDocumentoNotFoundException extends AppException {
+  TipoDocumentoNotFoundException([super.message = 'Tipo de documento no encontrado', super.statusCode = 404]);
+}
+
+class TipoEnUsoException extends AppException {
+  final int? personasCount;
+
+  TipoEnUsoException(
+    String message,
+    int statusCode, {
+    this.personasCount,
+  }) : super(message, statusCode);
+}
+
+class InvalidFormatException extends AppException {
+  InvalidFormatException([super.message = 'Formato de documento inválido', super.statusCode = 400]);
+}
+
+class InvalidLengthException extends AppException {
+  InvalidLengthException([super.message = 'Longitud de documento inválida', super.statusCode = 400]);
+}
+

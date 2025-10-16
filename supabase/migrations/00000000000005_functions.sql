@@ -289,6 +289,7 @@ BEGIN
                 'id', v_user.id,
                 'email', v_user.email,
                 'nombre_completo', v_nombre_completo,
+                'rol', v_user.raw_user_meta_data->>'rol',
                 'email_verificado', v_user.email_confirmed_at IS NOT NULL
             ),
             'message', 'Bienvenido ' || v_nombre_completo
@@ -2396,6 +2397,12 @@ BEGIN
                 WHERE v.sistema_talla_id = s.id
                   AND v.activo = true
             ),
+            'valores', (
+                SELECT array_agg(v.valor ORDER BY v.orden)
+                FROM valores_talla v
+                WHERE v.sistema_talla_id = s.id
+                  AND v.activo = true
+            ),
             'created_at', s.created_at,
             'updated_at', s.updated_at
         ) ORDER BY s.nombre ASC
@@ -3981,7 +3988,7 @@ COMMENT ON FUNCTION filtrar_productos_por_combinacion IS 'E002-HU-005: Filtra pr
 -- Función 1: validar_combinacion_comercial
 CREATE OR REPLACE FUNCTION validar_combinacion_comercial(
     p_tipo_id UUID,
-    p_sistema_talla_id UUID
+    p_valor_talla_id UUID
 ) RETURNS JSON AS $$
 DECLARE
     v_tipo_nombre TEXT;
@@ -3999,14 +4006,15 @@ BEGIN
         RAISE EXCEPTION 'Tipo no encontrado';
     END IF;
 
-    -- Validar sistema existe
-    SELECT tipo_sistema INTO v_sistema_tipo
-    FROM sistemas_talla
-    WHERE id = p_sistema_talla_id;
+    -- Validar valor_talla existe y obtener sistema indirectamente
+    SELECT st.tipo_sistema INTO v_sistema_tipo
+    FROM valores_talla vt
+    INNER JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
+    WHERE vt.id = p_valor_talla_id;
 
     IF v_sistema_tipo IS NULL THEN
-        v_error_hint := 'sistema_not_found';
-        RAISE EXCEPTION 'Sistema de tallas no encontrado';
+        v_error_hint := 'valor_talla_not_found';
+        RAISE EXCEPTION 'Valor de talla no encontrado';
     END IF;
 
     -- Validaciones combinaciones comerciales (RN-040)
@@ -4049,14 +4057,14 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-COMMENT ON FUNCTION validar_combinacion_comercial IS 'E002-HU-006: Valida combinaciones comerciales tipo + sistema tallas (advertencias no bloqueantes) - CA-005, RN-040';
+COMMENT ON FUNCTION validar_combinacion_comercial IS 'E002-HU-006: Valida combinaciones comerciales tipo + valor_talla (obtiene sistema indirectamente) - CA-005, RN-040';
 
 -- Función 2: crear_producto_maestro
 CREATE OR REPLACE FUNCTION crear_producto_maestro(
     p_marca_id UUID,
     p_material_id UUID,
     p_tipo_id UUID,
-    p_sistema_talla_id UUID,
+    p_valor_talla_id UUID,
     p_descripcion TEXT DEFAULT NULL
 ) RETURNS JSON AS $$
 DECLARE
@@ -4064,10 +4072,11 @@ DECLARE
     v_marca_activo BOOLEAN;
     v_material_activo BOOLEAN;
     v_tipo_activo BOOLEAN;
-    v_sistema_activo BOOLEAN;
+    v_talla_activo BOOLEAN;
     v_exists_activo BOOLEAN;
     v_exists_inactivo UUID;
     v_nombre_completo TEXT;
+    v_valor_talla TEXT;
     v_warnings TEXT[] := ARRAY[]::TEXT[];
     v_error_hint TEXT;
 BEGIN
@@ -4077,15 +4086,39 @@ BEGIN
         RAISE EXCEPTION 'Descripción excede 200 caracteres';
     END IF;
 
+    -- Validar valor_talla existe y está activo
+    SELECT vt.activo, vt.valor INTO v_talla_activo, v_valor_talla
+    FROM valores_talla vt
+    WHERE vt.id = p_valor_talla_id;
+
+    IF v_talla_activo IS NULL THEN
+        v_error_hint := 'valor_talla_not_found';
+        RAISE EXCEPTION 'Valor de talla no encontrado';
+    END IF;
+
+    IF v_talla_activo = false THEN
+        v_error_hint := 'inactive_catalog';
+        RAISE EXCEPTION 'El valor de talla está inactivo. Reactívelo primero';
+    END IF;
+
     -- Validar catálogos activos (RN-038)
     SELECT activo INTO v_marca_activo FROM marcas WHERE id = p_marca_id;
     SELECT activo INTO v_material_activo FROM materiales WHERE id = p_material_id;
     SELECT activo INTO v_tipo_activo FROM tipos WHERE id = p_tipo_id;
-    SELECT activo INTO v_sistema_activo FROM sistemas_talla WHERE id = p_sistema_talla_id;
+
+    IF v_marca_activo IS NULL THEN
+        v_error_hint := 'marca_not_found';
+        RAISE EXCEPTION 'Marca no encontrada';
+    END IF;
 
     IF v_marca_activo = false THEN
         v_error_hint := 'inactive_catalog';
         RAISE EXCEPTION 'La marca está inactiva. Reactívela primero';
+    END IF;
+
+    IF v_material_activo IS NULL THEN
+        v_error_hint := 'material_not_found';
+        RAISE EXCEPTION 'Material no encontrado';
     END IF;
 
     IF v_material_activo = false THEN
@@ -4093,29 +4126,29 @@ BEGIN
         RAISE EXCEPTION 'El material está inactivo. Reactívelo primero';
     END IF;
 
+    IF v_tipo_activo IS NULL THEN
+        v_error_hint := 'tipo_not_found';
+        RAISE EXCEPTION 'Tipo no encontrado';
+    END IF;
+
     IF v_tipo_activo = false THEN
         v_error_hint := 'inactive_catalog';
         RAISE EXCEPTION 'El tipo está inactivo. Reactívelo primero';
     END IF;
 
-    IF v_sistema_activo = false THEN
-        v_error_hint := 'inactive_catalog';
-        RAISE EXCEPTION 'El sistema de tallas está inactivo. Reactívelo primero';
-    END IF;
-
-    -- Validar combinación única (RN-037)
+    -- Validar combinación única (RN-037 CORREGIDO)
     SELECT EXISTS(
         SELECT 1 FROM productos_maestros
         WHERE marca_id = p_marca_id
         AND material_id = p_material_id
         AND tipo_id = p_tipo_id
-        AND sistema_talla_id = p_sistema_talla_id
+        AND valor_talla_id = p_valor_talla_id
         AND activo = true
     ) INTO v_exists_activo;
 
     IF v_exists_activo THEN
         v_error_hint := 'duplicate_combination';
-        RAISE EXCEPTION 'Ya existe un producto activo con esta combinación';
+        RAISE EXCEPTION 'Ya existe un producto activo con esta combinación (marca + material + tipo + talla)';
     END IF;
 
     -- Verificar si existe inactivo (CA-016)
@@ -4124,19 +4157,18 @@ BEGIN
     WHERE marca_id = p_marca_id
     AND material_id = p_material_id
     AND tipo_id = p_tipo_id
-    AND sistema_talla_id = p_sistema_talla_id
+    AND valor_talla_id = p_valor_talla_id
     AND activo = false
     LIMIT 1;
 
     IF v_exists_inactivo IS NOT NULL THEN
         -- Construir nombre completo para response
-        SELECT ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || st.nombre
+        SELECT ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || v_valor_talla
         INTO v_nombre_completo
-        FROM marcas ma, materiales mat, tipos t, sistemas_talla st
+        FROM marcas ma, materiales mat, tipos t
         WHERE ma.id = p_marca_id
         AND mat.id = p_material_id
-        AND t.id = p_tipo_id
-        AND st.id = p_sistema_talla_id;
+        AND t.id = p_tipo_id;
 
         v_error_hint := 'duplicate_combination_inactive';
         RETURN json_build_object(
@@ -4155,25 +4187,24 @@ BEGIN
     DECLARE
         v_validacion JSON;
     BEGIN
-        SELECT validar_combinacion_comercial(p_tipo_id, p_sistema_talla_id) INTO v_validacion;
+        SELECT validar_combinacion_comercial(p_tipo_id, p_valor_talla_id) INTO v_validacion;
         IF (v_validacion->'data'->>'has_warnings')::BOOLEAN THEN
             SELECT ARRAY(SELECT json_array_elements_text(v_validacion->'data'->'warnings')) INTO v_warnings;
         END IF;
     END;
 
     -- Crear producto maestro
-    INSERT INTO productos_maestros (marca_id, material_id, tipo_id, sistema_talla_id, descripcion, activo)
-    VALUES (p_marca_id, p_material_id, p_tipo_id, p_sistema_talla_id, p_descripcion, true)
+    INSERT INTO productos_maestros (marca_id, material_id, tipo_id, valor_talla_id, descripcion, activo)
+    VALUES (p_marca_id, p_material_id, p_tipo_id, p_valor_talla_id, p_descripcion, true)
     RETURNING id INTO v_producto_id;
 
     -- Construir nombre completo
-    SELECT ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || st.nombre
+    SELECT ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || v_valor_talla
     INTO v_nombre_completo
-    FROM marcas ma, materiales mat, tipos t, sistemas_talla st
+    FROM marcas ma, materiales mat, tipos t
     WHERE ma.id = p_marca_id
     AND mat.id = p_material_id
-    AND t.id = p_tipo_id
-    AND st.id = p_sistema_talla_id;
+    AND t.id = p_tipo_id;
 
     -- Respuesta exitosa
     RETURN json_build_object(
@@ -4198,7 +4229,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-COMMENT ON FUNCTION crear_producto_maestro IS 'E002-HU-006: Crea producto maestro con validaciones unicidad y catálogos activos - CA-006, CA-016, RN-037, RN-038, RN-039, RN-040';
+COMMENT ON FUNCTION crear_producto_maestro IS 'E002-HU-006: Crea producto maestro con UN SOLO valor_talla_id - CA-006, CA-016, RN-037, RN-038, RN-039, RN-040';
 
 -- Función 3: listar_productos_maestros
 CREATE OR REPLACE FUNCTION listar_productos_maestros(
@@ -4227,33 +4258,42 @@ BEGIN
             pm.tipo_id,
             t.nombre as tipo_nombre,
             t.codigo as tipo_codigo,
-            pm.sistema_talla_id,
-            st.nombre as sistema_talla_nombre,
-            st.tipo_sistema as sistema_talla_tipo,
             pm.descripcion,
             pm.activo,
             0 as articulos_activos,
             0 as articulos_totales,
-            CASE WHEN (ma.activo = false OR mat.activo = false OR t.activo = false OR st.activo = false)
+            CASE WHEN (ma.activo = false OR mat.activo = false OR t.activo = false OR vt.activo = false)
                  THEN true ELSE false END as tiene_catalogos_inactivos,
-            ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || st.nombre as nombre_completo,
+            ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || vt.valor as nombre_completo,
+            json_build_object(
+                'id', vt.id,
+                'valor', vt.valor,
+                'orden', vt.orden,
+                'sistema_talla', json_build_object(
+                    'id', st.id,
+                    'nombre', st.nombre,
+                    'tipo_sistema', st.tipo_sistema
+                )
+            ) as valor_talla,
             pm.created_at,
             pm.updated_at
         FROM productos_maestros pm
         INNER JOIN marcas ma ON pm.marca_id = ma.id
         INNER JOIN materiales mat ON pm.material_id = mat.id
         INNER JOIN tipos t ON pm.tipo_id = t.id
-        INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+        INNER JOIN valores_talla vt ON pm.valor_talla_id = vt.id
+        INNER JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
         WHERE (p_marca_id IS NULL OR pm.marca_id = p_marca_id)
         AND (p_material_id IS NULL OR pm.material_id = p_material_id)
         AND (p_tipo_id IS NULL OR pm.tipo_id = p_tipo_id)
-        AND (p_sistema_talla_id IS NULL OR pm.sistema_talla_id = p_sistema_talla_id)
+        AND (p_sistema_talla_id IS NULL OR st.id = p_sistema_talla_id)
         AND (p_activo IS NULL OR pm.activo = p_activo)
         AND (p_search_text IS NULL OR
              LOWER(pm.descripcion) LIKE LOWER('%' || p_search_text || '%') OR
              LOWER(ma.nombre) LIKE LOWER('%' || p_search_text || '%') OR
              LOWER(mat.nombre) LIKE LOWER('%' || p_search_text || '%') OR
              LOWER(t.nombre) LIKE LOWER('%' || p_search_text || '%') OR
+             LOWER(vt.valor) LIKE LOWER('%' || p_search_text || '%') OR
              LOWER(st.nombre) LIKE LOWER('%' || p_search_text || '%')
         )
         ORDER BY pm.created_at DESC
@@ -4277,7 +4317,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-COMMENT ON FUNCTION listar_productos_maestros IS 'E002-HU-006: Lista productos maestros con filtros y detección catálogos inactivos - CA-009, CA-010, RN-038, RN-043';
+COMMENT ON FUNCTION listar_productos_maestros IS 'E002-HU-006: Lista productos maestros con valor_talla individual - CA-009, CA-010, RN-038, RN-043';
 
 -- Función 4: editar_producto_maestro
 CREATE OR REPLACE FUNCTION editar_producto_maestro(
@@ -4285,7 +4325,7 @@ CREATE OR REPLACE FUNCTION editar_producto_maestro(
     p_marca_id UUID DEFAULT NULL,
     p_material_id UUID DEFAULT NULL,
     p_tipo_id UUID DEFAULT NULL,
-    p_sistema_talla_id UUID DEFAULT NULL,
+    p_valor_talla_id UUID DEFAULT NULL,
     p_descripcion TEXT DEFAULT NULL
 ) RETURNS JSON AS $$
 DECLARE
@@ -4301,10 +4341,10 @@ BEGIN
     -- Contar artículos derivados (preparado para HU-007)
     -- En el futuro: SELECT COUNT(*) INTO v_articulos_totales FROM articulos WHERE producto_maestro_id = p_producto_id;
 
-    -- Validación RN-044: Restricciones según artículos
+    -- Validación RN-044: Si tiene artículos, NO permitir cambiar valor_talla_id
     IF v_articulos_totales > 0 THEN
         -- Solo permitir editar descripción
-        IF p_marca_id IS NOT NULL OR p_material_id IS NOT NULL OR p_tipo_id IS NOT NULL OR p_sistema_talla_id IS NOT NULL THEN
+        IF p_marca_id IS NOT NULL OR p_material_id IS NOT NULL OR p_tipo_id IS NOT NULL OR p_valor_talla_id IS NOT NULL THEN
             v_error_hint := 'has_derived_articles';
             RAISE EXCEPTION 'Este producto tiene % artículos derivados. Solo se puede editar la descripción', v_articulos_totales;
         END IF;
@@ -4337,9 +4377,9 @@ BEGIN
             RAISE EXCEPTION 'El tipo seleccionado está inactivo';
         END IF;
 
-        IF p_sistema_talla_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM sistemas_talla WHERE id = p_sistema_talla_id AND activo = true) THEN
+        IF p_valor_talla_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM valores_talla WHERE id = p_valor_talla_id AND activo = true) THEN
             v_error_hint := 'inactive_catalog';
-            RAISE EXCEPTION 'El sistema de tallas seleccionado está inactivo';
+            RAISE EXCEPTION 'El valor de talla seleccionado está inactivo';
         END IF;
 
         -- Actualizar todos los campos
@@ -4347,7 +4387,7 @@ BEGIN
         SET marca_id = COALESCE(p_marca_id, marca_id),
             material_id = COALESCE(p_material_id, material_id),
             tipo_id = COALESCE(p_tipo_id, tipo_id),
-            sistema_talla_id = COALESCE(p_sistema_talla_id, sistema_talla_id),
+            valor_talla_id = COALESCE(p_valor_talla_id, valor_talla_id),
             descripcion = COALESCE(p_descripcion, descripcion),
             updated_at = NOW()
         WHERE id = p_producto_id;
@@ -4368,17 +4408,24 @@ BEGIN
                 'tipo_id', pm.tipo_id,
                 'tipo_nombre', t.nombre,
                 'tipo_codigo', t.codigo,
-                'sistema_talla_id', pm.sistema_talla_id,
-                'sistema_talla_nombre', st.nombre,
-                'sistema_talla_tipo', st.tipo_sistema,
                 'descripcion', pm.descripcion,
                 'activo', pm.activo,
                 'articulos_activos', 0,
                 'articulos_totales', 0,
                 'tiene_catalogos_inactivos', (
-                    NOT ma.activo OR NOT mat.activo OR NOT t.activo OR NOT st.activo
+                    NOT ma.activo OR NOT mat.activo OR NOT t.activo OR NOT vt.activo
                 ),
-                'nombre_completo', ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || st.nombre,
+                'nombre_completo', ma.nombre || ' - ' || t.nombre || ' - ' || mat.nombre || ' - ' || vt.valor,
+                'valor_talla', json_build_object(
+                    'id', vt.id,
+                    'valor', vt.valor,
+                    'orden', vt.orden,
+                    'sistema_talla', json_build_object(
+                        'id', st.id,
+                        'nombre', st.nombre,
+                        'tipo_sistema', st.tipo_sistema
+                    )
+                ),
                 'created_at', pm.created_at,
                 'updated_at', pm.updated_at
             )
@@ -4386,7 +4433,8 @@ BEGIN
             INNER JOIN marcas ma ON pm.marca_id = ma.id
             INNER JOIN materiales mat ON pm.material_id = mat.id
             INNER JOIN tipos t ON pm.tipo_id = t.id
-            INNER JOIN sistemas_talla st ON pm.sistema_talla_id = st.id
+            INNER JOIN valores_talla vt ON pm.valor_talla_id = vt.id
+            INNER JOIN sistemas_talla st ON vt.sistema_talla_id = st.id
             WHERE pm.id = p_producto_id
         )
     );
@@ -4404,7 +4452,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-COMMENT ON FUNCTION editar_producto_maestro IS 'E002-HU-006: Edita producto maestro con restricciones según artículos derivados - CA-013, RN-044';
+COMMENT ON FUNCTION editar_producto_maestro IS 'E002-HU-006: Edita producto maestro con valor_talla_id individual - CA-013, RN-044';
 
 -- Función 5: eliminar_producto_maestro
 CREATE OR REPLACE FUNCTION eliminar_producto_maestro(
@@ -5561,5 +5609,430 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION crear_producto_completo IS 'E002-HU-008: Crea producto maestro + artículos de forma transaccional con validaciones RN-008-001 a RN-008-006';
+
+-- ============================================
+-- SECCIÓN: FUNCIONES TIPOS DE DOCUMENTO (E004-HU-001)
+-- ============================================
+
+-- E004-HU-001: listar_tipos_documento - Lista tipos de documento según estado
+CREATE OR REPLACE FUNCTION listar_tipos_documento(
+    p_incluir_inactivos BOOLEAN DEFAULT false
+)
+RETURNS JSON AS $$
+DECLARE
+    v_result JSON;
+    v_error_hint TEXT;
+BEGIN
+    -- Listar tipos de documento según estado
+    SELECT json_build_object(
+        'success', true,
+        'data', COALESCE(json_agg(
+            json_build_object(
+                'id', td.id,
+                'codigo', td.codigo,
+                'nombre', td.nombre,
+                'formato', td.formato,
+                'longitud_minima', td.longitud_minima,
+                'longitud_maxima', td.longitud_maxima,
+                'activo', td.activo,
+                'created_at', td.created_at,
+                'updated_at', td.updated_at
+            ) ORDER BY td.nombre
+        ), '[]'::json)
+    ) INTO v_result
+    FROM tipos_documento td
+    WHERE (p_incluir_inactivos = true OR td.activo = true);
+
+    RETURN v_result;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION listar_tipos_documento IS 'E004-HU-001: Lista tipos de documento activos o todos según parámetro - RN-042 (CA-001)';
+
+-- E004-HU-001: crear_tipo_documento - Crea nuevo tipo de documento con validaciones
+CREATE OR REPLACE FUNCTION crear_tipo_documento(
+    p_codigo TEXT,
+    p_nombre TEXT,
+    p_formato tipo_documento_formato,
+    p_longitud_minima INTEGER,
+    p_longitud_maxima INTEGER
+)
+RETURNS JSON AS $$
+DECLARE
+    v_tipo_id UUID;
+    v_result JSON;
+    v_error_hint TEXT;
+BEGIN
+    -- Validación: parámetros obligatorios
+    IF p_codigo IS NULL OR TRIM(p_codigo) = '' THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El código es obligatorio';
+    END IF;
+
+    IF p_nombre IS NULL OR TRIM(p_nombre) = '' THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El nombre es obligatorio';
+    END IF;
+
+    IF p_formato IS NULL THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El formato es obligatorio';
+    END IF;
+
+    -- Validación RN-040: Código único (case-insensitive)
+    IF EXISTS (
+        SELECT 1 FROM tipos_documento
+        WHERE LOWER(codigo) = LOWER(TRIM(p_codigo))
+    ) THEN
+        v_error_hint := 'duplicate_codigo';
+        RAISE EXCEPTION 'Ya existe un tipo de documento con el código "%"', UPPER(TRIM(p_codigo));
+    END IF;
+
+    -- Validación RN-040: Nombre único (case-insensitive)
+    IF EXISTS (
+        SELECT 1 FROM tipos_documento
+        WHERE LOWER(nombre) = LOWER(TRIM(p_nombre))
+    ) THEN
+        v_error_hint := 'duplicate_nombre';
+        RAISE EXCEPTION 'Ya existe un tipo de documento con el nombre "%"', TRIM(p_nombre);
+    END IF;
+
+    -- Validación RN-041: Longitud mínima mayor a 0
+    IF p_longitud_minima IS NULL OR p_longitud_minima <= 0 THEN
+        v_error_hint := 'invalid_length';
+        RAISE EXCEPTION 'La longitud mínima debe ser mayor a 0';
+    END IF;
+
+    -- Validación RN-041: Longitud máxima >= longitud mínima
+    IF p_longitud_maxima IS NULL OR p_longitud_maxima < p_longitud_minima THEN
+        v_error_hint := 'invalid_length';
+        RAISE EXCEPTION 'La longitud máxima debe ser mayor o igual a la longitud mínima';
+    END IF;
+
+    -- Crear tipo de documento
+    INSERT INTO tipos_documento (
+        codigo,
+        nombre,
+        formato,
+        longitud_minima,
+        longitud_maxima,
+        activo
+    )
+    VALUES (
+        UPPER(TRIM(p_codigo)),
+        TRIM(p_nombre),
+        p_formato,
+        p_longitud_minima,
+        p_longitud_maxima,
+        true
+    )
+    RETURNING id INTO v_tipo_id;
+
+    -- Retornar tipo creado
+    SELECT json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', td.id,
+            'codigo', td.codigo,
+            'nombre', td.nombre,
+            'formato', td.formato,
+            'longitud_minima', td.longitud_minima,
+            'longitud_maxima', td.longitud_maxima,
+            'activo', td.activo,
+            'created_at', td.created_at,
+            'updated_at', td.updated_at
+        ),
+        'message', 'Tipo de documento creado exitosamente'
+    ) INTO v_result
+    FROM tipos_documento td
+    WHERE td.id = v_tipo_id;
+
+    RETURN v_result;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION crear_tipo_documento IS 'E004-HU-001: Crea tipo de documento con validaciones RN-040, RN-041, RN-046 (CA-002, CA-003)';
+
+-- E004-HU-001: actualizar_tipo_documento - Actualiza tipo de documento existente
+CREATE OR REPLACE FUNCTION actualizar_tipo_documento(
+    p_id UUID,
+    p_codigo TEXT,
+    p_nombre TEXT,
+    p_formato tipo_documento_formato,
+    p_longitud_minima INTEGER,
+    p_longitud_maxima INTEGER,
+    p_activo BOOLEAN
+)
+RETURNS JSON AS $$
+DECLARE
+    v_result JSON;
+    v_error_hint TEXT;
+    v_codigo_actual TEXT;
+    v_nombre_actual TEXT;
+BEGIN
+    -- Validación: tipo debe existir
+    IF NOT EXISTS (SELECT 1 FROM tipos_documento WHERE id = p_id) THEN
+        v_error_hint := 'tipo_not_found';
+        RAISE EXCEPTION 'Tipo de documento no encontrado';
+    END IF;
+
+    -- Obtener código y nombre actuales
+    SELECT codigo, nombre INTO v_codigo_actual, v_nombre_actual
+    FROM tipos_documento
+    WHERE id = p_id;
+
+    -- Validación RN-040: Código único (case-insensitive) - excepto el actual
+    IF LOWER(TRIM(p_codigo)) != LOWER(v_codigo_actual) THEN
+        IF EXISTS (
+            SELECT 1 FROM tipos_documento
+            WHERE LOWER(codigo) = LOWER(TRIM(p_codigo))
+            AND id != p_id
+        ) THEN
+            v_error_hint := 'duplicate_codigo';
+            RAISE EXCEPTION 'Ya existe otro tipo de documento con el código "%"', UPPER(TRIM(p_codigo));
+        END IF;
+    END IF;
+
+    -- Validación RN-040: Nombre único (case-insensitive) - excepto el actual
+    IF LOWER(TRIM(p_nombre)) != LOWER(v_nombre_actual) THEN
+        IF EXISTS (
+            SELECT 1 FROM tipos_documento
+            WHERE LOWER(nombre) = LOWER(TRIM(p_nombre))
+            AND id != p_id
+        ) THEN
+            v_error_hint := 'duplicate_nombre';
+            RAISE EXCEPTION 'Ya existe otro tipo de documento con el nombre "%"', TRIM(p_nombre);
+        END IF;
+    END IF;
+
+    -- Validación RN-041: Longitud mínima mayor a 0
+    IF p_longitud_minima IS NULL OR p_longitud_minima <= 0 THEN
+        v_error_hint := 'invalid_length';
+        RAISE EXCEPTION 'La longitud mínima debe ser mayor a 0';
+    END IF;
+
+    -- Validación RN-041: Longitud máxima >= longitud mínima
+    IF p_longitud_maxima IS NULL OR p_longitud_maxima < p_longitud_minima THEN
+        v_error_hint := 'invalid_length';
+        RAISE EXCEPTION 'La longitud máxima debe ser mayor o igual a la longitud mínima';
+    END IF;
+
+    -- Actualizar tipo de documento
+    UPDATE tipos_documento
+    SET
+        codigo = UPPER(TRIM(p_codigo)),
+        nombre = TRIM(p_nombre),
+        formato = p_formato,
+        longitud_minima = p_longitud_minima,
+        longitud_maxima = p_longitud_maxima,
+        activo = p_activo
+    WHERE id = p_id;
+
+    -- Retornar tipo actualizado
+    SELECT json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', td.id,
+            'codigo', td.codigo,
+            'nombre', td.nombre,
+            'formato', td.formato,
+            'longitud_minima', td.longitud_minima,
+            'longitud_maxima', td.longitud_maxima,
+            'activo', td.activo,
+            'created_at', td.created_at,
+            'updated_at', td.updated_at
+        ),
+        'message', 'Tipo de documento actualizado exitosamente'
+    ) INTO v_result
+    FROM tipos_documento td
+    WHERE td.id = p_id;
+
+    RETURN v_result;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION actualizar_tipo_documento IS 'E004-HU-001: Actualiza tipo de documento con validaciones RN-040, RN-041 (CA-005)';
+
+-- E004-HU-001: eliminar_tipo_documento - Elimina tipo de documento si no está en uso
+CREATE OR REPLACE FUNCTION eliminar_tipo_documento(
+    p_id UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    v_result JSON;
+    v_error_hint TEXT;
+    v_personas_count INTEGER := 0;
+    v_tipo_nombre TEXT;
+BEGIN
+    -- Validación: tipo debe existir
+    SELECT nombre INTO v_tipo_nombre
+    FROM tipos_documento
+    WHERE id = p_id;
+
+    IF v_tipo_nombre IS NULL THEN
+        v_error_hint := 'tipo_not_found';
+        RAISE EXCEPTION 'Tipo de documento no encontrado';
+    END IF;
+
+    -- Validación RN-043: Verificar si hay personas asociadas
+    -- NOTA: La tabla personas NO existe aún, preparamos la validación para el futuro
+    -- Cuando exista la tabla personas, descomentar esta validación:
+    /*
+    SELECT COUNT(*) INTO v_personas_count
+    FROM personas
+    WHERE tipo_documento_id = p_id;
+
+    IF v_personas_count > 0 THEN
+        v_error_hint := 'tipo_en_uso';
+        RAISE EXCEPTION 'No se puede eliminar. Existen % personas con este tipo de documento. Puede desactivarlo.', v_personas_count;
+    END IF;
+    */
+
+    -- Si no hay personas asociadas, permitir eliminación
+    DELETE FROM tipos_documento
+    WHERE id = p_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_id,
+            'nombre', v_tipo_nombre
+        ),
+        'message', 'Tipo de documento eliminado exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION eliminar_tipo_documento IS 'E004-HU-001: Elimina tipo de documento si no tiene personas asociadas - RN-043 (CA-006)';
+
+-- E004-HU-001: validar_formato_documento - Valida formato de documento según tipo
+CREATE OR REPLACE FUNCTION validar_formato_documento(
+    p_tipo_documento_id UUID,
+    p_numero_documento TEXT
+)
+RETURNS JSON AS $$
+DECLARE
+    v_tipo_record RECORD;
+    v_error_hint TEXT;
+    v_longitud INTEGER;
+    v_es_numerico BOOLEAN;
+BEGIN
+    -- Validación: parámetros obligatorios
+    IF p_tipo_documento_id IS NULL THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El tipo de documento es obligatorio';
+    END IF;
+
+    IF p_numero_documento IS NULL OR TRIM(p_numero_documento) = '' THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El número de documento es obligatorio';
+    END IF;
+
+    -- Obtener tipo de documento
+    SELECT formato, longitud_minima, longitud_maxima, nombre
+    INTO v_tipo_record
+    FROM tipos_documento
+    WHERE id = p_tipo_documento_id AND activo = true;
+
+    IF v_tipo_record IS NULL THEN
+        v_error_hint := 'tipo_not_found';
+        RAISE EXCEPTION 'Tipo de documento no encontrado o inactivo';
+    END IF;
+
+    -- Validar longitud
+    v_longitud := LENGTH(TRIM(p_numero_documento));
+
+    IF v_longitud < v_tipo_record.longitud_minima OR v_longitud > v_tipo_record.longitud_maxima THEN
+        v_error_hint := 'invalid_length';
+        RAISE EXCEPTION 'El documento debe tener entre % y % caracteres',
+            v_tipo_record.longitud_minima,
+            v_tipo_record.longitud_maxima;
+    END IF;
+
+    -- Validación RN-044: Formato según tipo
+    IF v_tipo_record.formato = 'NUMERICO' THEN
+        -- Solo acepta dígitos (0-9)
+        IF TRIM(p_numero_documento) !~ '^[0-9]+$' THEN
+            v_error_hint := 'invalid_format';
+            RAISE EXCEPTION 'El documento debe contener solo dígitos (0-9)';
+        END IF;
+    ELSIF v_tipo_record.formato = 'ALFANUMERICO' THEN
+        -- Acepta letras y números (sin espacios ni caracteres especiales)
+        IF TRIM(p_numero_documento) !~ '^[A-Za-z0-9]+$' THEN
+            v_error_hint := 'invalid_format';
+            RAISE EXCEPTION 'El documento debe contener solo letras y números (sin espacios ni caracteres especiales)';
+        END IF;
+    END IF;
+
+    -- Validación exitosa
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'tipo_documento', v_tipo_record.nombre,
+            'numero_documento', TRIM(p_numero_documento),
+            'formato', v_tipo_record.formato,
+            'valido', true
+        ),
+        'message', 'Documento válido'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION validar_formato_documento IS 'E004-HU-001: Valida formato y longitud de documento según tipo - RN-044 (CA-004)';
 
 COMMIT;

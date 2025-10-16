@@ -56,6 +56,7 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
   String? _materialId;
   String? _tipoId;
   String? _sistemaId;
+  String? _valorTallaId;
   int _charCount = 0;
 
   bool get _isEditMode => widget.arguments?['mode'] == 'edit';
@@ -345,16 +346,149 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
         }
         if (state is SistemasTallaLoaded) {
           final activos = state.sistemas.where((s) => s.activo).toList();
-          return _buildDropdownField(
-            label: 'Sistema de Tallas *',
-            value: _sistemaId,
-            items: activos.map((s) => DropdownMenuItem(
-              value: s.id,
-              child: Text('${s.nombre} (${s.tipoSistema})'),
-            )).toList(),
-            onChanged: (_isEditMode && _articulosTotales > 0) ? null : (v) => setState(() => _sistemaId = v),
-            validator: (v) => v == null ? 'Campo requerido' : null,
-            enabled: !(_isEditMode && _articulosTotales > 0),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Sistema de Tallas *',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF374151),
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _sistemaId,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFF44336)),
+                  ),
+                  filled: true,
+                  fillColor: (_isEditMode && _articulosTotales > 0)
+                      ? const Color(0xFFF3F4F6)
+                      : Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                items: activos.map((s) {
+                  return DropdownMenuItem(
+                    value: s.id,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${s.nombre} (${s.tipoSistema})',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF374151),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (s.valores.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Tallas: ${s.valores.join(', ')}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF6B7280),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (_isEditMode && _articulosTotales > 0)
+                    ? null
+                    : (v) {
+                        setState(() {
+                          _sistemaId = v;
+                          _valorTallaId = null;
+                        });
+                      },
+                validator: (v) => v == null ? 'Campo requerido' : null,
+              ),
+            ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildDropdownValorTalla() {
+    return BlocBuilder<SistemasTallaBloc, SistemasTallaState>(
+      builder: (context, state) {
+        if (state is SistemasTallaLoaded) {
+          final sistema = state.sistemas.firstWhere(
+            (s) => s.id == _sistemaId,
+            orElse: () => state.sistemas.first,
+          );
+
+          if (sistema.valoresCount == 0) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3CD),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFFE082)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Color(0xFFFF9800)),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Este sistema de tallas no tiene valores disponibles.',
+                      style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          context.read<SistemasTallaBloc>().add(LoadSistemaTallaValoresEvent(_sistemaId!));
+
+          return BlocBuilder<SistemasTallaBloc, SistemasTallaState>(
+            buildWhen: (previous, current) => current is SistemaTallaValoresLoaded,
+            builder: (context, valoresState) {
+              if (valoresState is! SistemaTallaValoresLoaded) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final valores = valoresState.valores.where((v) => v.activo).toList()
+                ..sort((a, b) => a.orden.compareTo(b.orden));
+
+              return _buildDropdownField(
+                label: 'Valor de Talla *',
+                value: _valorTallaId,
+                items: valores.map((v) => DropdownMenuItem(value: v.id, child: Text(v.valor))).toList(),
+                onChanged: (_isEditMode && _articulosTotales > 0) ? null : (v) => setState(() => _valorTallaId = v),
+                validator: (v) => v == null ? 'Campo requerido' : null,
+                enabled: !(_isEditMode && _articulosTotales > 0),
+              );
+            },
           );
         }
         return const SizedBox.shrink();
@@ -383,7 +517,7 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          initialValue: value,
+          value: value,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -545,7 +679,12 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
     if (_isEditMode) {
       return _descripcionController.text != (widget.arguments?['producto']?['descripcion'] ?? '');
     }
-    return _marcaId != null || _materialId != null || _tipoId != null || _sistemaId != null || _descripcionController.text.isNotEmpty;
+    return _marcaId != null ||
+           _materialId != null ||
+           _tipoId != null ||
+           _sistemaId != null ||
+           _valorTallaId != null ||
+           _descripcionController.text.isNotEmpty;
   }
 
   void _showSnackbar(BuildContext context, String message, {required bool isError}) {

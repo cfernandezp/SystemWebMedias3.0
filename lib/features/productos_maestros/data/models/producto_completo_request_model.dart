@@ -24,14 +24,14 @@ class ProductoMaestroData extends Equatable {
   final String marcaId;
   final String materialId;
   final String tipoId;
-  final String sistemaTallaId;
+  final String valorTallaId;
   final String? descripcion;
 
   const ProductoMaestroData({
     required this.marcaId,
     required this.materialId,
     required this.tipoId,
-    required this.sistemaTallaId,
+    required this.valorTallaId,
     this.descripcion,
   });
 
@@ -40,13 +40,13 @@ class ProductoMaestroData extends Equatable {
       'marca_id': marcaId,
       'material_id': materialId,
       'tipo_id': tipoId,
-      'sistema_talla_id': sistemaTallaId,
+      'valor_talla_id': valorTallaId,
       if (descripcion != null) 'descripcion': descripcion,
     };
   }
 
   @override
-  List<Object?> get props => [marcaId, materialId, tipoId, sistemaTallaId, descripcion];
+  List<Object?> get props => [marcaId, materialId, tipoId, valorTallaId, descripcion];
 }
 
 class ArticuloData extends Equatable {

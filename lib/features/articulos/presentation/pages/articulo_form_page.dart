@@ -275,7 +275,7 @@ class _ArticuloFormViewState extends State<_ArticuloFormView> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                initialValue: _productoMaestroId,
+                value: _productoMaestroId,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),

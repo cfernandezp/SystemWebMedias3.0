@@ -224,3 +224,32 @@ class ProductoMaestroNotFoundFailure extends Failure {
   const ProductoMaestroNotFoundFailure([super.message = 'Producto maestro no encontrado']);
 }
 
+/// E004-HU-001: Catálogo de Tipos de Documento failures
+/// Tipo de documento no encontrado (404)
+class TipoDocumentoNotFoundFailure extends Failure {
+  const TipoDocumentoNotFoundFailure([super.message = 'Tipo de documento no encontrado']);
+}
+
+/// Tipo en uso (400)
+class TipoEnUsoFailure extends Failure {
+  final int? personasCount;
+
+  const TipoEnUsoFailure(
+    String message, {
+    this.personasCount,
+  }) : super(message);
+
+  @override
+  List<Object> get props => personasCount != null ? [message, personasCount!] : [message];
+}
+
+/// Formato inválido (400)
+class InvalidFormatFailure extends Failure {
+  const InvalidFormatFailure([super.message = 'Formato de documento inválido']);
+}
+
+/// Longitud inválida (400)
+class InvalidLengthFailure extends Failure {
+  const InvalidLengthFailure([super.message = 'Longitud de documento inválida']);
+}
+

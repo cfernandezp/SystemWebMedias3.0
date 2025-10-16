@@ -20,6 +20,8 @@ import 'package:system_web_medias/features/catalogos/presentation/bloc/tipos_sta
 import 'package:system_web_medias/features/catalogos/presentation/bloc/sistemas_talla/sistemas_talla_bloc.dart';
 import 'package:system_web_medias/features/catalogos/presentation/bloc/sistemas_talla/sistemas_talla_event.dart';
 import 'package:system_web_medias/features/catalogos/presentation/bloc/sistemas_talla/sistemas_talla_state.dart';
+import 'package:system_web_medias/shared/design_system/atoms/corporate_button.dart';
+import 'package:system_web_medias/shared/design_system/atoms/corporate_form_field.dart';
 
 class ProductoCreationExpertPage extends StatelessWidget {
   const ProductoCreationExpertPage({super.key});
@@ -129,6 +131,7 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
   String? _selectedMaterialId;
   String? _selectedTipoId;
   String? _selectedSistemaTallaId;
+  String? _selectedValorTallaId;
   List<ArticuloData> _articulos = [];
 
   @override
@@ -141,7 +144,8 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
     return _selectedMarcaId != null &&
         _selectedMaterialId != null &&
         _selectedTipoId != null &&
-        _selectedSistemaTallaId != null;
+        _selectedSistemaTallaId != null &&
+        _selectedValorTallaId != null;
   }
 
   void _submitForm() {
@@ -161,7 +165,7 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
         marcaId: _selectedMarcaId!,
         materialId: _selectedMaterialId!,
         tipoId: _selectedTipoId!,
-        sistemaTallaId: _selectedSistemaTallaId!,
+        valorTallaId: _selectedValorTallaId!,
         descripcion: _descripcionController.text.isEmpty ? null : _descripcionController.text,
       ),
       articulos: _articulos,
@@ -236,6 +240,8 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
                 _buildSistemaTallaDropdown(),
               ],
               const SizedBox(height: DesignSpacing.sm),
+              _buildValorTallaDropdown(),
+              const SizedBox(height: DesignSpacing.sm),
               _buildDescripcionField(),
             ],
           ),
@@ -251,9 +257,31 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
           final marcasActivas = state.marcas.where((m) => m.activo).toList();
           return DropdownButtonFormField<String>(
             value: _selectedMarcaId,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Marca *',
-              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Colors.white,
+              prefixIcon: const Icon(Icons.business),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.accent, width: 2.5),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.error, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: DesignSpacing.md,
+                vertical: DesignSpacing.md,
+              ),
             ),
             items: marcasActivas.map((marca) {
               return DropdownMenuItem(
@@ -276,9 +304,31 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
           final materialesActivos = state.materiales.where((m) => m.activo).toList();
           return DropdownButtonFormField<String>(
             value: _selectedMaterialId,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Material *',
-              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Colors.white,
+              prefixIcon: const Icon(Icons.layers),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.accent, width: 2.5),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.error, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: DesignSpacing.md,
+                vertical: DesignSpacing.md,
+              ),
             ),
             items: materialesActivos.map((material) {
               return DropdownMenuItem(
@@ -301,9 +351,31 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
           final tiposActivos = state.tipos.where((t) => t.activo).toList();
           return DropdownButtonFormField<String>(
             value: _selectedTipoId,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Tipo *',
-              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Colors.white,
+              prefixIcon: const Icon(Icons.category),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.accent, width: 2.5),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.error, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: DesignSpacing.md,
+                vertical: DesignSpacing.md,
+              ),
             ),
             items: tiposActivos.map((tipo) {
               return DropdownMenuItem(
@@ -326,9 +398,31 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
           final sistemasActivos = state.sistemas.where((s) => s.activo).toList();
           return DropdownButtonFormField<String>(
             value: _selectedSistemaTallaId,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Sistema Talla *',
-              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Colors.white,
+              prefixIcon: const Icon(Icons.straighten),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.accent, width: 2.5),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.error, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: DesignSpacing.md,
+                vertical: DesignSpacing.md,
+              ),
             ),
             items: sistemasActivos.map((sistema) {
               return DropdownMenuItem(
@@ -336,7 +430,12 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
                 child: Text(sistema.nombre),
               );
             }).toList(),
-            onChanged: (value) => setState(() => _selectedSistemaTallaId = value),
+            onChanged: (value) {
+              setState(() {
+                _selectedSistemaTallaId = value;
+                _selectedValorTallaId = null;
+              });
+            },
           );
         }
         return const LinearProgressIndicator();
@@ -344,16 +443,187 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
     );
   }
 
+  Widget _buildValorTallaDropdown() {
+    return BlocBuilder<SistemasTallaBloc, SistemasTallaState>(
+      builder: (context, state) {
+        if (_selectedSistemaTallaId == null) {
+          return DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+              labelText: 'Valor de Talla *',
+              filled: true,
+              fillColor: Colors.grey[100],
+              prefixIcon: const Icon(Icons.format_size),
+              helperText: 'Seleccione primero un sistema de tallas',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: DesignSpacing.md,
+                vertical: DesignSpacing.md,
+              ),
+            ),
+            items: const [],
+            onChanged: null,
+          );
+        }
+
+        if (state is SistemasTallaLoaded) {
+          try {
+            final sistema = state.sistemas.firstWhere(
+              (s) => s.id == _selectedSistemaTallaId,
+              orElse: () => throw Exception('Sistema no encontrado'),
+            );
+
+            final valores = sistema.valores;
+
+            if (valores.isEmpty) {
+              return DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Valor de Talla *',
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  prefixIcon: const Icon(Icons.warning, color: Colors.orange),
+                  helperText: 'Este sistema no tiene valores configurados',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(28),
+                    borderSide: const BorderSide(color: DesignColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(28),
+                    borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: DesignSpacing.md,
+                    vertical: DesignSpacing.md,
+                  ),
+                ),
+                items: const [],
+                onChanged: null,
+              );
+            }
+
+            return DropdownButtonFormField<String>(
+              value: _selectedValorTallaId,
+              decoration: InputDecoration(
+                labelText: 'Valor de Talla *',
+                filled: true,
+                fillColor: Colors.white,
+                prefixIcon: const Icon(Icons.format_size),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: const BorderSide(color: DesignColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: const BorderSide(color: DesignColors.accent, width: 2.5),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: const BorderSide(color: DesignColors.error, width: 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: DesignSpacing.md,
+                  vertical: DesignSpacing.md,
+                ),
+              ),
+              items: valores.map((valor) {
+                return DropdownMenuItem(
+                  value: valor,
+                  child: Text(valor),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedValorTallaId = value;
+                });
+              },
+            );
+          } catch (e) {
+            return DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: 'Valor de Talla *',
+                filled: true,
+                fillColor: Colors.grey[100],
+                prefixIcon: const Icon(Icons.error, color: Colors.red),
+                helperText: 'Error: Sistema no encontrado',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: const BorderSide(color: DesignColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: DesignSpacing.md,
+                  vertical: DesignSpacing.md,
+                ),
+              ),
+              items: const [],
+              onChanged: null,
+            );
+          }
+        }
+
+        return DropdownButtonFormField<String>(
+          decoration: InputDecoration(
+            labelText: 'Valor de Talla *',
+            filled: true,
+            fillColor: Colors.grey[100],
+            prefixIcon: const SizedBox(
+              width: 20,
+              height: 20,
+              child: Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+            helperText: 'Cargando sistemas...',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(28),
+              borderSide: const BorderSide(color: DesignColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(28),
+              borderSide: const BorderSide(color: DesignColors.border, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: DesignSpacing.md,
+              vertical: DesignSpacing.md,
+            ),
+          ),
+          items: const [],
+          onChanged: null,
+        );
+      },
+    );
+  }
+
   Widget _buildDescripcionField() {
-    return TextFormField(
+    return CorporateFormField(
       controller: _descripcionController,
-      maxLength: 200,
-      decoration: InputDecoration(
-        labelText: 'Descripción (opcional)',
-        border: const OutlineInputBorder(),
-        counterText: '${_descripcionController.text.length}/200',
-      ),
+      label: 'Descripción',
+      hintText: 'Descripción adicional del producto (opcional)',
+      prefixIcon: Icons.description,
       maxLines: 3,
+      validator: (value) {
+        if (value != null && value.length > 200) {
+          return 'Máximo 200 caracteres';
+        }
+        return null;
+      },
       onChanged: (_) => setState(() {}),
     );
   }
@@ -424,28 +694,17 @@ class _ProductoCreationFormState extends State<_ProductoCreationForm> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        OutlinedButton(
+        CorporateButton(
+          text: 'Cancelar',
+          variant: ButtonVariant.secondary,
           onPressed: () => context.pop(),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              horizontal: DesignSpacing.lg,
-              vertical: DesignSpacing.md,
-            ),
-          ),
-          child: const Text('Cancelar'),
         ),
         const SizedBox(width: DesignSpacing.md),
-        ElevatedButton(
+        CorporateButton(
+          text: 'Crear Producto Completo',
+          variant: ButtonVariant.primary,
+          icon: Icons.add_circle_outline,
           onPressed: _isFormValid() ? _submitForm : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(
-              horizontal: DesignSpacing.lg,
-              vertical: DesignSpacing.md,
-            ),
-          ),
-          child: const Text('Crear Producto'),
         ),
       ],
     );

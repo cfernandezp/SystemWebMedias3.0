@@ -23,14 +23,23 @@ import '../../data/models/update_sistema_talla_request.dart';
 /// - CA-008: Validación de eliminación de valores
 class SistemaTallaFormPage extends StatelessWidget {
   final Map<String, dynamic>? sistema;
+  final SistemasTallaBloc? bloc;
 
   const SistemaTallaFormPage({
     Key? key,
     this.sistema,
+    this.bloc,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    if (bloc != null) {
+      return BlocProvider.value(
+        value: bloc!,
+        child: _SistemaTallaFormPageContent(sistema: sistema),
+      );
+    }
+
     return BlocProvider(
       create: (context) => sl<SistemasTallaBloc>(),
       child: _SistemaTallaFormPageContent(sistema: sistema),
@@ -127,7 +136,7 @@ class _SistemaTallaFormPageContentState extends State<_SistemaTallaFormPageConte
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_tipoSistema == 'NUMERO' || _tipoSistema == 'RANGO')
+            if (_tipoSistema == 'NUMERO' || _tipoSistema == 'NUMERO_INDIVIDUAL' || _tipoSistema == 'RANGO')
               ValorRangoInput(controller: controller)
             else if (_tipoSistema == 'LETRA')
               ValorLetrasInput(controller: controller),
@@ -449,7 +458,7 @@ class _SistemaTallaFormPageContentState extends State<_SistemaTallaFormPageConte
                       const SizedBox(height: 16),
 
                       DropdownButtonFormField<String>(
-                        initialValue: _tipoSistema,
+                        value: _tipoSistema,
                         decoration: InputDecoration(
                           labelText: 'Tipo de Sistema',
                           filled: true,
@@ -465,6 +474,7 @@ class _SistemaTallaFormPageContentState extends State<_SistemaTallaFormPageConte
                         items: const [
                           DropdownMenuItem(value: 'UNICA', child: Text('ÚNICA - Talla única')),
                           DropdownMenuItem(value: 'NUMERO', child: Text('NÚMERO - Rangos numéricos')),
+                          DropdownMenuItem(value: 'NUMERO_INDIVIDUAL', child: Text('NÚMERO INDIVIDUAL - Tallas individuales')),
                           DropdownMenuItem(value: 'LETRA', child: Text('LETRA - Tallas alfabéticas')),
                           DropdownMenuItem(value: 'RANGO', child: Text('RANGO - Rangos amplios')),
                         ],
@@ -581,6 +591,52 @@ class _SistemaTallaFormPageContentState extends State<_SistemaTallaFormPageConte
                   ),
                 ),
               ],
+            ),
+          ),
+        ] else if (_tipoSistema == 'NUMERO_INDIVIDUAL') ...[
+          const Text(
+            'Tallas Numéricas Individuales (ej: 35, 36, 37)',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ..._valoresControllers.asMap().entries.map((entry) {
+            final controller = entry.value;
+            final hasId = _valoresIds.containsKey(controller);
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ValorRangoInput(
+                      controller: controller,
+                      onDelete: _valoresControllers.length > 1
+                          ? () => _removeValorField(controller)
+                          : null,
+                    ),
+                  ),
+                  if (_isEditMode && hasId) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.save, color: Color(0xFF4ECDC4)),
+                      onPressed: () => _handleUpdateValor(controller),
+                      tooltip: 'Guardar cambio',
+                    ),
+                  ],
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _isLoading ? null : _addValorField,
+            icon: const Icon(Icons.add),
+            label: Text(_isEditMode ? 'Agregar Talla Nueva' : 'Agregar Talla'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
             ),
           ),
         ] else if (_tipoSistema == 'NUMERO' || _tipoSistema == 'RANGO') ...[

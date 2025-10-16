@@ -75,8 +75,10 @@ class _ProductosMaestrosListView extends StatelessWidget {
       ),
       floatingActionButton: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
-          final isAdmin = authState is AuthAuthenticated && authState.user.rol.toString().contains('admin');
-          if (!isAdmin) return const SizedBox.shrink();
+          // Verificar si el usuario es ADMIN usando el getter isAdmin
+          if (authState is! AuthAuthenticated || !authState.user.isAdmin) {
+            return const SizedBox.shrink();
+          }
 
           return FloatingActionButton.extended(
             onPressed: () => context.push('/productos-maestros-nuevo'),

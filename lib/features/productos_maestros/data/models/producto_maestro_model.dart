@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:system_web_medias/features/productos_maestros/data/models/valor_talla_model.dart';
 
 /// Modelo de Producto Maestro
 ///
@@ -21,6 +22,7 @@ import 'package:equatable/equatable.dart';
 /// - `articulos_activos` → `articulosActivos`
 /// - `articulos_totales` → `articulosTotales`
 /// - `tiene_catalogos_inactivos` → `tieneCatalogosInactivos`
+/// - `valor_talla` → `valorTalla`
 /// - `created_at` → `createdAt`
 /// - `updated_at` → `updatedAt`
 class ProductoMaestroModel extends Equatable {
@@ -43,6 +45,7 @@ class ProductoMaestroModel extends Equatable {
   final int articulosTotales;
   final bool tieneCatalogosInactivos;
   final String nombreCompleto;
+  final ValorTallaModel? valorTalla;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -66,6 +69,7 @@ class ProductoMaestroModel extends Equatable {
     required this.articulosTotales,
     required this.tieneCatalogosInactivos,
     required this.nombreCompleto,
+    this.valorTalla,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -75,6 +79,11 @@ class ProductoMaestroModel extends Equatable {
     final material = json['material'] as Map<String, dynamic>?;
     final tipo = json['tipo'] as Map<String, dynamic>?;
     final sistemaTalla = json['sistema_talla'] as Map<String, dynamic>?;
+
+    ValorTallaModel? valorTalla;
+    if (json['valor_talla'] != null) {
+      valorTalla = ValorTallaModel.fromJson(json['valor_talla'] as Map<String, dynamic>);
+    }
 
     return ProductoMaestroModel(
       id: json['id'] as String? ?? '',
@@ -96,6 +105,7 @@ class ProductoMaestroModel extends Equatable {
       articulosTotales: json['articulos_totales'] as int? ?? 0,
       tieneCatalogosInactivos: json['tiene_catalogos_inactivos'] as bool? ?? false,
       nombreCompleto: json['nombre_completo'] as String? ?? '',
+      valorTalla: valorTalla,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
@@ -126,6 +136,7 @@ class ProductoMaestroModel extends Equatable {
       'articulos_totales': articulosTotales,
       'tiene_catalogos_inactivos': tieneCatalogosInactivos,
       'nombre_completo': nombreCompleto,
+      if (valorTalla != null) 'valor_talla': valorTalla!.toJson(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -151,6 +162,7 @@ class ProductoMaestroModel extends Equatable {
     int? articulosTotales,
     bool? tieneCatalogosInactivos,
     String? nombreCompleto,
+    ValorTallaModel? valorTalla,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -174,6 +186,7 @@ class ProductoMaestroModel extends Equatable {
       articulosTotales: articulosTotales ?? this.articulosTotales,
       tieneCatalogosInactivos: tieneCatalogosInactivos ?? this.tieneCatalogosInactivos,
       nombreCompleto: nombreCompleto ?? this.nombreCompleto,
+      valorTalla: valorTalla ?? this.valorTalla,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -200,6 +213,7 @@ class ProductoMaestroModel extends Equatable {
         articulosTotales,
         tieneCatalogosInactivos,
         nombreCompleto,
+        valorTalla,
         createdAt,
         updatedAt,
       ];

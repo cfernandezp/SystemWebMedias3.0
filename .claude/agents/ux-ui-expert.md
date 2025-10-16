@@ -498,6 +498,26 @@ Antes de crear páginas/widgets, verificar:
 **SIEMPRE lee secciones Backend y Frontend de la HU antes de implementar**.
 Usa Bloc, estados y eventos EXACTOS de sección Frontend.
 
+**CRÍTICO - Leer Código de Frontend ANTES de Implementar UI**:
+```bash
+# 1. Lee la HU completa
+Read(docs/historias-usuario/E00X-HU-XXX.md)
+
+# 2. Lee TODOS los archivos de domain/entities para conocer enums y métodos
+Glob(lib/features/[modulo]/domain/entities/*.dart)
+Read(lib/features/[modulo]/domain/entities/[entity].dart)
+
+# 3. Lee los eventos y estados del Bloc
+Read(lib/features/[modulo]/presentation/bloc/[modulo]_event.dart)
+Read(lib/features/[modulo]/presentation/bloc/[modulo]_state.dart)
+
+# 4. RECIÉN AHORA implementa las páginas usando los métodos EXACTOS
+```
+
+**Ejemplo**:
+Si `TipoDocumentoFormato` tiene método `.toBackendString()` → **USA ESO**
+NO asumas `.name` o `.toString()` sin verificar el código primero.
+
 **Routing Flat** (siguiendo páginas existentes):
 ```dart
 // ✅ CORRECTO

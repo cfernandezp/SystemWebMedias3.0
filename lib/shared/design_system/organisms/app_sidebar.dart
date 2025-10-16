@@ -345,6 +345,24 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
         return Icons.assessment;
       case 'palette':
         return Icons.palette;
+      case 'add_box':
+        return Icons.add_box;
+      case 'view_module':
+        return Icons.view_module;
+      case 'label':
+        return Icons.label;
+      case 'straighten':
+        return Icons.straighten;
+      case 'local_offer':
+        return Icons.local_offer;
+      case 'texture':
+        return Icons.texture;
+      case 'document_scanner':
+        return Icons.document_scanner_outlined;
+      case 'local_shipping':
+        return Icons.local_shipping;
+      case 'person_add':
+        return Icons.person_add;
       default:
         return Icons.circle;
     }

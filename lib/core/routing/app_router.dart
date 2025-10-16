@@ -32,6 +32,8 @@ import 'package:system_web_medias/features/productos_maestros/presentation/pages
 import 'package:system_web_medias/features/productos_maestros/presentation/pages/producto_creation_expert_page.dart';
 import 'package:system_web_medias/features/articulos/presentation/pages/articulos_list_page.dart';
 import 'package:system_web_medias/features/articulos/presentation/pages/articulo_form_page.dart';
+import 'package:system_web_medias/features/tipos_documento/presentation/pages/tipos_documento_list_page.dart';
+import 'package:system_web_medias/features/tipos_documento/presentation/pages/tipo_documento_form_page.dart';
 import 'package:system_web_medias/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_bloc.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_event.dart';
@@ -246,7 +248,10 @@ class AppRouter {
             name: 'sistemas-talla-form',
             builder: (context, state) {
               final extra = state.extra as Map<String, dynamic>?;
-              return SistemaTallaFormPage(sistema: extra?['sistema']);
+              return SistemaTallaFormPage(
+                sistema: extra?['sistema'],
+                bloc: extra?['bloc'] as SistemasTallaBloc?,
+              );
             },
           ),
           // HU-005: Gestionar Catálogo de Colores
@@ -318,6 +323,20 @@ class AppRouter {
             builder: (context, state) {
               final arguments = state.extra as Map<String, dynamic>?;
               return ArticuloFormPage(arguments: arguments);
+            },
+          ),
+          // E004-HU-001: Gestionar Tipos de Documento
+          GoRoute(
+            path: '/tipos-documento',
+            name: 'tipos-documento',
+            builder: (context, state) => const TiposDocumentoListPage(),
+          ),
+          GoRoute(
+            path: '/tipo-documento-form',
+            name: 'tipo-documento-form',
+            builder: (context, state) {
+              final arguments = state.extra as Map<String, dynamic>?;
+              return TipoDocumentoFormPage(arguments: arguments);
             },
           ),
         ],
@@ -450,6 +469,8 @@ class _MainLayoutWrapper extends StatelessWidget {
       '/productos-maestros-nuevo': ('Crear Producto Completo', null),
       '/articulos': ('Artículos Especializados', '/articulos'),
       '/articulo-form': ('Formulario de Artículo', null),
+      '/tipos-documento': ('Tipos de Documento', '/tipos-documento'),
+      '/tipo-documento-form': ('Formulario Tipo de Documento', null),
     };
 
     final current = routeMap[route];
