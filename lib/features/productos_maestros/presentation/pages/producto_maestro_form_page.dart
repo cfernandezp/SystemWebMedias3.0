@@ -280,9 +280,20 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
         }
         if (state is MarcasLoaded) {
           final activas = state.marcas.where((m) => m.activo).toList();
+
+          if (activas.isEmpty) {
+            return const Text(
+              'No hay marcas activas disponibles',
+              style: TextStyle(color: Color(0xFFF44336)),
+            );
+          }
+
+          final valueExists = activas.any((m) => m.id == _marcaId);
+          final validValue = valueExists ? _marcaId : null;
+
           return _buildDropdownField(
             label: 'Marca *',
-            value: _marcaId,
+            value: validValue,
             items: activas.map((m) => DropdownMenuItem(value: m.id, child: Text(m.nombre))).toList(),
             onChanged: (_isEditMode && _articulosTotales > 0) ? null : (v) => setState(() => _marcaId = v),
             validator: (v) => v == null ? 'Campo requerido' : null,
@@ -302,9 +313,20 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
         }
         if (state is MaterialesLoaded) {
           final activos = state.materiales.where((m) => m.activo).toList();
+
+          if (activos.isEmpty) {
+            return const Text(
+              'No hay materiales activos disponibles',
+              style: TextStyle(color: Color(0xFFF44336)),
+            );
+          }
+
+          final valueExists = activos.any((m) => m.id == _materialId);
+          final validValue = valueExists ? _materialId : null;
+
           return _buildDropdownField(
             label: 'Material *',
-            value: _materialId,
+            value: validValue,
             items: activos.map((m) => DropdownMenuItem(value: m.id, child: Text(m.nombre))).toList(),
             onChanged: (_isEditMode && _articulosTotales > 0) ? null : (v) => setState(() => _materialId = v),
             validator: (v) => v == null ? 'Campo requerido' : null,
@@ -324,9 +346,20 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
         }
         if (state is TiposLoaded) {
           final activos = state.tipos.where((t) => t.activo).toList();
+
+          if (activos.isEmpty) {
+            return const Text(
+              'No hay tipos activos disponibles',
+              style: TextStyle(color: Color(0xFFF44336)),
+            );
+          }
+
+          final valueExists = activos.any((t) => t.id == _tipoId);
+          final validValue = valueExists ? _tipoId : null;
+
           return _buildDropdownField(
             label: 'Tipo *',
-            value: _tipoId,
+            value: validValue,
             items: activos.map((t) => DropdownMenuItem(value: t.id, child: Text(t.nombre))).toList(),
             onChanged: (_isEditMode && _articulosTotales > 0) ? null : (v) => setState(() => _tipoId = v),
             validator: (v) => v == null ? 'Campo requerido' : null,
@@ -346,6 +379,17 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
         }
         if (state is SistemasTallaLoaded) {
           final activos = state.sistemas.where((s) => s.activo).toList();
+
+          if (activos.isEmpty) {
+            return const Text(
+              'No hay sistemas de talla activos disponibles',
+              style: TextStyle(color: Color(0xFFF44336)),
+            );
+          }
+
+          final valueExists = activos.any((s) => s.id == _sistemaId);
+          final validValue = valueExists ? _sistemaId : null;
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -359,7 +403,7 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _sistemaId,
+                value: validValue,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -429,66 +473,6 @@ class _ProductoMaestroFormViewState extends State<_ProductoMaestroFormView> {
                 validator: (v) => v == null ? 'Campo requerido' : null,
               ),
             ],
-          );
-        }
-        return const SizedBox.shrink();
-      },
-    );
-  }
-
-  Widget _buildDropdownValorTalla() {
-    return BlocBuilder<SistemasTallaBloc, SistemasTallaState>(
-      builder: (context, state) {
-        if (state is SistemasTallaLoaded) {
-          final sistema = state.sistemas.firstWhere(
-            (s) => s.id == _sistemaId,
-            orElse: () => state.sistemas.first,
-          );
-
-          if (sistema.valoresCount == 0) {
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF3CD),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFFE082)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline, color: Color(0xFFFF9800)),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Este sistema de tallas no tiene valores disponibles.',
-                      style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          context.read<SistemasTallaBloc>().add(LoadSistemaTallaValoresEvent(_sistemaId!));
-
-          return BlocBuilder<SistemasTallaBloc, SistemasTallaState>(
-            buildWhen: (previous, current) => current is SistemaTallaValoresLoaded,
-            builder: (context, valoresState) {
-              if (valoresState is! SistemaTallaValoresLoaded) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final valores = valoresState.valores.where((v) => v.activo).toList()
-                ..sort((a, b) => a.orden.compareTo(b.orden));
-
-              return _buildDropdownField(
-                label: 'Valor de Talla *',
-                value: _valorTallaId,
-                items: valores.map((v) => DropdownMenuItem(value: v.id, child: Text(v.valor))).toList(),
-                onChanged: (_isEditMode && _articulosTotales > 0) ? null : (v) => setState(() => _valorTallaId = v),
-                validator: (v) => v == null ? 'Campo requerido' : null,
-                enabled: !(_isEditMode && _articulosTotales > 0),
-              );
-            },
           );
         }
         return const SizedBox.shrink();

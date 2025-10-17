@@ -9,7 +9,6 @@ import 'package:system_web_medias/features/personas/presentation/bloc/persona_st
 import 'package:system_web_medias/features/personas/presentation/widgets/confirm_eliminar_dialog.dart';
 import 'package:system_web_medias/features/personas/presentation/widgets/confirm_desactivar_dialog.dart';
 import 'package:system_web_medias/features/personas/presentation/widgets/persona_tipo_chip.dart';
-import 'package:system_web_medias/features/tipos_documento/domain/entities/tipo_documento_entity.dart';
 import 'package:system_web_medias/features/tipos_documento/presentation/bloc/tipo_documento_bloc.dart';
 import 'package:system_web_medias/features/tipos_documento/presentation/bloc/tipo_documento_event.dart';
 import 'package:system_web_medias/features/tipos_documento/presentation/bloc/tipo_documento_state.dart';
@@ -47,8 +46,32 @@ class _PersonasListViewState extends State<_PersonasListView> {
   String? _tipoPersonaFilter;
   bool? _activoFilter;
   String _searchQuery = '';
-  int _currentPage = 0;
-  final int _pageSize = 50;
+  int _currentPage = 1;
+  int _itemsPerPage = 20;
+  final TextEditingController _pageController = TextEditingController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  int get _offset => (_currentPage - 1) * _itemsPerPage;
+
+  int _calculateTotalPages(int total) {
+    return (total / _itemsPerPage).ceil();
+  }
+
+  int _calculateShowingFrom(int total) {
+    if (total == 0) return 0;
+    return _offset + 1;
+  }
+
+  int _calculateShowingTo(int total) {
+    if (total == 0) return 0;
+    final to = _offset + _itemsPerPage;
+    return to > total ? total : to;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,8 +89,8 @@ class _PersonasListViewState extends State<_PersonasListView> {
               tipoPersona: _tipoPersonaFilter,
               activo: _activoFilter,
               busqueda: _searchQuery.isEmpty ? null : _searchQuery,
-              limit: _pageSize,
-              offset: _currentPage * _pageSize,
+              limit: _itemsPerPage,
+              offset: _offset,
             ));
           }
 
@@ -87,11 +110,12 @@ class _PersonasListViewState extends State<_PersonasListView> {
                   _buildFilters(context, theme, isDesktop),
                   SizedBox(height: DesignSpacing.lg),
                   if (state is PersonaListSuccess)
-                    _buildCounter(context, state.total),
+                    _buildPaginationInfo(context, state, isDesktop),
                   SizedBox(height: DesignSpacing.md),
                   _buildContent(context, state, isDesktop),
-                  if (state is PersonaListSuccess && state.hasMore)
-                    _buildPagination(context, state),
+                  SizedBox(height: DesignSpacing.md),
+                  if (state is PersonaListSuccess)
+                    _buildPagination(context, state, isDesktop),
                 ],
               ),
             ),
@@ -144,14 +168,14 @@ class _PersonasListViewState extends State<_PersonasListView> {
                 onChanged: (value) {
                   setState(() {
                     _searchQuery = value;
-                    _currentPage = 0;
+                    _currentPage = 1;
                   });
                   context.read<PersonaBloc>().add(ListarPersonasEvent(
                     tipoDocumentoId: _tipoDocumentoIdFilter,
                     tipoPersona: _tipoPersonaFilter,
                     activo: _activoFilter,
                     busqueda: value.isEmpty ? null : value,
-                    limit: _pageSize,
+                    limit: _itemsPerPage,
                     offset: 0,
                   ));
                 },
@@ -191,14 +215,14 @@ class _PersonasListViewState extends State<_PersonasListView> {
                     onSelected: (value) {
                       setState(() {
                         _tipoDocumentoIdFilter = value?.isEmpty == true ? null : value;
-                        _currentPage = 0;
+                        _currentPage = 1;
                       });
                       context.read<PersonaBloc>().add(ListarPersonasEvent(
                         tipoDocumentoId: _tipoDocumentoIdFilter,
                         tipoPersona: _tipoPersonaFilter,
                         activo: _activoFilter,
                         busqueda: _searchQuery.isEmpty ? null : _searchQuery,
-                        limit: _pageSize,
+                        limit: _itemsPerPage,
                         offset: 0,
                       ));
                     },
@@ -214,7 +238,7 @@ class _PersonasListViewState extends State<_PersonasListView> {
               onTap: () {
                 setState(() {
                   _tipoPersonaFilter = null;
-                  _currentPage = 0;
+                  _currentPage = 1;
                 });
                 _applyFilters(context);
               },
@@ -227,7 +251,7 @@ class _PersonasListViewState extends State<_PersonasListView> {
               onTap: () {
                 setState(() {
                   _tipoPersonaFilter = 'Natural';
-                  _currentPage = 0;
+                  _currentPage = 1;
                 });
                 _applyFilters(context);
               },
@@ -240,7 +264,7 @@ class _PersonasListViewState extends State<_PersonasListView> {
               onTap: () {
                 setState(() {
                   _tipoPersonaFilter = 'Juridica';
-                  _currentPage = 0;
+                  _currentPage = 1;
                 });
                 _applyFilters(context);
               },
@@ -253,7 +277,7 @@ class _PersonasListViewState extends State<_PersonasListView> {
               onTap: () {
                 setState(() {
                   _activoFilter = _activoFilter == true ? null : true;
-                  _currentPage = 0;
+                  _currentPage = 1;
                 });
                 _applyFilters(context);
               },
@@ -266,7 +290,7 @@ class _PersonasListViewState extends State<_PersonasListView> {
               onTap: () {
                 setState(() {
                   _activoFilter = _activoFilter == false ? null : false;
-                  _currentPage = 0;
+                  _currentPage = 1;
                 });
                 _applyFilters(context);
               },
@@ -329,24 +353,82 @@ class _PersonasListViewState extends State<_PersonasListView> {
     );
   }
 
-  Widget _buildCounter(BuildContext context, int total) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: DesignSpacing.md,
-        vertical: DesignSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(DesignRadius.sm),
-      ),
-      child: Text(
-        '$total personas encontradas',
-        style: TextStyle(
-          fontSize: DesignTypography.fontSm,
-          fontWeight: DesignTypography.semibold,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-      ),
+  Widget _buildPaginationInfo(BuildContext context, PersonaListSuccess state, bool isDesktop) {
+    final showingFrom = _calculateShowingFrom(state.total);
+    final showingTo = _calculateShowingTo(state.total);
+
+    return Row(
+      children: [
+        if (isDesktop) ...[
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: DesignSpacing.md,
+              vertical: DesignSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(DesignRadius.sm),
+            ),
+            child: Text(
+              'Mostrando $showingFrom-$showingTo de ${state.total} personas',
+              style: TextStyle(
+                fontSize: DesignTypography.fontSm,
+                fontWeight: DesignTypography.semibold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+          const Spacer(),
+          Text(
+            'Items por página:',
+            style: TextStyle(
+              fontSize: DesignTypography.fontSm,
+              color: DesignColors.textSecondary,
+            ),
+          ),
+          SizedBox(width: DesignSpacing.sm),
+          DropdownButton<int>(
+            value: _itemsPerPage,
+            items: const [
+              DropdownMenuItem(value: 10, child: Text('10')),
+              DropdownMenuItem(value: 20, child: Text('20')),
+              DropdownMenuItem(value: 50, child: Text('50')),
+              DropdownMenuItem(value: 100, child: Text('100')),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _itemsPerPage = value;
+                  _currentPage = 1;
+                });
+                _applyFilters(context);
+              }
+            },
+          ),
+        ] else ...[
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: DesignSpacing.md,
+                vertical: DesignSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(DesignRadius.sm),
+              ),
+              child: Text(
+                'Mostrando $showingFrom-$showingTo de ${state.total}',
+                style: TextStyle(
+                  fontSize: DesignTypography.fontSm,
+                  fontWeight: DesignTypography.semibold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -581,45 +663,173 @@ class _PersonasListViewState extends State<_PersonasListView> {
     );
   }
 
-  Widget _buildPagination(BuildContext context, PersonaListSuccess state) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: DesignSpacing.lg),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ElevatedButton.icon(
-            onPressed: _currentPage > 0
-                ? () {
+  Widget _buildPagination(BuildContext context, PersonaListSuccess state, bool isDesktop) {
+    final totalPages = _calculateTotalPages(state.total);
+    final isFirstPage = _currentPage == 1;
+    final isLastPage = !state.hasMore;
+
+    if (isDesktop) {
+      return Container(
+        padding: EdgeInsets.symmetric(vertical: DesignSpacing.lg),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              onPressed: isFirstPage ? null : () {
+                setState(() {
+                  _currentPage = 1;
+                });
+                _applyFilters(context);
+              },
+              icon: const Icon(Icons.first_page),
+              tooltip: 'Primera página',
+            ),
+            SizedBox(width: DesignSpacing.sm),
+            ElevatedButton.icon(
+              onPressed: isFirstPage ? null : () {
+                setState(() {
+                  _currentPage--;
+                });
+                _applyFilters(context);
+              },
+              icon: const Icon(Icons.chevron_left, size: 18),
+              label: const Text('Anterior'),
+            ),
+            SizedBox(width: DesignSpacing.md),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: DesignSpacing.md,
+                vertical: DesignSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                borderRadius: BorderRadius.circular(DesignRadius.sm),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    'Página',
+                    style: TextStyle(
+                      fontSize: DesignTypography.fontSm,
+                      color: DesignColors.textSecondary,
+                    ),
+                  ),
+                  SizedBox(width: DesignSpacing.sm),
+                  SizedBox(
+                    width: 50,
+                    child: TextField(
+                      controller: _pageController,
+                      textAlign: TextAlign.center,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        hintText: '',
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        border: OutlineInputBorder(),
+                      ),
+                      onSubmitted: (value) {
+                        final page = int.tryParse(value);
+                        if (page != null && page >= 1 && page <= totalPages) {
+                          setState(() {
+                            _currentPage = page;
+                            _pageController.clear();
+                          });
+                          _applyFilters(context);
+                        } else {
+                          _pageController.clear();
+                          _showSnackbar(
+                            context,
+                            'Ingrese una página válida (1-$totalPages)',
+                            isError: true,
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                  SizedBox(width: DesignSpacing.sm),
+                  Text(
+                    '/ $totalPages',
+                    style: TextStyle(
+                      fontSize: DesignTypography.fontSm,
+                      fontWeight: DesignTypography.semibold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: DesignSpacing.md),
+            Text(
+              'Página $_currentPage de $totalPages',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            SizedBox(width: DesignSpacing.md),
+            ElevatedButton.icon(
+              onPressed: isLastPage ? null : () {
+                setState(() {
+                  _currentPage++;
+                });
+                _applyFilters(context);
+              },
+              icon: const Icon(Icons.chevron_right, size: 18),
+              label: const Text('Siguiente'),
+            ),
+            SizedBox(width: DesignSpacing.sm),
+            IconButton(
+              onPressed: isLastPage ? null : () {
+                setState(() {
+                  _currentPage = totalPages;
+                });
+                _applyFilters(context);
+              },
+              icon: const Icon(Icons.last_page),
+              tooltip: 'Última página',
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        padding: EdgeInsets.symmetric(vertical: DesignSpacing.lg),
+        child: Column(
+          children: [
+            Text(
+              'Página $_currentPage de $totalPages',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: DesignSpacing.md),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: isFirstPage ? null : () {
                     setState(() {
                       _currentPage--;
                     });
                     _applyFilters(context);
-                  }
-                : null,
-            icon: const Icon(Icons.chevron_left),
-            label: const Text('Anterior'),
-          ),
-          SizedBox(width: DesignSpacing.md),
-          Text(
-            'Página ${_currentPage + 1}',
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          SizedBox(width: DesignSpacing.md),
-          ElevatedButton.icon(
-            onPressed: state.hasMore
-                ? () {
+                  },
+                  icon: const Icon(Icons.chevron_left, size: 18),
+                  label: const Text('Anterior'),
+                ),
+                SizedBox(width: DesignSpacing.md),
+                ElevatedButton.icon(
+                  onPressed: isLastPage ? null : () {
                     setState(() {
                       _currentPage++;
                     });
                     _applyFilters(context);
-                  }
-                : null,
-            icon: const Icon(Icons.chevron_right),
-            label: const Text('Siguiente'),
-          ),
-        ],
-      ),
-    );
+                  },
+                  icon: const Icon(Icons.chevron_right, size: 18),
+                  label: const Text('Siguiente'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Widget _buildEmptyState() {
@@ -660,8 +870,8 @@ class _PersonasListViewState extends State<_PersonasListView> {
       tipoPersona: _tipoPersonaFilter,
       activo: _activoFilter,
       busqueda: _searchQuery.isEmpty ? null : _searchQuery,
-      limit: _pageSize,
-      offset: _currentPage * _pageSize,
+      limit: _itemsPerPage,
+      offset: _offset,
     ));
   }
 

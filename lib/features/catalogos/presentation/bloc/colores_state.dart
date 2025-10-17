@@ -18,6 +18,8 @@ class ColoresLoading extends ColoresState {
 }
 
 class ColoresLoaded extends ColoresState {
+  static const _sentinel = Object();
+
   final List<ColorModel> colores;
   final List<ColorModel> filteredColores;
   final String searchQuery;
@@ -48,7 +50,7 @@ class ColoresLoaded extends ColoresState {
     List<ColorModel>? colores,
     List<ColorModel>? filteredColores,
     String? searchQuery,
-    String? tipoColorFilter,
+    Object? tipoColorFilter = _sentinel,
     int? coloresActivos,
     int? coloresInactivos,
   }) {
@@ -56,7 +58,7 @@ class ColoresLoaded extends ColoresState {
       colores: colores ?? this.colores,
       filteredColores: filteredColores ?? this.filteredColores,
       searchQuery: searchQuery ?? this.searchQuery,
-      tipoColorFilter: tipoColorFilter ?? this.tipoColorFilter,
+      tipoColorFilter: tipoColorFilter == _sentinel ? this.tipoColorFilter : tipoColorFilter as String?,
       coloresActivos: coloresActivos ?? this.coloresActivos,
       coloresInactivos: coloresInactivos ?? this.coloresInactivos,
     );

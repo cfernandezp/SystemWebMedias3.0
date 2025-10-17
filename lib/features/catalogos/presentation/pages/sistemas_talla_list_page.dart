@@ -87,10 +87,6 @@ class _SistemasTallaListPageContentState extends State<_SistemasTallaListPageCon
                   'activo': v.activo,
                   'productosCount': v.productosCount,
                 }).toList(),
-                onEdit: () async {
-                  Navigator.of(dialogContext).pop();
-                  await _handleEdit(context, state.sistema);
-                },
               );
             }
 

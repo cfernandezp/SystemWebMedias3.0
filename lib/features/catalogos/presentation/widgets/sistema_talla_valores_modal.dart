@@ -11,7 +11,6 @@ class SistemaTallaValoresModal extends StatelessWidget {
   final String tipoSistema;
   final String? descripcion;
   final List<Map<String, dynamic>> valores;
-  final VoidCallback onEdit;
 
   const SistemaTallaValoresModal({
     Key? key,
@@ -19,7 +18,6 @@ class SistemaTallaValoresModal extends StatelessWidget {
     required this.tipoSistema,
     this.descripcion,
     required this.valores,
-    required this.onEdit,
   }) : super(key: key);
 
   @override
@@ -181,19 +179,6 @@ class SistemaTallaValoresModal extends StatelessWidget {
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Cerrar'),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      onEdit();
-                    },
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Editar Sistema'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: Colors.white,
-                    ),
                   ),
                 ],
               ),

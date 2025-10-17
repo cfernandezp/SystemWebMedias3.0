@@ -30,7 +30,14 @@
       "Bash(Select-String -Pattern \"lib\\core\\routing\\app_router.dart\" -Context 0,1)",
       "Bash(dir /b c:UsersProgramador2DocumentsCristianFernandezSystemWebMedias3.0libcore)",
       "Bash(dir /b supabasemigrations)",
-      "Bash(Select-String -Pattern \"issues found\")"
+      "Bash(Select-String -Pattern \"issues found\")",
+      "Bash(supabase status:*)",
+      "Bash(netstat:*)",
+      "Bash(tasklist)",
+      "Bash(del test_pagination.ps1)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nRefactor QA agent: v4.0 solo validación técnica\n\nSimplifica el agente qa-testing-expert para enfocarse únicamente en:\n- Compilación (flutter pub get, analyze)\n- Tests unitarios\n- Levantamiento de la app\n- Verificación de infraestructura (Supabase)\n\nElimina validación funcional (CAs) y pruebas de negocio - eso lo hace el usuario manualmente.\n\nReduce de 463 líneas a 274 líneas.\nTiempo estimado: 3-5 min vs 15-30 min anterior.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nRefactor UX-UI agent: v3.0 anti-retrabajo\n\nMejoras implementadas basadas en lecciones aprendidas:\n\n1. **PASO 0 obligatorio**: Analizar patrones existentes ANTES de implementar\n   - Buscar 2-3 páginas del mismo tipo\n   - Identificar patrón común del sistema\n   - Detectar oportunidades de mejora sistémica\n\n2. **Consulta proactiva**: Si detecta problemas UX comunes, consulta al usuario\n   ANTES de replicar el patrón subóptimo\n\n3. **Documentación de caso**: Incluye \"Caso 1: Personas List Page\" como \n   referencia de por qué existe esta regla\n\n4. **Reporte mejorado**: Incluye análisis previo y consistencia verificada\n\nCambios específicos:\n- Nuevo flujo: 7 pasos (antes 6)\n- PASO 0: Análisis Previo del Sistema (NUEVO)\n- Checklist Pre-Implementación expandido\n- Sección \"Lecciones Aprendidas\" agregada\n\nEvita: Retrabajo por implementar sin analizar sistema existente primero\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": [],
