@@ -494,6 +494,11 @@ BEGIN
     ON CONFLICT (code) DO UPDATE SET parent_id = v_personas_id, activo = EXCLUDED.activo, route = EXCLUDED.route
     RETURNING id INTO v_personas_tipos_documento_id;
 
+    -- Submenú: Gestión de Personas Base (E004-HU-002)
+    INSERT INTO menu_options (parent_id, code, label, icon, route, orden, activo)
+    VALUES (v_personas_id, 'personas-base', 'Gestión de Personas', 'person', '/personas', 15, true)
+    ON CONFLICT (code) DO UPDATE SET parent_id = v_personas_id, activo = EXCLUDED.activo, route = EXCLUDED.route;
+
     -- Submenú: Clientes (E004-HU-003 - Ahora submenú de Personas)
     INSERT INTO menu_options (parent_id, code, label, icon, route, orden, activo)
     VALUES (v_personas_id, 'clientes', 'Clientes', 'people', null, 20, true)
@@ -603,6 +608,7 @@ BEGIN
         (v_ventas_comisiones_id, 'ADMIN', true),
         (v_personas_id, 'ADMIN', true),
         (v_personas_tipos_documento_id, 'ADMIN', true),
+        ((SELECT id FROM menu_options WHERE code = 'personas-base'), 'ADMIN', true),
         (v_clientes_id, 'ADMIN', true),
         (v_clientes_registrar_id, 'ADMIN', true),
         (v_clientes_base_id, 'ADMIN', true),
@@ -639,6 +645,7 @@ BEGIN
         (v_ventas_comisiones_id, 'GERENTE', true),
         (v_personas_id, 'GERENTE', true),
         (v_personas_tipos_documento_id, 'GERENTE', true),
+        ((SELECT id FROM menu_options WHERE code = 'personas-base'), 'GERENTE', true),
         (v_clientes_id, 'GERENTE', true),
         (v_clientes_registrar_id, 'GERENTE', true),
         (v_clientes_base_id, 'GERENTE', true),
@@ -672,6 +679,7 @@ BEGIN
         (v_ventas_comisiones_id, 'VENDEDOR', true),
         (v_personas_id, 'VENDEDOR', true),
         (v_personas_tipos_documento_id, 'VENDEDOR', false),
+        ((SELECT id FROM menu_options WHERE code = 'personas-base'), 'VENDEDOR', true),
         (v_clientes_id, 'VENDEDOR', true),
         (v_clientes_registrar_id, 'VENDEDOR', true),
         (v_clientes_base_id, 'VENDEDOR', true),
@@ -683,7 +691,7 @@ BEGIN
         (v_config_id, 'VENDEDOR', false)
     ON CONFLICT (menu_option_id, role) DO NOTHING;
 
-    RAISE NOTICE 'Menús completos creados exitosamente (9 menús raíz + 21 submenús) - E004: Módulo Personas agregado';
+    RAISE NOTICE 'Menús completos creados exitosamente (9 menús raíz + 22 submenús) - E004: Módulo Personas agregado con HU-002 Gestión de Personas Base';
 END $$;
 
 COMMIT;

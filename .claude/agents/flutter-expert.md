@@ -274,6 +274,53 @@ UI → Bloc → Repository → DataSource → RPC(function_name) → Backend
 - `function_name`: [Descripción breve de uso]
 - `otra_funcion`: [Descripción breve de uso]
 
+#### 📋 Contrato API para Agentes Futuros (ux-ui-expert, otros features)
+
+**⚠️ NOMBRES EXACTOS** (copiar del código, NO asumir):
+
+**Estados del Bloc**:
+- Inicial: `[Modulo]Initial`
+- Cargando: `[Modulo]Loading`
+- Lista cargada: `[Modulo]ListLoaded` ← Nombre exacto (archivo _state.dart línea XX)
+  - Propiedad: `state.[items]` ← Nombre exacto (NOT state.[Items] ni state.[itemsList])
+- Operación exitosa: `[Modulo]OperationSuccess`
+- Error: `[Modulo]Error`
+  - Propiedad: `state.message`
+
+**Eventos del Bloc**:
+- Listar: `Listar[Modulos]Event()`
+- Crear: `Crear[Modulo]Event(params...)`
+- Actualizar: `Actualizar[Modulo]Event(params...)`
+
+**Ejemplo de uso correcto en UI** (para @ux-ui-expert):
+```dart
+// ✅ CORRECTO - Nombres exactos copiados del código
+BlocBuilder<[Modulo]Bloc, [Modulo]State>(
+  builder: (context, state) {
+    if (state is [Modulo]ListLoaded) {  // ← Nombre exacto de _state.dart
+      final items = state.[items];       // ← Propiedad exacta de _state.dart
+      return ListView.builder(...);
+    }
+  }
+)
+
+// ❌ INCORRECTO - Nombres asumidos
+if (state is [Modulo]ListSuccess) { ... }  // Estado NO existe
+final items = state.[Items];                // Propiedad NO existe
+```
+
+**Enums con Métodos Especiales** (si aplica):
+- Enum `[NombreEnum]`: valores `[valor1, valor2]`
+  - Método: `.toBackendString()` → retorna `'VALOR_BACKEND'`
+  - Método: `.fromString(String)` → parsea desde backend
+
+**Ejemplo enum**:
+```dart
+// Entity tiene enum TipoDocumentoFormato
+final formato = TipoDocumentoFormato.numerico;
+final backendValue = formato.toBackendString(); // 'NUMERICO'
+```
+
 ### Criterios de Aceptación Frontend
 - [✅] **CA-001**: Implementado en `[page].dart` → Evento `[Event]` → Estado `[State]`
 - [✅] **CA-002**: Validación en Bloc → UI muestra SnackBar

@@ -239,3 +239,44 @@ class InvalidLengthException extends AppException {
   InvalidLengthException([super.message = 'Longitud de documento inválida', super.statusCode = 400]);
 }
 
+/// E004-HU-002: Gestión de Personas exceptions
+class DuplicatePersonaException extends AppException {
+  DuplicatePersonaException([super.message = 'Ya existe una persona con este documento', super.statusCode = 409]);
+}
+
+class InvalidDocumentFormatException extends AppException {
+  InvalidDocumentFormatException([super.message = 'Formato de documento inválido', super.statusCode = 400]);
+}
+
+class InvalidDocumentForPersonTypeException extends AppException {
+  InvalidDocumentForPersonTypeException([super.message = 'Tipo de documento no válido para este tipo de persona', super.statusCode = 400]);
+}
+
+class MissingNombreException extends AppException {
+  MissingNombreException([super.message = 'El nombre completo es obligatorio para persona natural', super.statusCode = 400]);
+}
+
+class MissingRazonSocialException extends AppException {
+  MissingRazonSocialException([super.message = 'La razón social es obligatoria para persona jurídica', super.statusCode = 400]);
+}
+
+class InvalidEmailException extends AppException {
+  InvalidEmailException([super.message = 'Formato de email inválido', super.statusCode = 400]);
+}
+
+class InvalidPhoneException extends AppException {
+  InvalidPhoneException([super.message = 'El celular debe tener 9 dígitos', super.statusCode = 400]);
+}
+
+class PersonaNotFoundException extends AppException {
+  PersonaNotFoundException([super.message = 'Persona no encontrada', super.statusCode = 404]);
+}
+
+class HasTransactionsException extends AppException {
+  HasTransactionsException([super.message = 'Esta persona tiene transacciones registradas. Solo puede desactivarse', super.statusCode = 403]);
+}
+
+class AlreadyActiveException extends AppException {
+  AlreadyActiveException([super.message = 'La persona ya está activa', super.statusCode = 400]);
+}
+

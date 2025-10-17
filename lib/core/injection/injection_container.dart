@@ -70,7 +70,7 @@ import 'package:system_web_medias/features/articulos/domain/usecases/listar_arti
 import 'package:system_web_medias/features/articulos/domain/usecases/obtener_articulo_usecase.dart';
 import 'package:system_web_medias/features/articulos/domain/usecases/editar_articulo_usecase.dart';
 import 'package:system_web_medias/features/articulos/domain/usecases/eliminar_articulo_usecase.dart';
-import 'package:system_web_medias/features/articulos/presentation/bloc/articulos_bloc.dart';
+import 'package:system_web_medias/features/articulos/presentation/bloc/bloc.dart';
 import 'package:system_web_medias/features/tipos_documento/data/datasources/tipo_documento_remote_datasource.dart';
 import 'package:system_web_medias/features/tipos_documento/data/repositories/tipo_documento_repository_impl.dart';
 import 'package:system_web_medias/features/tipos_documento/domain/repositories/tipo_documento_repository.dart';
@@ -80,6 +80,18 @@ import 'package:system_web_medias/features/tipos_documento/domain/usecases/actua
 import 'package:system_web_medias/features/tipos_documento/domain/usecases/eliminar_tipo_documento_usecase.dart';
 import 'package:system_web_medias/features/tipos_documento/domain/usecases/validar_formato_documento_usecase.dart';
 import 'package:system_web_medias/features/tipos_documento/presentation/bloc/tipo_documento_bloc.dart';
+import 'package:system_web_medias/features/personas/data/datasources/persona_remote_datasource.dart';
+import 'package:system_web_medias/features/personas/data/repositories/persona_repository_impl.dart';
+import 'package:system_web_medias/features/personas/domain/repositories/persona_repository.dart';
+import 'package:system_web_medias/features/personas/domain/usecases/buscar_persona_por_documento.dart';
+import 'package:system_web_medias/features/personas/domain/usecases/crear_persona.dart';
+import 'package:system_web_medias/features/personas/domain/usecases/listar_personas.dart';
+import 'package:system_web_medias/features/personas/domain/usecases/obtener_persona.dart';
+import 'package:system_web_medias/features/personas/domain/usecases/editar_persona.dart';
+import 'package:system_web_medias/features/personas/domain/usecases/desactivar_persona.dart';
+import 'package:system_web_medias/features/personas/domain/usecases/eliminar_persona.dart';
+import 'package:system_web_medias/features/personas/domain/usecases/reactivar_persona.dart';
+import 'package:system_web_medias/features/personas/presentation/bloc/persona_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -428,6 +440,46 @@ Future<void> init() async {
   // Data Sources - Tipos de Documento
   sl.registerLazySingleton<TipoDocumentoRemoteDataSource>(
     () => TipoDocumentoRemoteDataSourceImpl(
+      supabase: sl(),
+    ),
+  );
+
+  // ========== E004-HU-002: PERSONAS ==========
+
+  // Bloc - Personas
+  sl.registerFactory(
+    () => PersonaBloc(
+      buscarPersonaPorDocumento: sl(),
+      crearPersona: sl(),
+      listarPersonas: sl(),
+      obtenerPersona: sl(),
+      editarPersona: sl(),
+      desactivarPersona: sl(),
+      eliminarPersona: sl(),
+      reactivarPersona: sl(),
+    ),
+  );
+
+  // Use Cases - Personas
+  sl.registerLazySingleton(() => BuscarPersonaPorDocumento(sl()));
+  sl.registerLazySingleton(() => CrearPersona(sl()));
+  sl.registerLazySingleton(() => ListarPersonas(sl()));
+  sl.registerLazySingleton(() => ObtenerPersona(sl()));
+  sl.registerLazySingleton(() => EditarPersona(sl()));
+  sl.registerLazySingleton(() => DesactivarPersona(sl()));
+  sl.registerLazySingleton(() => EliminarPersona(sl()));
+  sl.registerLazySingleton(() => ReactivarPersona(sl()));
+
+  // Repository - Personas
+  sl.registerLazySingleton<PersonaRepository>(
+    () => PersonaRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Data Sources - Personas
+  sl.registerLazySingleton<PersonaRemoteDataSource>(
+    () => PersonaRemoteDataSourceImpl(
       supabase: sl(),
     ),
   );

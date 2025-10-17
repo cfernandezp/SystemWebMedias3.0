@@ -34,6 +34,9 @@ import 'package:system_web_medias/features/articulos/presentation/pages/articulo
 import 'package:system_web_medias/features/articulos/presentation/pages/articulo_form_page.dart';
 import 'package:system_web_medias/features/tipos_documento/presentation/pages/tipos_documento_list_page.dart';
 import 'package:system_web_medias/features/tipos_documento/presentation/pages/tipo_documento_form_page.dart';
+import 'package:system_web_medias/features/personas/presentation/pages/personas_list_page.dart';
+import 'package:system_web_medias/features/personas/presentation/pages/persona_form_page.dart';
+import 'package:system_web_medias/features/personas/presentation/pages/persona_detail_page.dart';
 import 'package:system_web_medias/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_bloc.dart';
 import 'package:system_web_medias/features/menu/presentation/bloc/menu_event.dart';
@@ -247,11 +250,8 @@ class AppRouter {
             path: '/sistemas-talla-form',
             name: 'sistemas-talla-form',
             builder: (context, state) {
-              final extra = state.extra as Map<String, dynamic>?;
-              return SistemaTallaFormPage(
-                sistema: extra?['sistema'],
-                bloc: extra?['bloc'] as SistemasTallaBloc?,
-              );
+              final arguments = state.extra as Map<String, dynamic>?;
+              return SistemaTallaFormPage(arguments: arguments);
             },
           ),
           // HU-005: Gestionar Catálogo de Colores
@@ -337,6 +337,28 @@ class AppRouter {
             builder: (context, state) {
               final arguments = state.extra as Map<String, dynamic>?;
               return TipoDocumentoFormPage(arguments: arguments);
+            },
+          ),
+          // E004-HU-002: Gestionar Personas (Entidad Base)
+          GoRoute(
+            path: '/personas',
+            name: 'personas',
+            builder: (context, state) => const PersonasListPage(),
+          ),
+          GoRoute(
+            path: '/personas-form',
+            name: 'personas-form',
+            builder: (context, state) {
+              final arguments = state.extra as Map<String, dynamic>?;
+              return PersonaFormPage(arguments: arguments);
+            },
+          ),
+          GoRoute(
+            path: '/personas-detail',
+            name: 'personas-detail',
+            builder: (context, state) {
+              final arguments = state.extra as Map<String, dynamic>?;
+              return PersonaDetailPage(arguments: arguments);
             },
           ),
         ],
@@ -471,6 +493,9 @@ class _MainLayoutWrapper extends StatelessWidget {
       '/articulo-form': ('Formulario de Artículo', null),
       '/tipos-documento': ('Tipos de Documento', '/tipos-documento'),
       '/tipo-documento-form': ('Formulario Tipo de Documento', null),
+      '/personas': ('Gestión de Personas', '/personas'),
+      '/personas-form': ('Formulario de Persona', null),
+      '/personas-detail': ('Detalle de Persona', null),
     };
 
     final current = routeMap[route];

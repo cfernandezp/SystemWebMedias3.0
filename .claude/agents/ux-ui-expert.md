@@ -493,25 +493,72 @@ Antes de crear páginas/widgets, verificar:
 
 ## 🚨 REGLAS CRÍTICAS
 
-### 1. Lectura Obligatoria de Secciones Backend y Frontend en HU
+### 1. Lectura Obligatoria - PROTOCOLO MEJORADO CON DEPENDENCIAS
 
-**SIEMPRE lee secciones Backend y Frontend de la HU antes de implementar**.
-Usa Bloc, estados y eventos EXACTOS de sección Frontend.
+**ORDEN OBLIGATORIO DE LECTURA** (ANTES de escribir código):
 
-**CRÍTICO - Leer Código de Frontend ANTES de Implementar UI**:
 ```bash
-# 1. Lee la HU completa
+# PASO 1: Leer HU completa
 Read(docs/historias-usuario/E00X-HU-XXX.md)
 
-# 2. Lee TODOS los archivos de domain/entities para conocer enums y métodos
-Glob(lib/features/[modulo]/domain/entities/*.dart)
-Read(lib/features/[modulo]/domain/entities/[entity].dart)
+# PASO 2: Identificar dependencias de features anteriores
+# Buscar en HU menciones a:
+# - "Usa TipoDocumentoBloc de HU-001"
+# - "Integra con ColorBloc"
+# - "Selecciona de catálogo existente"
 
-# 3. Lee los eventos y estados del Bloc
-Read(lib/features/[modulo]/presentation/bloc/[modulo]_event.dart)
-Read(lib/features/[modulo]/presentation/bloc/[modulo]_state.dart)
+# PASO 3: POR CADA DEPENDENCIA IDENTIFICADA, leer PRIMERO:
 
-# 4. RECIÉN AHORA implementa las páginas usando los métodos EXACTOS
+# Ejemplo: Si HU menciona usar TipoDocumentoBloc:
+Read(lib/features/tipos_documento/presentation/bloc/tipo_documento_state.dart)
+Read(lib/features/tipos_documento/presentation/bloc/tipo_documento_event.dart)
+Read(lib/features/tipos_documento/domain/entities/tipo_documento_entity.dart)
+
+# PASO 4: ANOTAR nombres EXACTOS (crear checklist mental):
+# ✅ Estado lista: TipoDocumentoListLoaded (línea 15 del archivo)
+# ✅ Propiedad: state.tipos (línea 16 del archivo)
+# ✅ Evento: ListarTiposDocumentoEvent() (línea XX del event.dart)
+
+# PASO 5: Leer sección "Contrato API para Agentes Futuros" si existe
+# (Esta sección la crea @flutter-expert en su documentación de la HU)
+
+# PASO 6: Leer Bloc de ESTA HU (tu feature actual)
+Glob(lib/features/[modulo_actual]/domain/entities/*.dart)
+Read(lib/features/[modulo_actual]/presentation/bloc/[modulo]_event.dart)
+Read(lib/features/[modulo_actual]/presentation/bloc/[modulo]_state.dart)
+
+# PASO 7: RECIÉN AHORA implementar páginas
+```
+
+**⚠️ REGLA CRÍTICA - NO ASUMIR NUNCA**:
+
+```dart
+// ❌ MAL - Asumir nombres sin leer código
+if (state is TipoDocumentoListSuccess) { ... }  // ¿De dónde sacaste "ListSuccess"?
+final tipos = state.tiposDocumento;             // ¿De dónde sacaste "tiposDocumento"?
+
+// ✅ BIEN - Copiar nombres EXACTOS del código leído
+if (state is TipoDocumentoListLoaded) { ... }   // ✅ Leído de tipo_documento_state.dart:15
+final tipos = state.tipos;                       // ✅ Leído de tipo_documento_state.dart:16
+```
+
+**CHECKLIST PRE-IMPLEMENTACIÓN** (verificar mentalmente):
+
+- [ ] Leí archivos _state.dart de features dependientes
+- [ ] Anoté nombres EXACTOS de estados con número de línea
+- [ ] Anoté nombres EXACTOS de propiedades con número de línea
+- [ ] Anoté nombres EXACTOS de eventos
+- [ ] Verifiqué enums y métodos especiales (ej: .toBackendString())
+- [ ] Confirmo que NO estoy asumiendo nombres
+- [ ] COMPILARÉ antes de reportar completado
+
+**Ejemplo de anotación correcta**:
+```
+Dependencias verificadas:
+- TipoDocumentoBloc (HU-001):
+  - Estado lista: TipoDocumentoListLoaded (tipo_documento_state.dart:15)
+  - Propiedad: state.tipos (tipo_documento_state.dart:16)
+  - Evento: ListarTiposDocumentoEvent() (tipo_documento_event.dart:8)
 ```
 
 **Ejemplo**:

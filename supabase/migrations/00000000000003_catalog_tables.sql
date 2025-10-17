@@ -695,6 +695,84 @@ CREATE POLICY authenticated_view_tipos_documento ON tipos_documento
     TO authenticated
     USING (true);
 
+-- ============================================
+-- PASO 17: Tabla personas (E004-HU-002)
+-- ============================================
+
+-- ENUM para tipo de persona
+CREATE TYPE tipo_persona_enum AS ENUM ('Natural', 'Juridica');
+
+COMMENT ON TYPE tipo_persona_enum IS 'E004-HU-002: Tipo de persona (Natural o Jurídica) - RN-049';
+
+CREATE TABLE personas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo_documento_id UUID NOT NULL REFERENCES tipos_documento(id),
+    numero_documento TEXT NOT NULL,
+    tipo_persona tipo_persona_enum NOT NULL,
+    nombre_completo TEXT,
+    razon_social TEXT,
+    email TEXT,
+    celular TEXT,
+    telefono TEXT,
+    direccion TEXT,
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Constraints (RN-047, RN-048, RN-049, RN-052, RN-053)
+    CONSTRAINT personas_documento_unique UNIQUE (tipo_documento_id, numero_documento),
+    CONSTRAINT personas_numero_documento_not_empty CHECK (LENGTH(TRIM(numero_documento)) > 0),
+    CONSTRAINT personas_tipo_persona_nombre_check CHECK (
+        (tipo_persona = 'Natural' AND nombre_completo IS NOT NULL AND LENGTH(TRIM(nombre_completo)) > 0 AND razon_social IS NULL) OR
+        (tipo_persona = 'Juridica' AND razon_social IS NOT NULL AND LENGTH(TRIM(razon_social)) > 0 AND nombre_completo IS NULL)
+    ),
+    CONSTRAINT personas_email_format CHECK (
+        email IS NULL OR
+        (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$' AND LENGTH(email) <= 100)
+    ),
+    CONSTRAINT personas_celular_format CHECK (
+        celular IS NULL OR
+        (celular ~ '^[0-9]{9}$')
+    )
+);
+
+-- Índices optimización
+CREATE INDEX idx_personas_tipo_documento ON personas(tipo_documento_id);
+CREATE INDEX idx_personas_numero_documento ON personas(numero_documento);
+CREATE INDEX idx_personas_tipo_persona ON personas(tipo_persona);
+CREATE INDEX idx_personas_email ON personas(LOWER(email));
+CREATE INDEX idx_personas_activo ON personas(activo);
+CREATE INDEX idx_personas_created_at ON personas(created_at DESC);
+CREATE INDEX idx_personas_nombre_completo ON personas(LOWER(nombre_completo));
+CREATE INDEX idx_personas_razon_social ON personas(LOWER(razon_social));
+
+-- Trigger updated_at
+CREATE TRIGGER update_personas_updated_at
+    BEFORE UPDATE ON personas
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Comentarios
+COMMENT ON TABLE personas IS 'E004-HU-002: Entidad base de personas identificadas por documento (sin roles asignados) - RN-047 a RN-060';
+COMMENT ON COLUMN personas.tipo_documento_id IS 'Referencia a tipo de documento (inmutable después de creación) - RN-048, RN-050';
+COMMENT ON COLUMN personas.numero_documento IS 'Número de documento (único por tipo, inmutable) - RN-047, RN-048, RN-050';
+COMMENT ON COLUMN personas.tipo_persona IS 'Tipo de persona: Natural o Jurídica - RN-049, RN-057';
+COMMENT ON COLUMN personas.nombre_completo IS 'Nombre completo (obligatorio si tipo_persona = Natural) - RN-049';
+COMMENT ON COLUMN personas.razon_social IS 'Razón social (obligatorio si tipo_persona = Jurídica) - RN-049';
+COMMENT ON COLUMN personas.email IS 'Email de contacto (opcional, formato válido) - RN-051, RN-052';
+COMMENT ON COLUMN personas.celular IS 'Celular de contacto (opcional, 9 dígitos) - RN-051, RN-053';
+COMMENT ON COLUMN personas.telefono IS 'Teléfono fijo (opcional) - RN-051';
+COMMENT ON COLUMN personas.direccion IS 'Dirección (opcional) - RN-051';
+COMMENT ON COLUMN personas.activo IS 'Estado de la persona (soft delete, permite reactivación) - RN-060';
+
+-- RLS Policy
+ALTER TABLE personas ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY authenticated_view_personas ON personas
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
 
 COMMIT;
 

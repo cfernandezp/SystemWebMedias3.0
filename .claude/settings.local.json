@@ -26,7 +26,11 @@
       "Bash(tee:*)",
       "Bash(dir /s /b c:SystemWebMedias3.0libfeaturescatalogosdatamodels)",
       "Bash(curl:*)",
-      "Bash(PGPASSWORD=postgres psql:*)"
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(Select-String -Pattern \"lib\\core\\routing\\app_router.dart\" -Context 0,1)",
+      "Bash(dir /b c:UsersProgramador2DocumentsCristianFernandezSystemWebMedias3.0libcore)",
+      "Bash(dir /b supabasemigrations)",
+      "Bash(Select-String -Pattern \"issues found\")"
     ],
     "deny": [],
     "ask": [],

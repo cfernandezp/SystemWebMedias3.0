@@ -253,3 +253,54 @@ class InvalidLengthFailure extends Failure {
   const InvalidLengthFailure([super.message = 'Longitud de documento inválida']);
 }
 
+/// E004-HU-002: Gestión de Personas failures
+/// Documento duplicado (409)
+class DuplicatePersonaFailure extends Failure {
+  const DuplicatePersonaFailure([super.message = 'Ya existe una persona con este documento']);
+}
+
+/// Formato de documento inválido (400)
+class InvalidDocumentFormatFailure extends Failure {
+  const InvalidDocumentFormatFailure([super.message = 'Formato de documento inválido']);
+}
+
+/// Documento inválido para tipo persona (400)
+class InvalidDocumentForPersonTypeFailure extends Failure {
+  const InvalidDocumentForPersonTypeFailure([super.message = 'Tipo de documento no válido para este tipo de persona']);
+}
+
+/// Falta nombre (400)
+class MissingNombreFailure extends Failure {
+  const MissingNombreFailure([super.message = 'El nombre completo es obligatorio para persona natural']);
+}
+
+/// Falta razón social (400)
+class MissingRazonSocialFailure extends Failure {
+  const MissingRazonSocialFailure([super.message = 'La razón social es obligatoria para persona jurídica']);
+}
+
+/// Email inválido (400)
+class InvalidEmailFailure extends Failure {
+  const InvalidEmailFailure([super.message = 'Formato de email inválido']);
+}
+
+/// Teléfono inválido (400)
+class InvalidPhoneFailure extends Failure {
+  const InvalidPhoneFailure([super.message = 'El celular debe tener 9 dígitos']);
+}
+
+/// Persona no encontrada (404)
+class PersonaNotFoundFailure extends Failure {
+  const PersonaNotFoundFailure([super.message = 'Persona no encontrada']);
+}
+
+/// Tiene transacciones (403)
+class HasTransactionsFailure extends Failure {
+  const HasTransactionsFailure([super.message = 'Esta persona tiene transacciones registradas. Solo puede desactivarse']);
+}
+
+/// Ya está activa (400)
+class AlreadyActiveFailure extends Failure {
+  const AlreadyActiveFailure([super.message = 'La persona ya está activa']);
+}
+

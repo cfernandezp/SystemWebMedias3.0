@@ -22,20 +22,21 @@ import '../../data/models/update_sistema_talla_request.dart';
 /// - CA-007: Gestión de valores en edición (agregar, modificar, eliminar)
 /// - CA-008: Validación de eliminación de valores
 class SistemaTallaFormPage extends StatelessWidget {
-  final Map<String, dynamic>? sistema;
-  final SistemasTallaBloc? bloc;
+  final Map<String, dynamic>? arguments;
 
   const SistemaTallaFormPage({
     Key? key,
-    this.sistema,
-    this.bloc,
+    this.arguments,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final sistema = arguments?['sistema'] as Map<String, dynamic>?;
+    final bloc = arguments?['bloc'] as SistemasTallaBloc?;
+
     if (bloc != null) {
       return BlocProvider.value(
-        value: bloc!,
+        value: bloc,
         child: _SistemaTallaFormPageContent(sistema: sistema),
       );
     }

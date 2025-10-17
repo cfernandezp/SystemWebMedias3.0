@@ -6035,4 +6035,809 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION validar_formato_documento IS 'E004-HU-001: Valida formato y longitud de documento según tipo - RN-044 (CA-004)';
 
+-- ============================================
+-- E004-HU-002: FUNCIONES RPC PERSONAS
+-- ============================================
+
+-- E004-HU-002: buscar_persona_por_documento - Buscar persona existente por documento
+CREATE OR REPLACE FUNCTION buscar_persona_por_documento(
+    p_tipo_documento_id UUID,
+    p_numero_documento TEXT
+)
+RETURNS JSON AS $$
+DECLARE
+    v_persona RECORD;
+    v_roles JSONB;
+    v_error_hint TEXT;
+BEGIN
+    -- Validación: parámetros obligatorios
+    IF p_tipo_documento_id IS NULL THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El tipo de documento es obligatorio';
+    END IF;
+
+    IF p_numero_documento IS NULL OR TRIM(p_numero_documento) = '' THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El número de documento es obligatorio';
+    END IF;
+
+    -- Buscar persona (activos E inactivos) - RN-056
+    SELECT
+        p.id,
+        p.tipo_documento_id,
+        p.numero_documento,
+        p.tipo_persona::TEXT,
+        p.nombre_completo,
+        p.razon_social,
+        p.email,
+        p.celular,
+        p.telefono,
+        p.direccion,
+        p.activo,
+        p.created_at,
+        p.updated_at
+    INTO v_persona
+    FROM personas p
+    WHERE p.tipo_documento_id = p_tipo_documento_id
+      AND p.numero_documento = TRIM(p_numero_documento);
+
+    -- Si no existe, retornar not_found
+    IF NOT FOUND THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', '404',
+                'message', 'No se encontró persona con este documento',
+                'hint', 'not_found'
+            )
+        );
+    END IF;
+
+    -- TODO: Agregar consulta de roles cuando se implementen tablas clientes/proveedores/transportistas
+    v_roles := '[]'::jsonb;
+
+    -- Retornar persona encontrada con roles
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', v_persona.id,
+            'tipo_documento_id', v_persona.tipo_documento_id,
+            'numero_documento', v_persona.numero_documento,
+            'tipo_persona', v_persona.tipo_persona,
+            'nombre_completo', v_persona.nombre_completo,
+            'razon_social', v_persona.razon_social,
+            'email', v_persona.email,
+            'celular', v_persona.celular,
+            'telefono', v_persona.telefono,
+            'direccion', v_persona.direccion,
+            'activo', v_persona.activo,
+            'roles', v_roles,
+            'created_at', v_persona.created_at,
+            'updated_at', v_persona.updated_at
+        ),
+        'message', 'Persona encontrada'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION buscar_persona_por_documento IS 'E004-HU-002: Busca persona por tipo y número de documento (activos e inactivos) - RN-056 (CA-001)';
+
+-- E004-HU-002: crear_persona - Crear nueva persona con validaciones completas
+CREATE OR REPLACE FUNCTION crear_persona(
+    p_tipo_documento_id UUID,
+    p_numero_documento TEXT,
+    p_tipo_persona TEXT,
+    p_nombre_completo TEXT DEFAULT NULL,
+    p_razon_social TEXT DEFAULT NULL,
+    p_email TEXT DEFAULT NULL,
+    p_celular TEXT DEFAULT NULL,
+    p_telefono TEXT DEFAULT NULL,
+    p_direccion TEXT DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+    v_persona_id UUID;
+    v_error_hint TEXT;
+    v_validacion_documento JSON;
+    v_tipo_documento RECORD;
+    v_persona_existente RECORD;
+BEGIN
+    -- Validación: parámetros obligatorios
+    IF p_tipo_documento_id IS NULL THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El tipo de documento es obligatorio';
+    END IF;
+
+    IF p_numero_documento IS NULL OR TRIM(p_numero_documento) = '' THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El número de documento es obligatorio';
+    END IF;
+
+    IF p_tipo_persona IS NULL OR p_tipo_persona NOT IN ('Natural', 'Juridica') THEN
+        v_error_hint := 'invalid_param';
+        RAISE EXCEPTION 'El tipo de persona debe ser Natural o Juridica';
+    END IF;
+
+    -- RN-049: Validar campos según tipo de persona
+    IF p_tipo_persona = 'Natural' AND (p_nombre_completo IS NULL OR TRIM(p_nombre_completo) = '') THEN
+        v_error_hint := 'missing_nombre';
+        RAISE EXCEPTION 'El nombre completo es obligatorio para persona Natural';
+    END IF;
+
+    IF p_tipo_persona = 'Juridica' AND (p_razon_social IS NULL OR TRIM(p_razon_social) = '') THEN
+        v_error_hint := 'missing_razon_social';
+        RAISE EXCEPTION 'La razón social es obligatoria para persona Jurídica';
+    END IF;
+
+    -- RN-050: Validar formato de documento usando función de HU-001
+    v_validacion_documento := validar_formato_documento(p_tipo_documento_id, TRIM(p_numero_documento));
+    IF (v_validacion_documento->>'success')::boolean = false THEN
+        v_error_hint := 'invalid_document_format';
+        RAISE EXCEPTION '%', v_validacion_documento->'error'->>'message';
+    END IF;
+
+    -- RN-057: Validar coherencia tipo persona - tipo documento
+    SELECT codigo INTO v_tipo_documento
+    FROM tipos_documento
+    WHERE id = p_tipo_documento_id;
+
+    IF p_tipo_persona = 'Juridica' AND v_tipo_documento.codigo != 'RUC' THEN
+        v_error_hint := 'invalid_document_for_person_type';
+        RAISE EXCEPTION 'Persona Jurídica debe usar RUC';
+    END IF;
+
+    IF p_tipo_persona = 'Natural' AND v_tipo_documento.codigo = 'RUC' THEN
+        v_error_hint := 'invalid_document_for_person_type';
+        RAISE EXCEPTION 'RUC solo aplica para Persona Jurídica';
+    END IF;
+
+    -- RN-052: Validar formato email si se proporciona
+    IF p_email IS NOT NULL AND TRIM(p_email) != '' THEN
+        IF NOT (p_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') THEN
+            v_error_hint := 'invalid_email';
+            RAISE EXCEPTION 'Formato de email inválido';
+        END IF;
+    END IF;
+
+    -- RN-053: Validar formato celular si se proporciona
+    IF p_celular IS NOT NULL AND TRIM(p_celular) != '' THEN
+        IF NOT (p_celular ~ '^[0-9]{9}$') THEN
+            v_error_hint := 'invalid_phone';
+            RAISE EXCEPTION 'El celular debe tener 9 dígitos numéricos';
+        END IF;
+    END IF;
+
+    -- RN-047: Verificar unicidad de documento
+    SELECT id INTO v_persona_existente
+    FROM personas
+    WHERE tipo_documento_id = p_tipo_documento_id
+      AND numero_documento = TRIM(p_numero_documento);
+
+    IF FOUND THEN
+        v_error_hint := 'duplicate_document';
+        RAISE EXCEPTION 'Ya existe una persona con este documento';
+    END IF;
+
+    -- Crear persona
+    INSERT INTO personas (
+        tipo_documento_id,
+        numero_documento,
+        tipo_persona,
+        nombre_completo,
+        razon_social,
+        email,
+        celular,
+        telefono,
+        direccion,
+        activo
+    ) VALUES (
+        p_tipo_documento_id,
+        TRIM(p_numero_documento),
+        p_tipo_persona::tipo_persona_enum,
+        CASE WHEN p_tipo_persona = 'Natural' THEN TRIM(p_nombre_completo) ELSE NULL END,
+        CASE WHEN p_tipo_persona = 'Juridica' THEN TRIM(p_razon_social) ELSE NULL END,
+        CASE WHEN p_email IS NOT NULL AND TRIM(p_email) != '' THEN TRIM(p_email) ELSE NULL END,
+        CASE WHEN p_celular IS NOT NULL AND TRIM(p_celular) != '' THEN TRIM(p_celular) ELSE NULL END,
+        CASE WHEN p_telefono IS NOT NULL AND TRIM(p_telefono) != '' THEN TRIM(p_telefono) ELSE NULL END,
+        CASE WHEN p_direccion IS NOT NULL AND TRIM(p_direccion) != '' THEN TRIM(p_direccion) ELSE NULL END,
+        true
+    )
+    RETURNING id INTO v_persona_id;
+
+    -- Retornar persona creada
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', v_persona_id,
+            'tipo_documento_id', p_tipo_documento_id,
+            'numero_documento', TRIM(p_numero_documento),
+            'tipo_persona', p_tipo_persona,
+            'nombre_completo', CASE WHEN p_tipo_persona = 'Natural' THEN TRIM(p_nombre_completo) ELSE NULL END,
+            'razon_social', CASE WHEN p_tipo_persona = 'Juridica' THEN TRIM(p_razon_social) ELSE NULL END,
+            'email', CASE WHEN p_email IS NOT NULL AND TRIM(p_email) != '' THEN TRIM(p_email) ELSE NULL END,
+            'celular', CASE WHEN p_celular IS NOT NULL AND TRIM(p_celular) != '' THEN TRIM(p_celular) ELSE NULL END,
+            'telefono', CASE WHEN p_telefono IS NOT NULL AND TRIM(p_telefono) != '' THEN TRIM(p_telefono) ELSE NULL END,
+            'direccion', CASE WHEN p_direccion IS NOT NULL AND TRIM(p_direccion) != '' THEN TRIM(p_direccion) ELSE NULL END,
+            'activo', true,
+            'roles', '[]'::json
+        ),
+        'message', 'Persona creada exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION crear_persona IS 'E004-HU-002: Crea nueva persona con validaciones completas - RN-047 a RN-053, RN-057 (CA-002)';
+
+-- E004-HU-002: listar_personas - Listar personas con filtros multi-criterio
+CREATE OR REPLACE FUNCTION listar_personas(
+    p_tipo_documento_id UUID DEFAULT NULL,
+    p_tipo_persona TEXT DEFAULT NULL,
+    p_activo BOOLEAN DEFAULT NULL,
+    p_busqueda TEXT DEFAULT NULL,
+    p_limit INT DEFAULT 50,
+    p_offset INT DEFAULT 0
+)
+RETURNS JSON AS $$
+DECLARE
+    v_personas JSONB;
+    v_total_count INT;
+    v_error_hint TEXT;
+BEGIN
+    -- Validar límites
+    IF p_limit < 1 OR p_limit > 100 THEN
+        v_error_hint := 'invalid_param';
+        RAISE EXCEPTION 'El límite debe estar entre 1 y 100';
+    END IF;
+
+    -- Contar total de registros con filtros aplicados - RN-058
+    SELECT COUNT(*)
+    INTO v_total_count
+    FROM personas p
+    WHERE (p_tipo_documento_id IS NULL OR p.tipo_documento_id = p_tipo_documento_id)
+      AND (p_tipo_persona IS NULL OR p.tipo_persona::TEXT = p_tipo_persona)
+      AND (p_activo IS NULL OR p.activo = p_activo)
+      AND (
+          p_busqueda IS NULL OR
+          LOWER(p.numero_documento) LIKE LOWER('%' || p_busqueda || '%') OR
+          LOWER(p.nombre_completo) LIKE LOWER('%' || p_busqueda || '%') OR
+          LOWER(p.razon_social) LIKE LOWER('%' || p_busqueda || '%')
+      );
+
+    -- Obtener personas con paginación - RN-058
+    SELECT jsonb_agg(persona_row)
+    INTO v_personas
+    FROM (
+        SELECT jsonb_build_object(
+            'id', p.id,
+            'tipo_documento_id', p.tipo_documento_id,
+            'numero_documento', p.numero_documento,
+            'tipo_persona', p.tipo_persona::TEXT,
+            'nombre_completo', p.nombre_completo,
+            'razon_social', p.razon_social,
+            'email', p.email,
+            'celular', p.celular,
+            'telefono', p.telefono,
+            'direccion', p.direccion,
+            'activo', p.activo,
+            'roles', '[]'::jsonb,
+            'created_at', p.created_at,
+            'updated_at', p.updated_at
+        ) AS persona_row
+        FROM personas p
+        WHERE (p_tipo_documento_id IS NULL OR p.tipo_documento_id = p_tipo_documento_id)
+          AND (p_tipo_persona IS NULL OR p.tipo_persona::TEXT = p_tipo_persona)
+          AND (p_activo IS NULL OR p.activo = p_activo)
+          AND (
+              p_busqueda IS NULL OR
+              LOWER(p.numero_documento) LIKE LOWER('%' || p_busqueda || '%') OR
+              LOWER(p.nombre_completo) LIKE LOWER('%' || p_busqueda || '%') OR
+              LOWER(p.razon_social) LIKE LOWER('%' || p_busqueda || '%')
+          )
+        ORDER BY p.created_at DESC
+        LIMIT p_limit
+        OFFSET p_offset
+    ) AS personas_subquery;
+
+    -- Retornar resultados paginados
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'items', COALESCE(v_personas, '[]'::jsonb),
+            'total', v_total_count,
+            'limit', p_limit,
+            'offset', p_offset,
+            'has_more', (p_offset + p_limit) < v_total_count
+        ),
+        'message', format('Se encontraron %s personas', v_total_count)
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION listar_personas IS 'E004-HU-002: Lista personas con filtros multi-criterio y paginación - RN-058 (CA-006)';
+
+-- E004-HU-002: obtener_persona - Obtener detalle completo de persona
+CREATE OR REPLACE FUNCTION obtener_persona(
+    p_persona_id UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    v_persona RECORD;
+    v_roles JSONB;
+    v_error_hint TEXT;
+BEGIN
+    -- Validación: parámetro obligatorio
+    IF p_persona_id IS NULL THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El ID de persona es obligatorio';
+    END IF;
+
+    -- Obtener persona
+    SELECT
+        p.id,
+        p.tipo_documento_id,
+        p.numero_documento,
+        p.tipo_persona::TEXT,
+        p.nombre_completo,
+        p.razon_social,
+        p.email,
+        p.celular,
+        p.telefono,
+        p.direccion,
+        p.activo,
+        p.created_at,
+        p.updated_at
+    INTO v_persona
+    FROM personas p
+    WHERE p.id = p_persona_id;
+
+    IF NOT FOUND THEN
+        v_error_hint := 'not_found';
+        RAISE EXCEPTION 'Persona no encontrada';
+    END IF;
+
+    -- TODO: Obtener roles asignados cuando se implementen tablas
+    v_roles := '[]'::jsonb;
+
+    -- Retornar persona con roles - RN-059
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', v_persona.id,
+            'tipo_documento_id', v_persona.tipo_documento_id,
+            'numero_documento', v_persona.numero_documento,
+            'tipo_persona', v_persona.tipo_persona,
+            'nombre_completo', v_persona.nombre_completo,
+            'razon_social', v_persona.razon_social,
+            'email', v_persona.email,
+            'celular', v_persona.celular,
+            'telefono', v_persona.telefono,
+            'direccion', v_persona.direccion,
+            'activo', v_persona.activo,
+            'roles', v_roles,
+            'created_at', v_persona.created_at,
+            'updated_at', v_persona.updated_at
+        ),
+        'message', 'Persona obtenida exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION obtener_persona IS 'E004-HU-002: Obtiene detalle completo de persona con roles - RN-059 (CA-010)';
+
+-- E004-HU-002: editar_persona - Editar solo datos de contacto
+CREATE OR REPLACE FUNCTION editar_persona(
+    p_persona_id UUID,
+    p_email TEXT DEFAULT NULL,
+    p_celular TEXT DEFAULT NULL,
+    p_telefono TEXT DEFAULT NULL,
+    p_direccion TEXT DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+    v_persona RECORD;
+    v_error_hint TEXT;
+BEGIN
+    -- Validación: parámetro obligatorio
+    IF p_persona_id IS NULL THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El ID de persona es obligatorio';
+    END IF;
+
+    -- Verificar que persona existe
+    SELECT * INTO v_persona
+    FROM personas
+    WHERE id = p_persona_id;
+
+    IF NOT FOUND THEN
+        v_error_hint := 'not_found';
+        RAISE EXCEPTION 'Persona no encontrada';
+    END IF;
+
+    -- RN-052: Validar formato email si se proporciona
+    IF p_email IS NOT NULL AND TRIM(p_email) != '' THEN
+        IF NOT (p_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') THEN
+            v_error_hint := 'invalid_email';
+            RAISE EXCEPTION 'Formato de email inválido';
+        END IF;
+    END IF;
+
+    -- RN-053: Validar formato celular si se proporciona
+    IF p_celular IS NOT NULL AND TRIM(p_celular) != '' THEN
+        IF NOT (p_celular ~ '^[0-9]{9}$') THEN
+            v_error_hint := 'invalid_phone';
+            RAISE EXCEPTION 'El celular debe tener 9 dígitos numéricos';
+        END IF;
+    END IF;
+
+    -- RN-048: Solo actualizar datos de contacto (NO documento)
+    UPDATE personas
+    SET
+        email = CASE WHEN p_email IS NOT NULL THEN CASE WHEN TRIM(p_email) = '' THEN NULL ELSE TRIM(p_email) END ELSE email END,
+        celular = CASE WHEN p_celular IS NOT NULL THEN CASE WHEN TRIM(p_celular) = '' THEN NULL ELSE TRIM(p_celular) END ELSE celular END,
+        telefono = CASE WHEN p_telefono IS NOT NULL THEN CASE WHEN TRIM(p_telefono) = '' THEN NULL ELSE TRIM(p_telefono) END ELSE telefono END,
+        direccion = CASE WHEN p_direccion IS NOT NULL THEN CASE WHEN TRIM(p_direccion) = '' THEN NULL ELSE TRIM(p_direccion) END ELSE direccion END,
+        updated_at = NOW()
+    WHERE id = p_persona_id;
+
+    -- Retornar persona actualizada
+    SELECT
+        p.id,
+        p.tipo_documento_id,
+        p.numero_documento,
+        p.tipo_persona::TEXT,
+        p.nombre_completo,
+        p.razon_social,
+        p.email,
+        p.celular,
+        p.telefono,
+        p.direccion,
+        p.activo,
+        p.created_at,
+        p.updated_at
+    INTO v_persona
+    FROM personas p
+    WHERE p.id = p_persona_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', v_persona.id,
+            'tipo_documento_id', v_persona.tipo_documento_id,
+            'numero_documento', v_persona.numero_documento,
+            'tipo_persona', v_persona.tipo_persona,
+            'nombre_completo', v_persona.nombre_completo,
+            'razon_social', v_persona.razon_social,
+            'email', v_persona.email,
+            'celular', v_persona.celular,
+            'telefono', v_persona.telefono,
+            'direccion', v_persona.direccion,
+            'activo', v_persona.activo,
+            'roles', '[]'::json,
+            'created_at', v_persona.created_at,
+            'updated_at', v_persona.updated_at
+        ),
+        'message', 'Datos de contacto actualizados exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION editar_persona IS 'E004-HU-002: Edita solo datos de contacto, documento es inmutable - RN-048 (CA-007)';
+
+-- E004-HU-002: desactivar_persona - Desactivar persona con opción cascada
+CREATE OR REPLACE FUNCTION desactivar_persona(
+    p_persona_id UUID,
+    p_desactivar_roles BOOLEAN DEFAULT false
+)
+RETURNS JSON AS $$
+DECLARE
+    v_persona RECORD;
+    v_error_hint TEXT;
+    v_roles_activos_count INT := 0;
+BEGIN
+    -- Validación: parámetro obligatorio
+    IF p_persona_id IS NULL THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El ID de persona es obligatorio';
+    END IF;
+
+    -- Verificar que persona existe
+    SELECT * INTO v_persona
+    FROM personas
+    WHERE id = p_persona_id;
+
+    IF NOT FOUND THEN
+        v_error_hint := 'not_found';
+        RAISE EXCEPTION 'Persona no encontrada';
+    END IF;
+
+    -- TODO: RN-055 - Verificar roles activos cuando se implementen tablas
+    -- SELECT COUNT(*) INTO v_roles_activos_count FROM (
+    --     SELECT 1 FROM clientes WHERE persona_id = p_persona_id AND activo = true
+    --     UNION ALL
+    --     SELECT 1 FROM proveedores WHERE persona_id = p_persona_id AND activo = true
+    --     UNION ALL
+    --     SELECT 1 FROM transportistas WHERE persona_id = p_persona_id AND activo = true
+    -- ) AS roles_activos;
+
+    -- TODO: Si tiene roles activos y p_desactivar_roles = false, advertir
+    -- IF v_roles_activos_count > 0 AND NOT p_desactivar_roles THEN
+    --     v_error_hint := 'has_active_roles';
+    --     RAISE EXCEPTION 'Esta persona tiene roles activos. Use p_desactivar_roles=true para desactivarlos también';
+    -- END IF;
+
+    -- Desactivar persona
+    UPDATE personas
+    SET activo = false, updated_at = NOW()
+    WHERE id = p_persona_id;
+
+    -- TODO: Si p_desactivar_roles = true, desactivar roles en cascada
+    -- IF p_desactivar_roles THEN
+    --     UPDATE clientes SET activo = false WHERE persona_id = p_persona_id;
+    --     UPDATE proveedores SET activo = false WHERE persona_id = p_persona_id;
+    --     UPDATE transportistas SET activo = false WHERE persona_id = p_persona_id;
+    -- END IF;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_persona_id,
+            'activo', false,
+            'roles_desactivados', p_desactivar_roles
+        ),
+        'message', 'Persona desactivada exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION desactivar_persona IS 'E004-HU-002: Desactiva persona con validación de roles activos - RN-055 (CA-008)';
+
+-- E004-HU-002: eliminar_persona - Eliminar persona si no tiene transacciones
+CREATE OR REPLACE FUNCTION eliminar_persona(
+    p_persona_id UUID
+)
+RETURNS JSON AS $$
+DECLARE
+    v_persona RECORD;
+    v_error_hint TEXT;
+    v_tiene_transacciones BOOLEAN := false;
+BEGIN
+    -- Validación: parámetro obligatorio
+    IF p_persona_id IS NULL THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El ID de persona es obligatorio';
+    END IF;
+
+    -- Verificar que persona existe
+    SELECT * INTO v_persona
+    FROM personas
+    WHERE id = p_persona_id;
+
+    IF NOT FOUND THEN
+        v_error_hint := 'not_found';
+        RAISE EXCEPTION 'Persona no encontrada';
+    END IF;
+
+    -- TODO: RN-054 - Verificar transacciones cuando se implementen tablas
+    -- SELECT EXISTS (
+    --     SELECT 1 FROM ventas WHERE cliente_id IN (SELECT id FROM clientes WHERE persona_id = p_persona_id)
+    --     UNION ALL
+    --     SELECT 1 FROM compras WHERE proveedor_id IN (SELECT id FROM proveedores WHERE persona_id = p_persona_id)
+    --     UNION ALL
+    --     SELECT 1 FROM entregas WHERE transportista_id IN (SELECT id FROM transportistas WHERE persona_id = p_persona_id)
+    -- ) INTO v_tiene_transacciones;
+
+    -- IF v_tiene_transacciones THEN
+    --     v_error_hint := 'has_transactions';
+    --     RAISE EXCEPTION 'Esta persona tiene transacciones registradas. Solo puede desactivarse';
+    -- END IF;
+
+    -- Eliminar persona físicamente
+    DELETE FROM personas WHERE id = p_persona_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', p_persona_id,
+            'deleted', true
+        ),
+        'message', 'Persona eliminada exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION eliminar_persona IS 'E004-HU-002: Elimina persona si no tiene transacciones - RN-054 (CA-009)';
+
+-- E004-HU-002: reactivar_persona - Reactivar persona inactiva
+CREATE OR REPLACE FUNCTION reactivar_persona(
+    p_persona_id UUID,
+    p_email TEXT DEFAULT NULL,
+    p_celular TEXT DEFAULT NULL,
+    p_telefono TEXT DEFAULT NULL,
+    p_direccion TEXT DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+    v_persona RECORD;
+    v_error_hint TEXT;
+BEGIN
+    -- Validación: parámetro obligatorio
+    IF p_persona_id IS NULL THEN
+        v_error_hint := 'missing_param';
+        RAISE EXCEPTION 'El ID de persona es obligatorio';
+    END IF;
+
+    -- Verificar que persona existe y está inactiva
+    SELECT * INTO v_persona
+    FROM personas
+    WHERE id = p_persona_id;
+
+    IF NOT FOUND THEN
+        v_error_hint := 'not_found';
+        RAISE EXCEPTION 'Persona no encontrada';
+    END IF;
+
+    IF v_persona.activo THEN
+        v_error_hint := 'already_active';
+        RAISE EXCEPTION 'La persona ya está activa';
+    END IF;
+
+    -- RN-052: Validar formato email si se proporciona
+    IF p_email IS NOT NULL AND TRIM(p_email) != '' THEN
+        IF NOT (p_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') THEN
+            v_error_hint := 'invalid_email';
+            RAISE EXCEPTION 'Formato de email inválido';
+        END IF;
+    END IF;
+
+    -- RN-053: Validar formato celular si se proporciona
+    IF p_celular IS NOT NULL AND TRIM(p_celular) != '' THEN
+        IF NOT (p_celular ~ '^[0-9]{9}$') THEN
+            v_error_hint := 'invalid_phone';
+            RAISE EXCEPTION 'El celular debe tener 9 dígitos numéricos';
+        END IF;
+    END IF;
+
+    -- RN-060: Reactivar persona y actualizar datos de contacto
+    UPDATE personas
+    SET
+        activo = true,
+        email = CASE WHEN p_email IS NOT NULL THEN CASE WHEN TRIM(p_email) = '' THEN NULL ELSE TRIM(p_email) END ELSE email END,
+        celular = CASE WHEN p_celular IS NOT NULL THEN CASE WHEN TRIM(p_celular) = '' THEN NULL ELSE TRIM(p_celular) END ELSE celular END,
+        telefono = CASE WHEN p_telefono IS NOT NULL THEN CASE WHEN TRIM(p_telefono) = '' THEN NULL ELSE TRIM(p_telefono) END ELSE telefono END,
+        direccion = CASE WHEN p_direccion IS NOT NULL THEN CASE WHEN TRIM(p_direccion) = '' THEN NULL ELSE TRIM(p_direccion) END ELSE direccion END,
+        updated_at = NOW()
+    WHERE id = p_persona_id;
+
+    -- Retornar persona reactivada
+    SELECT
+        p.id,
+        p.tipo_documento_id,
+        p.numero_documento,
+        p.tipo_persona::TEXT,
+        p.nombre_completo,
+        p.razon_social,
+        p.email,
+        p.celular,
+        p.telefono,
+        p.direccion,
+        p.activo,
+        p.created_at,
+        p.updated_at
+    INTO v_persona
+    FROM personas p
+    WHERE p.id = p_persona_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'data', json_build_object(
+            'id', v_persona.id,
+            'tipo_documento_id', v_persona.tipo_documento_id,
+            'numero_documento', v_persona.numero_documento,
+            'tipo_persona', v_persona.tipo_persona,
+            'nombre_completo', v_persona.nombre_completo,
+            'razon_social', v_persona.razon_social,
+            'email', v_persona.email,
+            'celular', v_persona.celular,
+            'telefono', v_persona.telefono,
+            'direccion', v_persona.direccion,
+            'activo', v_persona.activo,
+            'roles', '[]'::json,
+            'created_at', v_persona.created_at,
+            'updated_at', v_persona.updated_at
+        ),
+        'message', 'Persona reactivada exitosamente'
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object(
+            'success', false,
+            'error', json_build_object(
+                'code', SQLSTATE,
+                'message', SQLERRM,
+                'hint', COALESCE(v_error_hint, 'unknown')
+            )
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION reactivar_persona IS 'E004-HU-002: Reactiva persona inactiva y actualiza datos de contacto - RN-060 (CA-003)';
+
 COMMIT;

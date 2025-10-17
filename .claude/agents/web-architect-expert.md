@@ -195,13 +195,33 @@ Task(@flutter-expert):
 ⏭️ Siguiente: Lanzar @ux-ui-expert
 ```
 
-### 6. Lanzar UI (Tercero)
+### 6. Lanzar UI (Tercero) - CON VERIFICACIÓN DE DEPENDENCIAS
+
+**ANTES DE LANZAR** - Identificar dependencias de HUs anteriores:
+```bash
+# 1. Leer HU para identificar Blocs de features anteriores
+Read(docs/historias-usuario/E00X-HU-XXX.md)
+
+# 2. Si HU menciona usar Blocs externos (ej: TipoDocumentoBloc, ColorBloc):
+#    Identificar features y leer sus estados/eventos
+Glob(lib/features/*/presentation/bloc/*_state.dart)
+
+# 3. Por cada dependencia, extraer nombres EXACTOS:
+Read(lib/features/[feature_dep]/presentation/bloc/[feature]_state.dart)
+Read(lib/features/[feature_dep]/presentation/bloc/[feature]_event.dart)
+
+# Anotar:
+# - Estados: TipoDocumentoListLoaded (NO asumir ListSuccess)
+# - Propiedades: state.tipos (NO asumir tiposDocumento)
+# - Eventos: ListarTiposDocumentoEvent
+```
 
 **REPORTA AL USUARIO**:
 ```
 📊 Paso 6/8 - 75% completado
 🔄 Lanzando @ux-ui-expert para implementar UI HU-XXX
 ⏳ Creando: Pages, Widgets, Responsive
+✅ Dependencias identificadas: [listar features anteriores si aplica]
 ```
 
 ```bash
@@ -210,17 +230,35 @@ Task(@flutter-expert):
 Task(@ux-ui-expert):
 "Implementa UI HU-XXX (visualización de Bloc)
 
-📖 LEER:
-- docs/historias-usuario/E00X-HU-XXX.md (TODOS los CA + secciones Backend y Frontend)
-- docs/technical/00-CONVENTIONS.md (sección 2, 5)
+📖 LEER OBLIGATORIO (EN ORDEN):
+1. docs/historias-usuario/E00X-HU-XXX.md (CA + Backend + Frontend)
+2. docs/technical/00-CONVENTIONS.md (sección 2, 5)
+3. ⭐ CRÍTICO - SI HU USA BLOCS DE FEATURES ANTERIORES:
+
+   ANTES de escribir código, LEER archivos de dependencias:
+
+   ```bash
+   # Ejemplo: Si usa TipoDocumentoBloc de HU-001
+   Read(lib/features/tipos_documento/presentation/bloc/tipo_documento_state.dart)
+   Read(lib/features/tipos_documento/presentation/bloc/tipo_documento_event.dart)
+
+   # ANOTAR nombres EXACTOS (NO asumir):
+   # - Estado lista: TipoDocumentoListLoaded (línea 15)
+   # - Propiedad: state.tipos (línea 16)
+   # - Evento: ListarTiposDocumentoEvent()
+   ```
+
+   USAR NOMBRES EXACTOS del código (NO inventar, NO asumir).
 
 🎯 IMPLEMENTAR:
 - Pages (routing flat, escuchar estados Bloc de Frontend)
 - Widgets (Theme.of(context), mostrar datos de Models)
 - Responsive (mobile + desktop)
 - TODOS los CA de la HU visualmente
+- ⚠️ Compilar y verificar ANTES de reportar completado
 
 📝 AL TERMINAR:
+- flutter analyze --no-pub (0 errores críticos)
 - Agregar sección técnica UI en HU (después de Frontend)
 - Usar formato <details> colapsable compacto
 - Mapear CA implementados visualmente"
